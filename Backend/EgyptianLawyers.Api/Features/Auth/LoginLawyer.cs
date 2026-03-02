@@ -12,67 +12,90 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace EgyptianLawyers.Api.Features.Auth;
 
-public sealed record LoginLawyerCommand(
-    string Email,
-    string Password
-) : IRequest<LoginLawyerResult>;
+public sealed record LoginCommand(string Email, string Password) : IRequest<LoginResult>;
 
-public sealed record LoginLawyerResult(string Token, Guid LawyerId, string FullName, string Role);
+public sealed record LoginResult(string Token, string Role, string FullName, Guid? LawyerId);
 
-public sealed class LoginLawyerValidator : AbstractValidator<LoginLawyerCommand>
+public sealed class LoginValidator : AbstractValidator<LoginCommand>
 {
-    public LoginLawyerValidator()
+    public LoginValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("Email must be a valid email address.");
+            .NotEmpty()
+            .WithMessage("Email is required.")
+            .EmailAddress()
+            .WithMessage("Email must be a valid email address.");
 
-        RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required.");
+        RuleFor(x => x.Password).NotEmpty().WithMessage("Password is required.");
     }
 }
 
-public sealed class LoginLawyerHandler : IRequestHandler<LoginLawyerCommand, LoginLawyerResult>
+public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _dbContext;
     private readonly IConfiguration _configuration;
 
-    public LoginLawyerHandler(
+    public LoginHandler(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext dbContext,
-        IConfiguration configuration)
+        IConfiguration configuration
+    )
     {
         _userManager = userManager;
         _dbContext = dbContext;
         _configuration = configuration;
     }
 
-    public async Task<LoginLawyerResult> Handle(LoginLawyerCommand request, CancellationToken cancellationToken)
+    public async Task<LoginResult> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
-            throw new FluentValidation.ValidationException("Invalid email or password.");
+            throw new ValidationException("Invalid email or password.");
 
         var validPassword = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!validPassword)
-            throw new FluentValidation.ValidationException("Invalid email or password.");
-
-        var lawyer = await _dbContext.Lawyers
-            .FirstOrDefaultAsync(l => l.IdentityUserId == user.Id, cancellationToken);
-
-        if (lawyer is null)
-            throw new FluentValidation.ValidationException("Lawyer profile not found.");
-
-        if (lawyer.IsSuspended)
-            throw new FluentValidation.ValidationException("Your account has been suspended. Please contact support.");
-
-        if (!lawyer.IsVerified)
-            throw new FluentValidation.ValidationException("Your account is pending admin approval.");
+            throw new ValidationException("Invalid email or password.");
 
         var roles = await _userManager.GetRolesAsync(user);
         var role = roles.FirstOrDefault() ?? "Lawyer";
 
+        string fullName;
+        Guid? lawyerId = null;
+
+        if (role == "Admin")
+        {
+            fullName = user.UserName ?? user.Email ?? "Admin";
+        }
+        else
+        {
+            var lawyer = await _dbContext.Lawyers.FirstOrDefaultAsync(
+                l => l.IdentityUserId == user.Id,
+                cancellationToken
+            );
+
+            if (lawyer is null)
+                throw new ValidationException("Lawyer profile not found.");
+
+            if (lawyer.IsSuspended)
+                throw new ValidationException(
+                    "Your account has been suspended. Please contact support."
+                );
+
+            if (!lawyer.IsVerified)
+                throw new ValidationException("Your account is pending admin approval.");
+
+            fullName = lawyer.FullName;
+            lawyerId = lawyer.Id;
+        }
+
+        var tokenString = GenerateJwt(user, role);
+
+        return new LoginResult(tokenString, role, fullName, lawyerId);
+    }
+
+    private string GenerateJwt(ApplicationUser user, string role)
+    {
         var jwtSection = _configuration.GetSection("Jwt");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -83,7 +106,7 @@ public sealed class LoginLawyerHandler : IRequestHandler<LoginLawyerCommand, Log
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Role, role)
+            new(ClaimTypes.Role, role),
         };
 
         var token = new JwtSecurityToken(
@@ -91,24 +114,26 @@ public sealed class LoginLawyerHandler : IRequestHandler<LoginLawyerCommand, Log
             audience: jwtSection["Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddHours(12),
-            signingCredentials: credentials);
+            signingCredentials: credentials
+        );
 
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-        return new LoginLawyerResult(tokenString, lawyer.Id, lawyer.FullName, role);
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
 
-public sealed class LoginLawyerEndpoint : IEndpoint
+public sealed class LoginEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/auth/login", async (LoginLawyerCommand command, IMediator mediator) =>
-            {
-                var result = await mediator.Send(command);
-                return Results.Ok(result);
-            })
-            .WithName("LoginLawyer")
+        app.MapPost(
+                "/api/auth/login",
+                async (LoginCommand command, IMediator mediator) =>
+                {
+                    var result = await mediator.Send(command);
+                    return Results.Ok(result);
+                }
+            )
+            .WithName("Login")
             .WithTags("Auth");
     }
 }
