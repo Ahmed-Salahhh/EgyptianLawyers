@@ -1,43 +1,62 @@
 using EgyptianLawyers.Api.Abstractions;
 using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Errors;
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace EgyptianLawyers.Api.Features.Admin;
 
-public record ApproveLawyerCommand(Guid LawyerId) : IRequest<bool>;
+public sealed record ApproveLawyerCommand(Guid LawyerId) : IRequest<Unit>;
 
-public class ApproveLawyerHandler : IRequestHandler<ApproveLawyerCommand, bool>
+public sealed class ApproveLawyerValidator : AbstractValidator<ApproveLawyerCommand>
 {
-    private readonly ApplicationDbContext _db;
-
-    public ApproveLawyerHandler(ApplicationDbContext db) => _db = db;
-
-    public async Task<bool> Handle(ApproveLawyerCommand request, CancellationToken cancellationToken)
+    public ApproveLawyerValidator()
     {
-        var lawyer = await _db.Lawyers.FindAsync([request.LawyerId], cancellationToken);
-        
-        if (lawyer == null)
-            throw new NotFoundException(new NotFoundError("Lawyer", request.LawyerId));
-
-        lawyer.IsVerified = true;
-        await _db.SaveChangesAsync(cancellationToken);
-
-        return true;
+        RuleFor(x => x.LawyerId)
+            .NotEmpty().WithMessage("LawyerId is required.");
     }
 }
 
-public class ApproveLawyerEndpoint : IEndpoint
+public sealed class ApproveLawyerHandler : IRequestHandler<ApproveLawyerCommand, Unit>
+{
+    private readonly ApplicationDbContext _dbContext;
+
+    public ApproveLawyerHandler(ApplicationDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<Unit> Handle(ApproveLawyerCommand request, CancellationToken cancellationToken)
+    {
+        var lawyer = await _dbContext.Lawyers
+            .FirstOrDefaultAsync(l => l.Id == request.LawyerId, cancellationToken);
+
+        if (lawyer is null)
+        {
+            throw new NotFoundException(new NotFoundError("Lawyer", request.LawyerId));
+        }
+
+        if (!lawyer.IsVerified)
+        {
+            lawyer.IsVerified = true;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return Unit.Value;
+    }
+}
+
+public sealed class ApproveLawyerEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapPut("/api/admin/lawyers/{id:guid}/approve", async (Guid id, IMediator mediator) =>
-        {
-            await mediator.Send(new ApproveLawyerCommand(id));
-            return Results.NoContent();
-        })
-        .WithName("ApproveLawyer")
-        .WithTags("Admin");
+            {
+                await mediator.Send(new ApproveLawyerCommand(id));
+                return Results.NoContent();
+            })
+            .WithName("ApproveLawyer")
+            .WithTags("Admin");
     }
 }
