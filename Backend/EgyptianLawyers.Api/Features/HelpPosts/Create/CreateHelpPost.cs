@@ -1,19 +1,28 @@
+using System.Security.Claims;
 using EgyptianLawyers.Api.Abstractions;
 using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Domain.Entities;
 using EgyptianLawyers.Api.Errors;
+using EgyptianLawyers.Api.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace EgyptianLawyers.Api.Features.HelpPosts.Create;
 
-public sealed record CreateHelpPostCommand(
+// Body sent by the mobile client — no LawyerId (resolved from JWT)
+public sealed record CreateHelpPostRequest(
     string Description,
     string? AttachmentUrl,
     Guid CourtId,
-    Guid CityId,
-    Guid LawyerId
+    Guid CityId);
+
+public sealed record CreateHelpPostCommand(
+    string IdentityUserId,
+    string Description,
+    string? AttachmentUrl,
+    Guid CourtId,
+    Guid CityId
 ) : IRequest<CreateHelpPostResult>;
 
 public sealed record CreateHelpPostResult(Guid Id);
@@ -30,51 +39,38 @@ public sealed class CreateHelpPostValidator : AbstractValidator<CreateHelpPostCo
             .MaximumLength(1000)
             .When(x => x.AttachmentUrl != null);
 
-        RuleFor(x => x.CourtId)
-            .NotEmpty().WithMessage("Court is required.");
-
-        RuleFor(x => x.CityId)
-            .NotEmpty().WithMessage("City is required.");
-
-        RuleFor(x => x.LawyerId)
-            .NotEmpty().WithMessage("Lawyer is required.");
+        RuleFor(x => x.CourtId).NotEmpty().WithMessage("Court is required.");
+        RuleFor(x => x.CityId).NotEmpty().WithMessage("City is required.");
     }
 }
 
 public sealed class CreateHelpPostHandler : IRequestHandler<CreateHelpPostCommand, CreateHelpPostResult>
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly INotificationService _notificationService;
 
-    public CreateHelpPostHandler(ApplicationDbContext dbContext)
+    public CreateHelpPostHandler(ApplicationDbContext dbContext, INotificationService notificationService)
     {
         _dbContext = dbContext;
+        _notificationService = notificationService;
     }
 
     public async Task<CreateHelpPostResult> Handle(CreateHelpPostCommand request, CancellationToken cancellationToken)
     {
-        var courtExists = await _dbContext.Courts
-            .AnyAsync(c => c.Id == request.CourtId, cancellationToken);
+        var lawyer = await _dbContext.Lawyers
+            .FirstOrDefaultAsync(l => l.IdentityUserId == request.IdentityUserId, cancellationToken);
 
+        if (lawyer is null)
+            throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
+
+        var courtExists = await _dbContext.Courts.AnyAsync(c => c.Id == request.CourtId, cancellationToken);
         if (!courtExists)
-        {
             throw new NotFoundException(new NotFoundError("Court", request.CourtId));
-        }
 
         var cityExists = await _dbContext.Cities
             .AnyAsync(c => c.Id == request.CityId && c.CourtId == request.CourtId, cancellationToken);
-
         if (!cityExists)
-        {
             throw new NotFoundException(new NotFoundError("City", request.CityId));
-        }
-
-        var lawyerExists = await _dbContext.Lawyers
-            .AnyAsync(l => l.Id == request.LawyerId, cancellationToken);
-
-        if (!lawyerExists)
-        {
-            throw new NotFoundException(new NotFoundError("Lawyer", request.LawyerId));
-        }
 
         var helpPost = new HelpPost
         {
@@ -83,15 +79,15 @@ public sealed class CreateHelpPostHandler : IRequestHandler<CreateHelpPostComman
             AttachmentUrl = request.AttachmentUrl,
             CourtId = request.CourtId,
             CityId = request.CityId,
-            LawyerId = request.LawyerId,
+            LawyerId = lawyer.Id,
             CreatedAt = DateTime.UtcNow
         };
 
         _dbContext.HelpPosts.Add(helpPost);
-
-        // TODO: Trigger push notification to Lawyers where ActiveCities contains this CityId.
-
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await _notificationService.SendNewPostNotificationAsync(
+            helpPost.Id, helpPost.Description, helpPost.CityId, cancellationToken);
 
         return new CreateHelpPostResult(helpPost.Id);
     }
@@ -101,11 +97,15 @@ public sealed class CreateHelpPostEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/help-posts", async (CreateHelpPostCommand command, IMediator mediator) =>
+        app.MapPost("/api/help-posts", async (CreateHelpPostRequest body, HttpContext ctx, IMediator mediator) =>
             {
+                var identityUserId = ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+                var command = new CreateHelpPostCommand(
+                    identityUserId, body.Description, body.AttachmentUrl, body.CourtId, body.CityId);
                 var result = await mediator.Send(command);
                 return Results.Created($"/api/help-posts/{result.Id}", result);
             })
+            .RequireAuthorization()
             .WithName("CreateHelpPost")
             .WithTags("HelpPosts");
     }

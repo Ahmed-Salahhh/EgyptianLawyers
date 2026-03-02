@@ -24,10 +24,7 @@ public sealed class GetLawyerProfileHandler : IRequestHandler<GetLawyerProfileQu
 {
     private readonly ApplicationDbContext _dbContext;
 
-    public GetLawyerProfileHandler(ApplicationDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    public GetLawyerProfileHandler(ApplicationDbContext dbContext) => _dbContext = dbContext;
 
     public async Task<LawyerProfileResult> Handle(GetLawyerProfileQuery request, CancellationToken cancellationToken)
     {
@@ -36,9 +33,7 @@ public sealed class GetLawyerProfileHandler : IRequestHandler<GetLawyerProfileQu
             .FirstOrDefaultAsync(l => l.Id == request.LawyerId, cancellationToken);
 
         if (lawyer is null)
-        {
             throw new NotFoundException(new NotFoundError("Lawyer", request.LawyerId));
-        }
 
         var activeCities = lawyer.ActiveCities
             .Select(c => new LawyerCityDto(c.Id, c.Name, c.CourtId))
@@ -65,6 +60,7 @@ public sealed class GetLawyerProfileEndpoint : IEndpoint
                 var result = await mediator.Send(new GetLawyerProfileQuery(id));
                 return Results.Ok(result);
             })
+            .RequireAuthorization()
             .WithName("GetLawyerProfile")
             .WithTags("Lawyers");
     }

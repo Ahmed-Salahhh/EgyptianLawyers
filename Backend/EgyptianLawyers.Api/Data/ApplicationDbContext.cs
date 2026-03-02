@@ -24,13 +24,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Court>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
         });
 
         modelBuilder.Entity<City>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
 
             entity.HasOne(e => e.Court)
                 .WithMany(c => c.Cities)
@@ -41,18 +41,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Lawyer>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.FullName).HasMaxLength(200);
+            entity.Property(e => e.FullName).HasMaxLength(200).IsRequired();
             entity.Property(e => e.Title).HasMaxLength(100);
-            entity.Property(e => e.SyndicateCardNumber).HasMaxLength(50);
-            entity.Property(e => e.WhatsAppNumber).HasMaxLength(20);
+            entity.Property(e => e.SyndicateCardNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.WhatsAppNumber).HasMaxLength(20).IsRequired();
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
+            entity.Property(e => e.IsSuspended).HasDefaultValue(false);
+            entity.Property(e => e.FcmToken).HasMaxLength(500);
             entity.Property(e => e.IdentityUserId).IsRequired();
         });
 
         modelBuilder.Entity<HelpPost>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.Description).HasMaxLength(2000).IsRequired();
             entity.Property(e => e.AttachmentUrl).HasMaxLength(1000);
 
             entity.HasOne(e => e.Court)
@@ -91,9 +93,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Lawyer>()
             .HasMany(l => l.ActiveCities)
             .WithMany(c => c.ActiveLawyers)
-            .UsingEntity(j =>
-            {
-                j.ToTable("LawyerActiveCities");
-            });
+            .UsingEntity(j => j.ToTable("LawyerActiveCities"));
     }
 }

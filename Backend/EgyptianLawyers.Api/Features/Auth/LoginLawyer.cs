@@ -2,11 +2,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using EgyptianLawyers.Api.Abstractions;
+using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Domain.Entities;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace EgyptianLawyers.Api.Features.Auth;
@@ -16,7 +17,7 @@ public sealed record LoginLawyerCommand(
     string Password
 ) : IRequest<LoginLawyerResult>;
 
-public sealed record LoginLawyerResult(string Token);
+public sealed record LoginLawyerResult(string Token, Guid LawyerId, string FullName, string Role);
 
 public sealed class LoginLawyerValidator : AbstractValidator<LoginLawyerCommand>
 {
@@ -34,11 +35,16 @@ public sealed class LoginLawyerValidator : AbstractValidator<LoginLawyerCommand>
 public sealed class LoginLawyerHandler : IRequestHandler<LoginLawyerCommand, LoginLawyerResult>
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ApplicationDbContext _dbContext;
     private readonly IConfiguration _configuration;
 
-    public LoginLawyerHandler(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+    public LoginLawyerHandler(
+        UserManager<ApplicationUser> userManager,
+        ApplicationDbContext dbContext,
+        IConfiguration configuration)
     {
         _userManager = userManager;
+        _dbContext = dbContext;
         _configuration = configuration;
     }
 
@@ -46,15 +52,23 @@ public sealed class LoginLawyerHandler : IRequestHandler<LoginLawyerCommand, Log
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
-        {
             throw new FluentValidation.ValidationException("Invalid email or password.");
-        }
 
         var validPassword = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!validPassword)
-        {
             throw new FluentValidation.ValidationException("Invalid email or password.");
-        }
+
+        var lawyer = await _dbContext.Lawyers
+            .FirstOrDefaultAsync(l => l.IdentityUserId == user.Id, cancellationToken);
+
+        if (lawyer is null)
+            throw new FluentValidation.ValidationException("Lawyer profile not found.");
+
+        if (lawyer.IsSuspended)
+            throw new FluentValidation.ValidationException("Your account has been suspended. Please contact support.");
+
+        if (!lawyer.IsVerified)
+            throw new FluentValidation.ValidationException("Your account is pending admin approval.");
 
         var roles = await _userManager.GetRolesAsync(user);
         var role = roles.FirstOrDefault() ?? "Lawyer";
@@ -81,7 +95,7 @@ public sealed class LoginLawyerHandler : IRequestHandler<LoginLawyerCommand, Log
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return new LoginLawyerResult(tokenString);
+        return new LoginLawyerResult(tokenString, lawyer.Id, lawyer.FullName, role);
     }
 }
 

@@ -3,6 +3,7 @@ using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Errors;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace EgyptianLawyers.Api.Features.Admin;
@@ -13,8 +14,7 @@ public sealed class ApproveLawyerValidator : AbstractValidator<ApproveLawyerComm
 {
     public ApproveLawyerValidator()
     {
-        RuleFor(x => x.LawyerId)
-            .NotEmpty().WithMessage("LawyerId is required.");
+        RuleFor(x => x.LawyerId).NotEmpty().WithMessage("LawyerId is required.");
     }
 }
 
@@ -22,10 +22,7 @@ public sealed class ApproveLawyerHandler : IRequestHandler<ApproveLawyerCommand,
 {
     private readonly ApplicationDbContext _dbContext;
 
-    public ApproveLawyerHandler(ApplicationDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    public ApproveLawyerHandler(ApplicationDbContext dbContext) => _dbContext = dbContext;
 
     public async Task<Unit> Handle(ApproveLawyerCommand request, CancellationToken cancellationToken)
     {
@@ -33,15 +30,10 @@ public sealed class ApproveLawyerHandler : IRequestHandler<ApproveLawyerCommand,
             .FirstOrDefaultAsync(l => l.Id == request.LawyerId, cancellationToken);
 
         if (lawyer is null)
-        {
             throw new NotFoundException(new NotFoundError("Lawyer", request.LawyerId));
-        }
 
-        if (!lawyer.IsVerified)
-        {
-            lawyer.IsVerified = true;
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
+        lawyer.IsVerified = true;
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }
@@ -56,6 +48,7 @@ public sealed class ApproveLawyerEndpoint : IEndpoint
                 await mediator.Send(new ApproveLawyerCommand(id));
                 return Results.NoContent();
             })
+            .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .WithName("ApproveLawyer")
             .WithTags("Admin");
     }
