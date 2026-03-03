@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using EgyptianLawyers.Api.Abstractions;
+using EgyptianLawyers.Api.Common;
 using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Domain.Entities;
 using EgyptianLawyers.Api.Errors;
@@ -84,7 +85,7 @@ public sealed class ReplyToPostEndpoint : IEndpoint
                     var result = await mediator.Send(command);
                     return Results.Created($"/api/help-posts/{helpPostId}/replies/{result.Id}", result);
                 })
-            .RequireAuthorization()
+            .RequireAuthorization(PolicyNames.RequireActive)
             .WithName("ReplyToPost")
             .WithTags("HelpPosts");
     }

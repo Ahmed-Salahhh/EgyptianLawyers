@@ -14,17 +14,22 @@ namespace EgyptianLawyers.Api.Features.Auth;
 
 public sealed record LoginCommand(string Email, string Password) : IRequest<LoginResult>;
 
-public sealed record LoginResult(string Token, string Role, string FullName, Guid? LawyerId);
+public sealed record LoginResult(
+    string Token,
+    string Role,
+    string FullName,
+    bool IsVerified,
+    bool IsSuspended,
+    // Null for Admin users
+    Guid? LawyerId);
 
 public sealed class LoginValidator : AbstractValidator<LoginCommand>
 {
     public LoginValidator()
     {
         RuleFor(x => x.Email)
-            .NotEmpty()
-            .WithMessage("Email is required.")
-            .EmailAddress()
-            .WithMessage("Email must be a valid email address.");
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("Email must be a valid email address.");
 
         RuleFor(x => x.Password).NotEmpty().WithMessage("Password is required.");
     }
@@ -39,8 +44,7 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
     public LoginHandler(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext dbContext,
-        IConfiguration configuration
-    )
+        IConfiguration configuration)
     {
         _userManager = userManager;
         _dbContext = dbContext;
@@ -62,38 +66,35 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
 
         string fullName;
         Guid? lawyerId = null;
+        bool isVerified;
+        bool isSuspended;
 
         if (role == "Admin")
         {
             fullName = user.UserName ?? user.Email ?? "Admin";
+            isVerified = true;
+            isSuspended = false;
         }
         else
         {
-            var lawyer = await _dbContext.Lawyers.FirstOrDefaultAsync(
-                l => l.IdentityUserId == user.Id,
-                cancellationToken
-            );
+            var lawyer = await _dbContext.Lawyers
+                .FirstOrDefaultAsync(l => l.IdentityUserId == user.Id, cancellationToken);
 
             if (lawyer is null)
                 throw new ValidationException("Lawyer profile not found.");
 
-            if (lawyer.IsSuspended)
-                throw new ValidationException(
-                    "Your account has been suspended. Please contact support."
-                );
-
-            if (!lawyer.IsVerified)
-                throw new ValidationException("Your account is pending admin approval.");
-
             fullName = lawyer.FullName;
             lawyerId = lawyer.Id;
+            isVerified = lawyer.IsVerified;
+            isSuspended = lawyer.IsSuspended;
         }
 
-        var tokenString = GenerateJwt(user, role);
-        return new LoginResult(tokenString, role, fullName, lawyerId);
+        var tokenString = GenerateJwt(user, role, isVerified, isSuspended);
+
+        return new LoginResult(tokenString, role, fullName, isVerified, isSuspended, lawyerId);
     }
 
-    private string GenerateJwt(ApplicationUser user, string role)
+    private string GenerateJwt(ApplicationUser user, string role, bool isVerified, bool isSuspended)
     {
         var jwtSection = _configuration.GetSection("Jwt");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!));
@@ -106,6 +107,8 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
             new(ClaimTypes.Role, role),
+            new("IsVerified", isVerified.ToString()),
+            new("IsSuspended", isSuspended.ToString()),
         };
 
         var token = new JwtSecurityToken(
@@ -113,8 +116,7 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
             audience: jwtSection["Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddHours(12),
-            signingCredentials: credentials
-        );
+            signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -124,14 +126,11 @@ public sealed class LoginEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost(
-                "/api/auth/login",
-                async (LoginCommand command, IMediator mediator) =>
-                {
-                    var result = await mediator.Send(command);
-                    return Results.Ok(result);
-                }
-            )
+        app.MapPost("/api/auth/login", async (LoginCommand command, IMediator mediator) =>
+            {
+                var result = await mediator.Send(command);
+                return Results.Ok(result);
+            })
             .WithName("Login")
             .WithTags("Auth");
     }

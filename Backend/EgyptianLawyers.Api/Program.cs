@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using System.Text;
 using EgyptianLawyers.Api.Behaviors;
+using EgyptianLawyers.Api.Common;
 using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Domain.Entities;
 using EgyptianLawyers.Api.Errors;
@@ -59,7 +61,22 @@ builder
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Verified: account has been approved by admin.
+    // Suspended lawyers still pass (they can read the app, but not write).
+    options.AddPolicy(PolicyNames.RequireVerified, policy =>
+        policy.RequireAssertion(ctx =>
+            ctx.User.IsInRole("Admin") ||
+            ctx.User.FindFirstValue("IsVerified") == "True"));
+
+    // Active: verified AND not suspended — required for all write operations.
+    options.AddPolicy(PolicyNames.RequireActive, policy =>
+        policy.RequireAssertion(ctx =>
+            ctx.User.IsInRole("Admin") ||
+            (ctx.User.FindFirstValue("IsVerified") == "True" &&
+             ctx.User.FindFirstValue("IsSuspended") == "False")));
+});
 
 builder.Services.AddCors(options =>
 {

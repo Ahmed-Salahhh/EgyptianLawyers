@@ -1,4 +1,5 @@
 using EgyptianLawyers.Api.Abstractions;
+using EgyptianLawyers.Api.Common;
 using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Errors;
 using MediatR;
@@ -87,7 +88,7 @@ public sealed class GetHelpPostDetailEndpoint : IEndpoint
                 var result = await mediator.Send(new GetHelpPostDetailQuery(id));
                 return Results.Ok(result);
             })
-            .RequireAuthorization()
+            .RequireAuthorization(PolicyNames.RequireVerified)
             .WithName("GetHelpPostDetail")
             .WithTags("HelpPosts");
     }

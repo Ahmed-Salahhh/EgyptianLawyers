@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using EgyptianLawyers.Api.Abstractions;
+using EgyptianLawyers.Api.Common;
 using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Domain.Entities;
 using EgyptianLawyers.Api.Errors;
@@ -102,7 +103,7 @@ public sealed class CreateHelpPostEndpoint : IEndpoint
                 var result = await mediator.Send(command);
                 return Results.Created($"/api/help-posts/{result.Id}", result);
             })
-            .RequireAuthorization()
+            .RequireAuthorization(PolicyNames.RequireActive)
             .WithName("CreateHelpPost")
             .WithTags("HelpPosts");
     }

@@ -1,6 +1,7 @@
 using EgyptianLawyers.Api.Abstractions;
 using EgyptianLawyers.Api.Common;
 using EgyptianLawyers.Api.Data;
+
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -85,7 +86,7 @@ public sealed class GetHelpFeedEndpoint : IEndpoint
                         new GetHelpFeedQuery(courtId, cityId, pageIndex, pageSize));
                     return Results.Ok(result);
                 })
-            .RequireAuthorization()
+            .RequireAuthorization(PolicyNames.RequireVerified)
             .WithName("GetHelpFeed")
             .WithTags("HelpPosts");
     }
