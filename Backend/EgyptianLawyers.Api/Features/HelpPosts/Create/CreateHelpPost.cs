@@ -63,14 +63,11 @@ public sealed class CreateHelpPostHandler : IRequestHandler<CreateHelpPostComman
         if (lawyer is null)
             throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
 
-        var courtExists = await _dbContext.Courts.AnyAsync(c => c.Id == request.CourtId, cancellationToken);
-        if (!courtExists)
+        // Verify the court belongs to the selected city (Court.CityId is the FK in the new schema)
+        var courtBelongsToCity = await _dbContext.Courts
+            .AnyAsync(c => c.Id == request.CourtId && c.CityId == request.CityId, cancellationToken);
+        if (!courtBelongsToCity)
             throw new NotFoundException(new NotFoundError("Court", request.CourtId));
-
-        var cityExists = await _dbContext.Cities
-            .AnyAsync(c => c.Id == request.CityId && c.CourtId == request.CourtId, cancellationToken);
-        if (!cityExists)
-            throw new NotFoundException(new NotFoundError("City", request.CityId));
 
         var helpPost = new HelpPost
         {

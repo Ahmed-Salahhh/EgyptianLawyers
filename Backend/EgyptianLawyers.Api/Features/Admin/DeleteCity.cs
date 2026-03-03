@@ -23,6 +23,11 @@ public sealed class DeleteCityHandler : IRequestHandler<DeleteCityCommand, Unit>
         if (city is null)
             throw new NotFoundException(new NotFoundError("City", request.Id));
 
+        var hasCourts = await _dbContext.Courts.AnyAsync(c => c.CityId == request.Id, cancellationToken);
+        if (hasCourts)
+            throw new FluentValidation.ValidationException(
+                "Cannot delete this city because it contains registered courts.");
+
         var hasHelpPosts = await _dbContext.HelpPosts.AnyAsync(p => p.CityId == request.Id, cancellationToken);
         if (hasHelpPosts)
             throw new FluentValidation.ValidationException(

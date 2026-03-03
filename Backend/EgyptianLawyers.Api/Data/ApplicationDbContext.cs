@@ -21,20 +21,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Court>(entity =>
+        modelBuilder.Entity<City>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
         });
 
-        modelBuilder.Entity<City>(entity =>
+        // Court belongs to a City. Restrict deletion of a City that still has Courts.
+        modelBuilder.Entity<Court>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
 
-            entity.HasOne(e => e.Court)
-                .WithMany(c => c.Cities)
-                .HasForeignKey(e => e.CourtId)
+            entity.HasOne(e => e.City)
+                .WithMany(c => c.Courts)
+                .HasForeignKey(e => e.CityId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

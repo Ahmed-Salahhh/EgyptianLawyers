@@ -90,7 +90,6 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
         }
 
         var tokenString = GenerateJwt(user, role);
-
         return new LoginResult(tokenString, role, fullName, lawyerId);
     }
 

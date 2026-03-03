@@ -5,38 +5,37 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EgyptianLawyers.Api.Features.Lookups;
 
-public sealed record GetCourtsAndCitiesQuery() : IRequest<GetCourtsAndCitiesResult>;
+public sealed record GetCourtsAndCitiesQuery(Guid? CityId) : IRequest<List<LookupCityDto>>;
 
-public sealed record LookupCityDto(Guid Id, string Name);
+public sealed record LookupCourtDto(Guid Id, string Name);
 
-public sealed record LookupCourtDto(Guid Id, string Name, List<LookupCityDto> Cities);
+public sealed record LookupCityDto(Guid Id, string Name, List<LookupCourtDto> Courts);
 
-public sealed record GetCourtsAndCitiesResult(List<LookupCourtDto> Courts);
-
-public sealed class GetCourtsAndCitiesHandler : IRequestHandler<GetCourtsAndCitiesQuery, GetCourtsAndCitiesResult>
+public sealed class GetCourtsAndCitiesHandler : IRequestHandler<GetCourtsAndCitiesQuery, List<LookupCityDto>>
 {
     private readonly ApplicationDbContext _dbContext;
 
-    public GetCourtsAndCitiesHandler(ApplicationDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    public GetCourtsAndCitiesHandler(ApplicationDbContext dbContext) => _dbContext = dbContext;
 
-    public async Task<GetCourtsAndCitiesResult> Handle(GetCourtsAndCitiesQuery request, CancellationToken cancellationToken)
+    public async Task<List<LookupCityDto>> Handle(GetCourtsAndCitiesQuery request, CancellationToken cancellationToken)
     {
-        var courts = await _dbContext.Courts
-            .Include(c => c.Cities)
+        var query = _dbContext.Cities
+            .Include(c => c.Courts)
+            .AsQueryable();
+
+        if (request.CityId.HasValue)
+            query = query.Where(c => c.Id == request.CityId.Value);
+
+        return await query
             .OrderBy(c => c.Name)
-            .Select(c => new LookupCourtDto(
+            .Select(c => new LookupCityDto(
                 c.Id,
                 c.Name,
-                c.Cities
-                    .OrderBy(city => city.Name)
-                    .Select(city => new LookupCityDto(city.Id, city.Name))
+                c.Courts
+                    .OrderBy(court => court.Name)
+                    .Select(court => new LookupCourtDto(court.Id, court.Name))
                     .ToList()))
             .ToListAsync(cancellationToken);
-
-        return new GetCourtsAndCitiesResult(courts);
     }
 }
 
@@ -44,9 +43,9 @@ public sealed class GetCourtsAndCitiesEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/lookups/courts-and-cities", async (IMediator mediator) =>
+        app.MapGet("/api/lookups/courts-and-cities", async (Guid? cityId, IMediator mediator) =>
             {
-                var result = await mediator.Send(new GetCourtsAndCitiesQuery());
+                var result = await mediator.Send(new GetCourtsAndCitiesQuery(cityId));
                 return Results.Ok(result);
             })
             .WithName("GetCourtsAndCities")

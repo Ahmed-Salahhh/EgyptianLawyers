@@ -8,7 +8,7 @@ namespace EgyptianLawyers.Api.Features.Lawyers.Profile;
 
 public sealed record GetLawyerProfileQuery(Guid LawyerId) : IRequest<LawyerProfileResult>;
 
-public sealed record LawyerCityDto(Guid Id, string Name, Guid CourtId);
+public sealed record LawyerCityDto(Guid Id, string Name);
 
 public sealed record LawyerProfileResult(
     Guid Id,
@@ -36,7 +36,7 @@ public sealed class GetLawyerProfileHandler : IRequestHandler<GetLawyerProfileQu
             throw new NotFoundException(new NotFoundError("Lawyer", request.LawyerId));
 
         var activeCities = lawyer.ActiveCities
-            .Select(c => new LawyerCityDto(c.Id, c.Name, c.CourtId))
+            .Select(c => new LawyerCityDto(c.Id, c.Name))
             .ToList();
 
         return new LawyerProfileResult(

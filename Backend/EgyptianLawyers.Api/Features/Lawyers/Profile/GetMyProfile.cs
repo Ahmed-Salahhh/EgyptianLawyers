@@ -25,7 +25,7 @@ public sealed class GetMyProfileHandler : IRequestHandler<GetMyProfileQuery, Law
             throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
 
         var activeCities = lawyer.ActiveCities
-            .Select(c => new LawyerCityDto(c.Id, c.Name, c.CourtId))
+            .Select(c => new LawyerCityDto(c.Id, c.Name))
             .ToList();
 
         return new LawyerProfileResult(
