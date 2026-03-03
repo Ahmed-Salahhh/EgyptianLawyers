@@ -35,15 +35,13 @@ public sealed class FcmNotificationService : INotificationService
             return;
         }
 
-        // TODO: Integrate FirebaseAdmin SDK (FirebaseAdmin NuGet package).
-        // Example:
-        //   var message = new MulticastMessage
-        //   {
-        //       Tokens = tokens,
-        //       Notification = new Notification { Title = "New Help Request", Body = description },
-        //       Data = new Dictionary<string, string> { ["postId"] = postId.ToString() }
-        //   };
-        //   await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message, cancellationToken);
+          var message = new MulticastMessage
+          {
+              Tokens = tokens,
+              Notification = new Notification { Title = "New Help Request", Body = description },
+              Data = new Dictionary<string, string> { ["postId"] = postId.ToString() }
+          };
+          await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message, cancellationToken);
 
         _logger.LogInformation(
             "Push notification queued for post {PostId} to {Count} lawyers in city {CityId}.",

@@ -17,6 +17,21 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "firebase-admin-key.json");
+if (File.Exists(firebaseKeyPath))
+{
+    FirebaseApp.Create(new AppOptions
+    {
+        Credential = GoogleCredential.FromFile(firebaseKeyPath)
+    });
+}
+else
+{
+    // A warning so you know if the file goes missing on SmarterASP later
+    Console.WriteLine("WARNING: firebase-admin-key.json not found. Push notifications will fail.");
+}
+
+
 // DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
@@ -171,7 +186,9 @@ app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapEndpoints();
+
+app.MapGet("/", () => Results.Ok("Egyptian Lawyers Network API is running"));
+app.MapGet("/health", () => Results.Ok("Healthy"));
 
 await app.RunAsync();
