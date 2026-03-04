@@ -1,37 +1,30 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-toastify';
 import {
-  useCreateCourtMutation,
-  useDeleteCourtMutation,
+  useCreateCityMutation,
+  useDeleteCityMutation,
   useGetCitiesLookupQuery,
-  useGetCourtsQuery,
-  useUpdateCourtMutation,
+  useGetCitiesQuery,
+  useUpdateCityMutation,
 } from '@/lib/features/courts/api';
-import { CitySelect } from '@/components/dashboard/city-select';
 import { DataTable } from '@/components/dashboard/data-table';
 import { DashboardModal } from '@/components/dashboard/dashboard-modal';
 import { FilterSelect } from '@/components/dashboard/filter-select';
 import { FilterFormRow } from '@/components/dashboard/filter-form-row';
 import { Pagination } from '@/components/dashboard/pagination';
 
-type CreateCourtFormValues = {
-  name: string;
-  cityId: string;
-};
-
-type EditCourtFormValues = {
+type CityFormValues = {
   name: string;
 };
 
-type CourtFiltersFormValues = {
+type CityFiltersFormValues = {
   cityId: string;
-  courtId: string;
 };
 
 function EditIcon() {
@@ -55,197 +48,134 @@ function DeleteIcon() {
   );
 }
 
-export function CourtsPageClient() {
+export function CitiesPageClient() {
   const t = useTranslations('Pages');
-  const createCourtSchema = z.object({
-    name: z.string().trim().min(1, t('courtNameRequired')),
-    cityId: z.string().min(1, t('cityRequired')),
-  });
-  const editCourtSchema = z.object({
-    name: z.string().trim().min(1, t('courtNameRequired')),
+  const citySchema = z.object({
+    name: z.string().trim().min(1, t('cityNameRequired')),
   });
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [cityId, setCityId] = useState('');
-  const [courtId, setCourtId] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingCourt, setEditingCourt] = useState<{ id: string; name: string } | null>(null);
-  const [courtToDelete, setCourtToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [editingCity, setEditingCity] = useState<{ id: string; name: string } | null>(null);
+  const [cityToDelete, setCityToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  const {
-    data: courtsResponse,
-    isLoading,
-    isError,
-  } = useGetCourtsQuery({
+  const { data: citiesResponse, isLoading, isError } = useGetCitiesQuery({
     pageIndex,
     pageSize,
     ...(cityId ? { cityId } : {}),
-    ...(courtId ? { courtId } : {}),
   });
-  const courts = courtsResponse?.data ?? [];
-  const { data: citiesResponse } = useGetCitiesLookupQuery();
-  const cities = citiesResponse ?? [];
-  const cityNameByCourtId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const city of cities) {
-      for (const court of city.courts ?? []) {
-        map.set(court.id, city.name);
-      }
-    }
-    return map;
-  }, [cities]);
-  const filtersForm = useForm<CourtFiltersFormValues>({
-    defaultValues: {
-      cityId: '',
-      courtId: '',
-    },
-  });
-  const selectedCityId = filtersForm.watch('cityId');
-  const courtOptions = useMemo(() => {
-    const selectedCity = cities.find((city) => city.id === selectedCityId);
-    const source = selectedCity ? [selectedCity] : cities;
-    const map = new Map<string, string>();
-    for (const city of source) {
-      for (const court of city.courts ?? []) {
-        map.set(court.id, court.name);
-      }
-    }
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [cities, selectedCityId]);
+  const cities = citiesResponse?.data ?? [];
+  const { data: citiesLookupResponse } = useGetCitiesLookupQuery();
+  const citiesLookup = citiesLookupResponse ?? [];
+  const [createCity, { isLoading: isCreating }] = useCreateCityMutation();
+  const [updateCity, { isLoading: isUpdating }] = useUpdateCityMutation();
+  const [deleteCity, { isLoading: isDeleting }] = useDeleteCityMutation();
+  const isMutating = isCreating || isUpdating || isDeleting;
 
   useEffect(() => {
     setPageIndex(1);
   }, [pageSize]);
 
+  const filtersForm = useForm<CityFiltersFormValues>({
+    defaultValues: { cityId: '' },
+  });
+
   const handleSearch = filtersForm.handleSubmit((values) => {
     setCityId(values.cityId);
-    setCourtId(values.courtId);
     setPageIndex(1);
   });
 
-  const [createCourt, { isLoading: isCreatingCourt }] = useCreateCourtMutation();
-  const [updateCourt, { isLoading: isUpdatingCourt }] = useUpdateCourtMutation();
-  const [deleteCourt, { isLoading: isDeletingCourt }] = useDeleteCourtMutation();
-
-  const isMutating = isCreatingCourt || isUpdatingCourt || isDeletingCourt;
-
-  const createForm = useForm<CreateCourtFormValues>({
-    defaultValues: {
-      name: '',
-      cityId: '',
-    },
-    resolver: zodResolver(createCourtSchema),
+  const createForm = useForm<CityFormValues>({
+    defaultValues: { name: '' },
+    resolver: zodResolver(citySchema),
   });
-
-  const editForm = useForm<EditCourtFormValues>({
-    defaultValues: {
-      name: '',
-    },
-    resolver: zodResolver(editCourtSchema),
+  const editForm = useForm<CityFormValues>({
+    defaultValues: { name: '' },
+    resolver: zodResolver(citySchema),
   });
 
   const openCreateModal = () => {
-    createForm.reset({ name: '', cityId: '' });
+    createForm.reset({ name: '' });
     setIsCreateModalOpen(true);
   };
 
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
-    createForm.reset({ name: '', cityId: '' });
+    createForm.reset({ name: '' });
   };
 
-  const handleCreateCourt = createForm.handleSubmit(async (values) => {
+  const handleCreateCity = createForm.handleSubmit(async (values) => {
     const name = values.name.trim();
 
     try {
-      await createCourt({ name, cityId: values.cityId }).unwrap();
-      toast.success(t('courtCreatedSuccess'));
+      await createCity({ name }).unwrap();
+      toast.success(t('cityCreatedSuccess'));
       closeCreateModal();
     } catch {
-      toast.error(t('courtCreateFailed'));
+      toast.error(t('cityCreateFailed'));
     }
   });
 
-  const startEditCourt = (courtId: string, currentName: string) => {
-    setEditingCourt({ id: courtId, name: currentName });
+  const startEditCity = (id: string, currentName: string) => {
+    setEditingCity({ id, name: currentName });
     editForm.reset({ name: currentName });
   };
 
   const closeEditModal = () => {
-    setEditingCourt(null);
+    setEditingCity(null);
     editForm.reset({ name: '' });
   };
 
-  const handleEditCourt = editForm.handleSubmit(async (values) => {
-    if (!editingCourt) return;
-
+  const handleEditCity = editForm.handleSubmit(async (values) => {
+    if (!editingCity) return;
     const name = values.name.trim();
 
     try {
-      await updateCourt({ id: editingCourt.id, name }).unwrap();
-      toast.success(t('courtUpdatedSuccess'));
+      await updateCity({ id: editingCity.id, name }).unwrap();
+      toast.success(t('cityUpdatedSuccess'));
       closeEditModal();
     } catch {
-      toast.error(t('courtUpdateFailed'));
+      toast.error(t('cityUpdateFailed'));
     }
   });
 
-  const handleDeleteCourt = async () => {
-    if (!courtToDelete) return;
+  const handleDeleteCity = async () => {
+    if (!cityToDelete) return;
     try {
-      await deleteCourt({ id: courtToDelete.id }).unwrap();
-      setCourtToDelete(null);
-      toast.success(t('courtDeletedSuccess'));
+      await deleteCity({ id: cityToDelete.id }).unwrap();
+      setCityToDelete(null);
+      toast.success(t('cityDeletedSuccess'));
     } catch {
-      toast.error(t('courtDeleteFailed'));
+      toast.error(t('cityDeleteFailed'));
     }
   };
 
   return (
     <main>
       <div className='flex items-center justify-between gap-3'>
-        <h1 className='text-2xl font-bold text-[#1a2f52]'>{t('courtsTitle')}</h1>
+        <h1 className='text-2xl font-bold text-[#1a2f52]'>{t('citiesTitle')}</h1>
         <button
           type='button'
           onClick={openCreateModal}
           className='rounded-lg bg-[#245ce2] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1f4fd0]'
         >
-          {t('addCourt')}
+          {t('addCity')}
         </button>
       </div>
 
-      <div className='mt-4'>
-        <FilterFormRow
-          onSubmit={handleSearch}
-          submitLabel={t('search')}
-          className='md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'
-        >
+      <section className='mt-4'>
+        <FilterFormRow onSubmit={handleSearch} submitLabel={t('search')}>
           <Controller
             control={filtersForm.control}
             name='cityId'
             render={({ field }) => (
               <FilterSelect
                 value={field.value}
-                onChange={(value) => {
-                  field.onChange(value);
-                  filtersForm.setValue('courtId', '');
-                }}
+                onChange={field.onChange}
                 placeholder={t('filterByCity')}
                 clearLabel={t('clear')}
-                options={cities.map((city) => ({ value: city.id, label: city.name }))}
-              />
-            )}
-          />
-          <Controller
-            control={filtersForm.control}
-            name='courtId'
-            render={({ field }) => (
-              <FilterSelect
-                value={field.value}
-                onChange={field.onChange}
-                placeholder={t('court')}
-                clearLabel={t('clear')}
-                options={courtOptions.map((court) => ({ value: court.id, label: court.name }))}
+                options={citiesLookup.map((city) => ({ value: city.id, label: city.name }))}
               />
             )}
           />
@@ -255,25 +185,38 @@ export function CourtsPageClient() {
           <div className='rounded-xl border border-[#d8e2f3] bg-white p-4 text-sm text-[#5d6f8f]'>{t('loading')}</div>
         ) : isError ? (
           <div className='rounded-xl border border-[#f2ccd5] bg-[#fff5f8] p-4 text-sm text-[#a13c52]'>{t('failedToLoad')}</div>
-        ) : courts.length === 0 ? (
-          <div className='rounded-xl border border-[#d8e2f3] bg-white p-4 text-sm text-[#5d6f8f]'>{t('noCourtsFound')}</div>
+        ) : cities.length === 0 ? (
+          <div className='rounded-xl border border-[#d8e2f3] bg-white p-4 text-sm text-[#5d6f8f]'>{t('noCities')}</div>
         ) : (
           <>
             <DataTable
               columns={[
-                { key: 'name', header: t('name') },
-                { key: 'city', header: t('city') },
+                { key: 'name', header: t('city') },
+                { key: 'courts', header: t('court') },
                 { key: 'action', header: t('action') },
               ]}
-              rows={courts.map((court) => ({
-                key: court.id,
+              rows={cities.map((city) => ({
+                key: city.id,
                 cells: [
-                  court.name,
-                  cityNameByCourtId.get(court.id) ?? '-',
-                  <div key={`${court.id}-actions`} className='flex flex-wrap items-center justify-center gap-2'>
+                  city.name,
+                  city.courts.length > 0 ? (
+                    <div key={`${city.id}-courts`} className='flex flex-wrap justify-center gap-1.5'>
+                      {city.courts.map((court) => (
+                        <span
+                          key={court.id}
+                          className='rounded-full border border-[#d8e2f3] bg-[#f7faff] px-2 py-0.5 text-xs text-[#30415d]'
+                        >
+                          {court.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    '-'
+                  ),
+                  <div key={`${city.id}-actions`} className='flex items-center justify-center gap-2'>
                     <button
                       type='button'
-                      onClick={() => startEditCourt(court.id, court.name)}
+                      onClick={() => startEditCity(city.id, city.name)}
                       disabled={isMutating}
                       title={t('edit')}
                       aria-label={t('edit')}
@@ -283,7 +226,7 @@ export function CourtsPageClient() {
                     </button>
                     <button
                       type='button'
-                      onClick={() => setCourtToDelete({ id: court.id, name: court.name })}
+                      onClick={() => setCityToDelete({ id: city.id, name: city.name })}
                       disabled={isMutating}
                       title={t('delete')}
                       aria-label={t('delete')}
@@ -296,9 +239,9 @@ export function CourtsPageClient() {
               }))}
             />
             <Pagination
-              pageIndex={courtsResponse?.pageIndex ?? pageIndex}
-              totalPages={courtsResponse?.totalPages ?? 1}
-              totalCount={courtsResponse?.totalCount ?? courts.length}
+              pageIndex={citiesResponse?.pageIndex ?? pageIndex}
+              totalPages={citiesResponse?.totalPages ?? 1}
+              totalCount={citiesResponse?.totalCount ?? cities.length}
               onPageChange={setPageIndex}
               pageSize={pageSize}
               onPageSizeChange={setPageSize}
@@ -312,42 +255,23 @@ export function CourtsPageClient() {
             />
           </>
         )}
-      </div>
+      </section>
 
       <DashboardModal
         open={isCreateModalOpen}
-        title={t('addCourt')}
+        title={t('addCity')}
         onClose={closeCreateModal}
         closeLabel={t('closeDialog')}
       >
-        <form onSubmit={handleCreateCourt} className='space-y-3'>
+        <form onSubmit={handleCreateCity} className='space-y-3'>
           <div>
             <input
               {...createForm.register('name')}
               className='w-full rounded-lg border border-[#d8e2f3] bg-white px-3 py-2 text-sm text-[#314866] outline-none ring-[#245ce2] focus:ring-2'
-              placeholder={t('courtName')}
+              placeholder={t('cityName')}
             />
             {createForm.formState.errors.name ? (
               <p className='mt-1 text-xs text-[#b53f58]'>{createForm.formState.errors.name.message}</p>
-            ) : null}
-          </div>
-          <div>
-            <Controller
-              control={createForm.control}
-              name='cityId'
-              render={({ field }) => (
-                <CitySelect
-                  cities={cities}
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t('selectCity')}
-                  className='w-full rounded-lg border border-[#d8e2f3] bg-white px-3 py-2 text-sm text-[#314866] outline-none ring-[#245ce2] focus:ring-2'
-                  disabled={isMutating}
-                />
-              )}
-            />
-            {createForm.formState.errors.cityId ? (
-              <p className='mt-1 text-xs text-[#b53f58]'>{createForm.formState.errors.cityId.message}</p>
             ) : null}
           </div>
           <div className='flex justify-end gap-2'>
@@ -363,24 +287,24 @@ export function CourtsPageClient() {
               disabled={isMutating}
               className='rounded-lg bg-[#245ce2] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60'
             >
-              {t('addCourt')}
+              {t('addCity')}
             </button>
           </div>
         </form>
       </DashboardModal>
 
       <DashboardModal
-        open={Boolean(editingCourt)}
-        title={editingCourt ? `${t('edit')}: ${editingCourt.name}` : t('edit')}
+        open={Boolean(editingCity)}
+        title={editingCity ? `${t('edit')}: ${editingCity.name}` : t('edit')}
         onClose={closeEditModal}
         closeLabel={t('closeDialog')}
       >
-        <form onSubmit={handleEditCourt} className='space-y-3'>
+        <form onSubmit={handleEditCity} className='space-y-3'>
           <div>
             <input
               {...editForm.register('name')}
               className='w-full rounded-lg border border-[#d8e2f3] bg-white px-3 py-2 text-sm text-[#314866] outline-none ring-[#245ce2] focus:ring-2'
-              placeholder={t('courtName')}
+              placeholder={t('cityName')}
             />
             {editForm.formState.errors.name ? (
               <p className='mt-1 text-xs text-[#b53f58]'>{editForm.formState.errors.name.message}</p>
@@ -406,28 +330,28 @@ export function CourtsPageClient() {
       </DashboardModal>
 
       <DashboardModal
-        open={Boolean(courtToDelete)}
-        title={t('deleteCourtTitle')}
-        onClose={() => setCourtToDelete(null)}
+        open={Boolean(cityToDelete)}
+        title={t('deleteCityTitle')}
+        onClose={() => setCityToDelete(null)}
         closeLabel={t('closeDialog')}
       >
         <p className='text-sm text-[#4e648c]'>
-          {t.rich('confirmDeleteCourtWithName', {
-            name: courtToDelete?.name ?? '',
+          {t.rich('confirmDeleteCityWithName', {
+            name: cityToDelete?.name ?? '',
             strong: (chunks) => <span className='font-semibold'>{chunks}</span>,
           })}
         </p>
         <div className='mt-4 flex justify-end gap-2'>
           <button
             type='button'
-            onClick={() => setCourtToDelete(null)}
+            onClick={() => setCityToDelete(null)}
             className='rounded-lg border border-[#d8e2f3] bg-white px-3 py-2 text-sm text-[#314866]'
           >
             {t('cancel')}
           </button>
           <button
             type='button'
-            onClick={handleDeleteCourt}
+            onClick={handleDeleteCity}
             disabled={isMutating}
             className='rounded-lg bg-[#d94b64] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60'
           >

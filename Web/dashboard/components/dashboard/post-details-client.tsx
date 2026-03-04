@@ -54,6 +54,9 @@ export function PostDetailsClient({ locale, postId }: Props) {
           {t("author")}: {post.lawyerFullName}
         </p>
         <p className="mt-1 text-sm text-[#5d6f8f]">
+          {t("whatsApp")}: <LtrText>{post.lawyerWhatsAppNumber}</LtrText>
+        </p>
+        <p className="mt-1 text-sm text-[#5d6f8f]">
           {t("createdAt")}: <LtrText>{post.createdAt}</LtrText>
         </p>
         <p className="mt-1 text-sm text-[#5d6f8f]">

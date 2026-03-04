@@ -11,9 +11,9 @@ import { useAuthUser } from "@/lib/features/auth/use-auth-user";
 const navItems = [
   { key: "dashboard", href: "/dashboard", badge: "DB" },
   { key: "lawyers", href: "/lawyers", badge: "LW" },
+  { key: "cities", href: "/cities", badge: "CY" },
   { key: "courts", href: "/courts", badge: "CT" },
   { key: "posts", href: "/posts", badge: "PS" },
-  { key: "settings", href: "/settings", badge: "ST" },
 ] as const;
 
 type Props = {
@@ -233,14 +233,6 @@ export default function DashboardShell({ locale, children }: Props) {
                         className="block rounded-lg px-3 py-2 text-sm text-[#2a3a55] hover:bg-[#f1f5ff]"
                       >
                         {common("profile")}
-                      </Link>
-                      <Link
-                        href="/settings"
-                        locale={locale}
-                        onClick={() => setProfileOpen(false)}
-                        className="block rounded-lg px-3 py-2 text-sm text-[#2a3a55] hover:bg-[#f1f5ff]"
-                      >
-                        {common("accountSettings")}
                       </Link>
                       <button
                         type="button"

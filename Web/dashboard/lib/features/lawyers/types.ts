@@ -1,25 +1,10 @@
+import type { PaginatedResult, SearchRequest } from "@/lib/common/pagination";
+
 export type LawyerStatus = "pending" | "verified" | "suspended";
 
-export type CityKey =
-  | "cityCairo"
-  | "cityAlexandria"
-  | "cityMansoura"
-  | "cityGiza";
-
-export type SubmittedKey = "todayTime" | "yesterday";
-
-export type Lawyer = {
+export type AdminLawyerCity = {
   id: string;
   name: string;
-  email: string;
-  cityKey: CityKey;
-  status: LawyerStatus;
-  whatsapp: string;
-  cardNumber: string;
-  createdAt: string;
-  submitted: SubmittedKey;
-  title: string;
-  activeCourts: string[];
 };
 
 export type AdminLawyerListItem = {
@@ -31,6 +16,17 @@ export type AdminLawyerListItem = {
   isVerified: boolean;
   isSuspended: boolean;
   createdAt: string;
+  cities: AdminLawyerCity[];
+};
+
+export type AdminLawyersListResponse = PaginatedResult<AdminLawyerListItem>;
+
+export type GetLawyersRequest = SearchRequest & {
+  cityId?: string;
+  syndicateCardNumber?: string;
+  whatsAppNumber?: string;
+  isVerified?: boolean;
+  isSuspended?: boolean;
 };
 
 export type ActiveCityItem = {

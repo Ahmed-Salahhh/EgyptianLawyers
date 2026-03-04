@@ -30,12 +30,9 @@ export function LawyerDetailsClient({ locale, lawyerId }: Props) {
     );
   }
 
-  const statusLabel =
-    lawyer.status === "pending"
-      ? t("pending")
-      : lawyer.status === "verified"
-        ? t("verified")
-        : t("suspended");
+  const statusLabel = lawyer.isVerified ? t("verified") : t("pending");
+  const primaryCity = lawyer.activeCities?.[0]?.name ?? "-";
+  const activeCities = lawyer.activeCities ?? [];
 
   return (
     <main>
@@ -54,16 +51,16 @@ export function LawyerDetailsClient({ locale, lawyerId }: Props) {
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="text-sm text-[#5d6f8f]">{t("fullName")}</p>
-            <p className="font-semibold text-[#1a2f52]">{lawyer.name}</p>
+            <p className="font-semibold text-[#1a2f52]">{lawyer.fullName}</p>
           </div>
           <div>
             <p className="text-sm text-[#5d6f8f]">{t("professionalTitle")}</p>
-            <p className="font-semibold text-[#1a2f52]">{lawyer.title}</p>
+            <p className="font-semibold text-[#1a2f52]">{lawyer.title || "-"}</p>
           </div>
           <div>
             <p className="text-sm text-[#5d6f8f]">{t("syndicateCardNumber")}</p>
             <p className="font-semibold text-[#1a2f52]">
-              <LtrText>{lawyer.cardNumber}</LtrText>
+              <LtrText>{lawyer.syndicateCardNumber}</LtrText>
             </p>
           </div>
           <div>
@@ -72,12 +69,12 @@ export function LawyerDetailsClient({ locale, lawyerId }: Props) {
           </div>
           <div>
             <p className="text-sm text-[#5d6f8f]">{t("primaryCity")}</p>
-            <p className="font-semibold text-[#1a2f52]">{t(lawyer.cityKey)}</p>
+            <p className="font-semibold text-[#1a2f52]">{primaryCity}</p>
           </div>
           <div>
             <p className="text-sm text-[#5d6f8f]">{t("whatsApp")}</p>
             <p className="font-semibold text-[#1a2f52]">
-              <LtrText>{lawyer.whatsapp}</LtrText>
+              <LtrText>{lawyer.whatsAppNumber}</LtrText>
             </p>
           </div>
         </div>
@@ -85,14 +82,18 @@ export function LawyerDetailsClient({ locale, lawyerId }: Props) {
         <div className="mt-5">
           <p className="text-sm text-[#5d6f8f]">{t("activeCourts")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {lawyer.activeCourts.map((court) => (
-              <span
-                key={court}
-                className="rounded-full border border-[#d8e2f3] bg-[#f7faff] px-3 py-1 text-sm text-[#30415d]"
-              >
-                {court}
-              </span>
-            ))}
+            {activeCities.length > 0 ? (
+              activeCities.map((city) => (
+                <span
+                  key={city.id}
+                  className="rounded-full border border-[#d8e2f3] bg-[#f7faff] px-3 py-1 text-sm text-[#30415d]"
+                >
+                  {city.name}
+                </span>
+              ))
+            ) : (
+              <span className="text-sm text-[#5d6f8f]">-</span>
+            )}
           </div>
         </div>
       </section>

@@ -1,13 +1,8 @@
-export type ModerationItemType = "post" | "comment";
-export type ModerationItemStatus = "flagged" | "kept" | "removed";
+import type { PaginatedResult, SearchRequest } from "@/lib/common/pagination";
 
-export type ModerationItem = {
-  id: string;
-  type: ModerationItemType;
-  title: string;
-  meta: string;
-  reason: string;
-  status: ModerationItemStatus;
+export type GetHelpPostsFeedRequest = SearchRequest & {
+  courtId?: string;
+  cityId?: string;
 };
 
 export type HelpPostFeedItem = {
@@ -20,9 +15,10 @@ export type HelpPostFeedItem = {
   cityName: string;
   lawyerId: string;
   lawyerFullName: string;
-  replyCount: number;
   createdAt: string;
 };
+
+export type GetHelpPostsFeedResponse = PaginatedResult<HelpPostFeedItem>;
 
 export type HelpPostReply = {
   id: string;
@@ -44,6 +40,7 @@ export type HelpPostDetails = {
   cityName: string;
   lawyerId: string;
   lawyerFullName: string;
+  lawyerWhatsAppNumber: string;
   createdAt: string;
   replies: HelpPostReply[];
 };

@@ -2,31 +2,11 @@
 
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { appBaseQuery } from "../base-query";
-import type { HelpPostDetails, HelpPostFeedItem, ModerationItem } from "./types";
-
-type HelpPostsFeedResponse =
-  | HelpPostFeedItem[]
-  | {
-      data?: HelpPostFeedItem[];
-      items?: HelpPostFeedItem[];
-      helpPosts?: HelpPostFeedItem[];
-    };
-
-function normalizeHelpPosts(response: HelpPostsFeedResponse): HelpPostFeedItem[] {
-  if (Array.isArray(response)) return response;
-  return response.items ?? response.data ?? response.helpPosts ?? [];
-}
-
-function toModerationItems(posts: HelpPostFeedItem[]): ModerationItem[] {
-  return posts.map((post) => ({
-    id: post.id,
-    type: "post",
-    title: `Help Post #${post.id}`,
-    meta: `${post.courtName} | ${post.cityName} | ${post.lawyerFullName}`,
-    reason: post.description,
-    status: "flagged",
-  }));
-}
+import type {
+  GetHelpPostsFeedRequest,
+  GetHelpPostsFeedResponse,
+  HelpPostDetails,
+} from "./types";
 
 function normalizeHelpPostDetails(post: HelpPostDetails): HelpPostDetails {
   return {
@@ -40,26 +20,16 @@ export const postsApi = createApi({
   baseQuery: appBaseQuery,
   tagTypes: ["PostModeration"],
   endpoints: (builder) => ({
-    getFlaggedItems: builder.query<
-      ModerationItem[],
-      { courtId?: string; cityId?: string } | void
-    >({
-      query: (arg) => ({
+    getFlaggedItems: builder.query<GetHelpPostsFeedResponse, GetHelpPostsFeedRequest>({
+      query: (req) => ({
         url: "/api/help-posts/feed",
         method: "GET",
-        params:
-          arg && (arg.courtId || arg.cityId)
-            ? {
-                ...(arg.courtId ? { courtId: arg.courtId } : {}),
-                ...(arg.cityId ? { cityId: arg.cityId } : {}),
-              }
-            : undefined,
+        params: req,
       }),
-      transformResponse: (response: HelpPostsFeedResponse) =>
-        toModerationItems(normalizeHelpPosts(response)),
       providesTags: (result) => [
         { type: "PostModeration", id: "LIST" },
-        ...(result?.map((item) => ({ type: "PostModeration" as const, id: item.id })) ?? []),
+        ...(result?.data.map((item) => ({ type: "PostModeration" as const, id: item.id })) ??
+          []),
       ],
     }),
     getHelpPostById: builder.query<HelpPostDetails, string>({
