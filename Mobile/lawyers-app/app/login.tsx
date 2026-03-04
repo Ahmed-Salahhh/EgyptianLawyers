@@ -34,10 +34,11 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      await signIn({ email: email.trim(), password });
+      await signIn({ email: email.trim(), password: password.trim() });
       router.replace("/(tabs)");
-    } catch {
-      setError("Login failed. Check your credentials.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unexpected error.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }

@@ -12,6 +12,7 @@ type LoginRequest = {
   password: string;
 };
 
+// Mirrors the backend LoginResult record (camelCase after JSON serialisation).
 type LoginResponse = {
   token?: string;
   accessToken?: string;
@@ -19,6 +20,9 @@ type LoginResponse = {
   role?: string;
   lawyerId?: string | null;
   email?: string;
+  isVerified?: boolean;
+  isSuspended?: boolean;
+  // Some backends wrap the payload under a "data" envelope.
   data?: {
     token?: string;
     accessToken?: string;
@@ -26,6 +30,8 @@ type LoginResponse = {
     role?: string;
     lawyerId?: string | null;
     email?: string;
+    isVerified?: boolean;
+    isSuspended?: boolean;
   };
 };
 
@@ -34,6 +40,8 @@ export type AuthProfile = {
   email: string;
   role: string;
   lawyerId: string | null;
+  isVerified: boolean;
+  isSuspended: boolean;
 };
 
 type SessionContextValue = {
@@ -52,11 +60,15 @@ function extractToken(payload: LoginResponse): string | null {
 }
 
 function extractProfile(payload: LoginResponse, emailFallback: string): AuthProfile {
+  const role = payload.role ?? payload.data?.role ?? "Lawyer";
   return {
-    fullName: payload.fullName ?? payload.data?.fullName ?? "Admin",
-    role: payload.role ?? payload.data?.role ?? "Admin",
+    fullName: payload.fullName ?? payload.data?.fullName ?? emailFallback,
+    role,
     lawyerId: payload.lawyerId ?? payload.data?.lawyerId ?? null,
     email: payload.email ?? payload.data?.email ?? emailFallback,
+    // Admins are always verified and never suspended.
+    isVerified: payload.isVerified ?? payload.data?.isVerified ?? role === "Admin",
+    isSuspended: payload.isSuspended ?? payload.data?.isSuspended ?? false,
   };
 }
 
@@ -93,27 +105,59 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async ({ email, password }: LoginRequest) => {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    console.info(`[Auth] POST ${API_BASE_URL}/api/auth/login  email=${email}`);
+
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (networkErr) {
+      // fetch() itself throws on network failure (no connection, DNS failure,
+      // Android cleartext HTTP blocked, etc.)
+      console.error("[Auth] Network error during login:", networkErr);
+      throw new Error(
+        `Network error — cannot reach the server.\n` +
+          `URL: ${API_BASE_URL}\n` +
+          `Detail: ${String(networkErr)}`
+      );
+    }
+
+    console.info(`[Auth] Response status: ${response.status}`);
 
     if (!response.ok) {
-      throw new Error("LOGIN_FAILED");
+      // Read the error body so we can show the real validation message.
+      let serverMessage = `HTTP ${response.status}`;
+      try {
+        const errorBody = await response.json();
+        // ASP.NET Core ProblemDetails shape: { title, detail, errors: {...} }
+        serverMessage =
+          errorBody?.detail ??
+          errorBody?.title ??
+          Object.values(errorBody?.errors ?? {}).flat().join(" ") ??
+          serverMessage;
+      } catch {
+        // body wasn't JSON — keep the HTTP status string
+      }
+      console.error(`[Auth] Login failed: ${serverMessage}`);
+      throw new Error(serverMessage);
     }
 
     const data = (await response.json()) as LoginResponse;
     const accessToken = extractToken(data);
 
     if (!accessToken) {
-      throw new Error("MISSING_TOKEN");
+      console.error("[Auth] Server returned OK but no token in response:", data);
+      throw new Error("Server returned no token. Contact support.");
     }
 
     const nextProfile = extractProfile(data, email);
+    console.info(`[Auth] Login success — role=${nextProfile.role}, verified=${nextProfile.isVerified}`);
 
     await Promise.all([
       SecureStore.setItemAsync(TOKEN_KEY, accessToken),

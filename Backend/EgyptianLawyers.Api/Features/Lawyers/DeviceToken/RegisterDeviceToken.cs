@@ -28,19 +28,40 @@ public sealed class RegisterDeviceTokenValidator : AbstractValidator<RegisterDev
 public sealed class RegisterDeviceTokenHandler : IRequestHandler<RegisterDeviceTokenCommand, Unit>
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ILogger<RegisterDeviceTokenHandler> _logger;
 
-    public RegisterDeviceTokenHandler(ApplicationDbContext dbContext) => _dbContext = dbContext;
+    public RegisterDeviceTokenHandler(ApplicationDbContext dbContext, ILogger<RegisterDeviceTokenHandler> logger)
+    {
+        _dbContext = dbContext;
+        _logger = logger;
+    }
 
     public async Task<Unit> Handle(RegisterDeviceTokenCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "[FCM] Received device token sync request for IdentityUserId={UserId}, Token={Token}",
+            request.IdentityUserId,
+            request.Token.Length > 20 ? request.Token[..20] + "..." : request.Token);
+
         var lawyer = await _dbContext.Lawyers
             .FirstOrDefaultAsync(l => l.IdentityUserId == request.IdentityUserId, cancellationToken);
 
         if (lawyer is null)
+        {
+            _logger.LogWarning(
+                "[FCM] Lawyer not found for IdentityUserId={UserId}.", request.IdentityUserId);
             throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
+        }
 
+        var previousToken = lawyer.FcmToken;
         lawyer.FcmToken = request.Token;
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "[FCM] FcmToken saved for LawyerId={LawyerId}. Previous={Previous}, New={New}",
+            lawyer.Id,
+            previousToken is null ? "null" : "set",
+            "set");
 
         return Unit.Value;
     }
