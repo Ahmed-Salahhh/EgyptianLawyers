@@ -11,19 +11,20 @@ import {
 import { useRouter } from "expo-router";
 import { useSession } from "@/lib/auth/session";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
-import type { LookupCourt } from "@/lib/features/lookups/types";
+import type { LookupCity } from "@/lib/features/lookups/types";
 import { createHelpPost } from "@/lib/features/posts/api";
 
 export default function CreatePostScreen() {
   const router = useRouter();
   const { token } = useSession();
 
-  const [courts, setCourts] = useState<LookupCourt[]>([]);
+  const [cities, setCities] = useState<LookupCity[]>([]);
   const [isLoadingLookups, setIsLoadingLookups] = useState(false);
   const [lookupsError, setLookupsError] = useState<string | null>(null);
 
-  const [selectedCourtId, setSelectedCourtId] = useState<string>("");
+  // City is selected first; Court is filtered by the selected city.
   const [selectedCityId, setSelectedCityId] = useState<string>("");
+  const [selectedCourtId, setSelectedCourtId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
 
@@ -31,9 +32,9 @@ export default function CreatePostScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
-  const selectedCourt = useMemo(
-    () => courts.find((court) => court.id === selectedCourtId) ?? null,
-    [courts, selectedCourtId],
+  const selectedCity = useMemo(
+    () => cities.find((c) => c.id === selectedCityId) ?? null,
+    [cities, selectedCityId],
   );
 
   const loadLookups = async () => {
@@ -47,9 +48,10 @@ export default function CreatePostScreen() {
 
     try {
       const data = await fetchCourtsAndCities(token);
-      setCourts(data);
-    } catch {
-      setLookupsError("Failed to load courts and cities.");
+      setCities(data);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to load cities.";
+      setLookupsError(msg);
     } finally {
       setIsLoadingLookups(false);
     }
@@ -57,11 +59,12 @@ export default function CreatePostScreen() {
 
   useEffect(() => {
     loadLookups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const handleSelectCourt = (courtId: string) => {
-    setSelectedCourtId(courtId);
-    setSelectedCityId("");
+  const handleSelectCity = (cityId: string) => {
+    setSelectedCityId(cityId);
+    setSelectedCourtId(""); // reset court when city changes
   };
 
   const handleSubmit = async () => {
@@ -70,8 +73,8 @@ export default function CreatePostScreen() {
       return;
     }
 
-    if (!selectedCourtId || !selectedCityId || !description.trim()) {
-      setSubmitError("Please select court/city and enter a description.");
+    if (!selectedCityId || !selectedCourtId || !description.trim()) {
+      setSubmitError("Please select city, court, and enter a description.");
       return;
     }
 
@@ -84,17 +87,18 @@ export default function CreatePostScreen() {
         courtId: selectedCourtId,
         cityId: selectedCityId,
         description: description.trim(),
-        attachmentUrl: attachmentUrl.trim() ? attachmentUrl.trim() : undefined,
+        attachmentUrl: attachmentUrl.trim() || undefined,
       });
 
       setDescription("");
       setAttachmentUrl("");
-      setSelectedCourtId("");
       setSelectedCityId("");
+      setSelectedCourtId("");
       setSubmitSuccess("Post created successfully.");
       router.push("/(tabs)");
-    } catch {
-      setSubmitError("Failed to create post. Check payload/backend validation.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create post.";
+      setSubmitError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -105,14 +109,14 @@ export default function CreatePostScreen() {
       <View style={styles.heroCard}>
         <Text style={styles.heroLabel}>New Request</Text>
         <Text style={styles.heroTitle}>Publish a Help Post</Text>
-        <Text style={styles.heroSub}>Select location and describe what support you need.</Text>
+        <Text style={styles.heroSub}>Select your city and court, then describe what you need.</Text>
       </View>
 
       {isLoadingLookups ? (
         <View style={styles.card}>
           <View style={styles.row}>
             <ActivityIndicator size="small" color="#1f5bd8" />
-            <Text style={styles.helperText}>Loading courts and cities...</Text>
+            <Text style={styles.helperText}>Loading cities and courts...</Text>
           </View>
         </View>
       ) : lookupsError ? (
@@ -124,37 +128,18 @@ export default function CreatePostScreen() {
         </View>
       ) : (
         <>
+          {/* Step 1: Select City */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>1) Select Court</Text>
-            {courts.map((court) => {
-              const active = selectedCourtId === court.id;
-              return (
-                <Pressable
-                  key={court.id}
-                  onPress={() => handleSelectCourt(court.id)}
-                  style={[styles.choice, active ? styles.choiceActive : null]}
-                >
-                  <Text style={[styles.choiceText, active ? styles.choiceTextActive : null]}>
-                    {court.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>2) Select City</Text>
-            {!selectedCourt ? (
-              <Text style={styles.helperText}>Pick a court first.</Text>
-            ) : selectedCourt.cities.length === 0 ? (
-              <Text style={styles.helperText}>No cities linked to this court.</Text>
+            <Text style={styles.sectionTitle}>1) Select City</Text>
+            {cities.length === 0 ? (
+              <Text style={styles.helperText}>No cities available.</Text>
             ) : (
-              selectedCourt.cities.map((city) => {
+              cities.map((city) => {
                 const active = selectedCityId === city.id;
                 return (
                   <Pressable
                     key={city.id}
-                    onPress={() => setSelectedCityId(city.id)}
+                    onPress={() => handleSelectCity(city.id)}
                     style={[styles.choice, active ? styles.choiceActive : null]}
                   >
                     <Text style={[styles.choiceText, active ? styles.choiceTextActive : null]}>
@@ -166,6 +151,32 @@ export default function CreatePostScreen() {
             )}
           </View>
 
+          {/* Step 2: Select Court */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>2) Select Court</Text>
+            {!selectedCity ? (
+              <Text style={styles.helperText}>Pick a city first.</Text>
+            ) : selectedCity.courts.length === 0 ? (
+              <Text style={styles.helperText}>No courts registered in this city.</Text>
+            ) : (
+              selectedCity.courts.map((court) => {
+                const active = selectedCourtId === court.id;
+                return (
+                  <Pressable
+                    key={court.id}
+                    onPress={() => setSelectedCourtId(court.id)}
+                    style={[styles.choice, active ? styles.choiceActive : null]}
+                  >
+                    <Text style={[styles.choiceText, active ? styles.choiceTextActive : null]}>
+                      {court.name}
+                    </Text>
+                  </Pressable>
+                );
+              })
+            )}
+          </View>
+
+          {/* Step 3: Details */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>3) Details</Text>
             <TextInput
@@ -177,7 +188,9 @@ export default function CreatePostScreen() {
               style={[styles.input, styles.textArea]}
             />
 
-            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Attachment URL (optional)</Text>
+            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
+              Attachment URL (optional)
+            </Text>
             <TextInput
               value={attachmentUrl}
               onChangeText={setAttachmentUrl}
@@ -206,20 +219,9 @@ export default function CreatePostScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f4f7fc",
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 110,
-    gap: 12,
-  },
-  heroCard: {
-    borderRadius: 22,
-    padding: 18,
-    backgroundColor: "#113e87",
-  },
+  container: { flex: 1, backgroundColor: "#f4f7fc" },
+  content: { padding: 16, paddingBottom: 110, gap: 12 },
+  heroCard: { borderRadius: 22, padding: 18, backgroundColor: "#113e87" },
   heroLabel: {
     color: "#b9cef8",
     fontWeight: "600",
@@ -227,16 +229,8 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
-  heroTitle: {
-    marginTop: 4,
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  heroSub: {
-    marginTop: 6,
-    color: "#d9e6ff",
-  },
+  heroTitle: { marginTop: 4, color: "#ffffff", fontSize: 28, fontWeight: "700" },
+  heroSub: { marginTop: 6, color: "#d9e6ff" },
   card: {
     borderRadius: 18,
     borderWidth: 1,
@@ -244,12 +238,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 15,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1a2f52",
-    marginBottom: 8,
-  },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#1a2f52", marginBottom: 8 },
   choice: {
     borderRadius: 10,
     borderWidth: 1,
@@ -259,20 +248,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     backgroundColor: "#f9fbff",
   },
-  choiceActive: {
-    borderColor: "#1f5bd8",
-    backgroundColor: "#eaf1ff",
-  },
-  choiceText: {
-    color: "#2c3f61",
-  },
-  choiceTextActive: {
-    color: "#1842a8",
-    fontWeight: "700",
-  },
-  helperText: {
-    color: "#60769a",
-  },
+  choiceActive: { borderColor: "#1f5bd8", backgroundColor: "#eaf1ff" },
+  choiceText: { color: "#2c3f61" },
+  choiceTextActive: { color: "#1842a8", fontWeight: "700" },
+  helperText: { color: "#60769a" },
   input: {
     borderWidth: 1,
     borderColor: "#d2deef",
@@ -282,10 +261,7 @@ const styles = StyleSheet.create({
     color: "#1f2e49",
     backgroundColor: "#fbfdff",
   },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: "top",
-  },
+  textArea: { minHeight: 100, textAlignVertical: "top" },
   primaryButton: {
     marginTop: 14,
     borderRadius: 10,
@@ -294,11 +270,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  primaryButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
+  primaryButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   retryButton: {
     marginTop: 8,
     alignSelf: "flex-start",
@@ -307,21 +279,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  errorText: {
-    marginTop: 10,
-    color: "#b13550",
-  },
-  successText: {
-    marginTop: 10,
-    color: "#1e7a3e",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
+  retryButtonText: { color: "#fff", fontWeight: "700" },
+  errorText: { marginTop: 10, color: "#b13550" },
+  successText: { marginTop: 10, color: "#1e7a3e" },
+  row: { flexDirection: "row", alignItems: "center", gap: 8 },
 });

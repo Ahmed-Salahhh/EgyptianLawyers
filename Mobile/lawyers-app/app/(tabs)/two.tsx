@@ -11,14 +11,13 @@ import {
 import { useRouter } from "expo-router";
 import { useSession } from "@/lib/auth/session";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
-import type { LookupCourt } from "@/lib/features/lookups/types";
+import type { LookupCity } from "@/lib/features/lookups/types";
 import { fetchMyLawyerProfile, updateMyLawyerProfile } from "@/lib/features/lawyers/api";
 import type { MyLawyerProfile } from "@/lib/features/lawyers/types";
 
 type CityOption = {
   id: string;
   name: string;
-  courtName: string;
 };
 
 export default function ProfileTab() {
@@ -26,7 +25,7 @@ export default function ProfileTab() {
   const { token, signOut } = useSession();
 
   const [profile, setProfile] = useState<MyLawyerProfile | null>(null);
-  const [courts, setCourts] = useState<LookupCourt[]>([]);
+  const [cities, setCities] = useState<LookupCity[]>([]);
 
   const [title, setTitle] = useState("");
   const [whatsAppNumber, setWhatsAppNumber] = useState("");
@@ -38,16 +37,11 @@ export default function ProfileTab() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-  const cities = useMemo<CityOption[]>(
-    () =>
-      courts.flatMap((court) =>
-        court.cities.map((city) => ({
-          id: city.id,
-          name: city.name,
-          courtName: court.name,
-        })),
-      ),
-    [courts],
+  // Cities are the top-level lookup items; each city has courts nested under it.
+  // For profile editing we only need to let the lawyer pick which cities they are active in.
+  const cityOptions = useMemo<CityOption[]>(
+    () => cities.map((c) => ({ id: c.id, name: c.name })),
+    [cities],
   );
 
   const loadProfile = useCallback(async () => {
@@ -67,7 +61,7 @@ export default function ProfileTab() {
       ]);
 
       setProfile(me);
-      setCourts(lookupData);
+      setCities(lookupData);
       setTitle(me.title ?? "");
       setWhatsAppNumber(me.whatsAppNumber ?? "");
       setCityIds(me.activeCities.map((city) => city.id));
@@ -202,7 +196,7 @@ export default function ProfileTab() {
 
           <Text style={styles.label}>Active Cities</Text>
           <View style={styles.citiesWrap}>
-            {cities.map((city) => {
+            {cityOptions.map((city) => {
               const selected = cityIds.includes(city.id);
               return (
                 <Pressable
@@ -211,7 +205,7 @@ export default function ProfileTab() {
                   style={[styles.cityChip, selected ? styles.cityChipActive : null]}
                 >
                   <Text style={[styles.cityText, selected ? styles.cityTextActive : null]}>
-                    {city.name} ({city.courtName})
+                    {city.name}
                   </Text>
                 </Pressable>
               );

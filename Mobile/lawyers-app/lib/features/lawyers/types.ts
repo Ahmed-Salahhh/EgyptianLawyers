@@ -15,7 +15,6 @@ export type RegisterLawyerResponse = {
 export type LawyerActiveCity = {
   id: string;
   name: string;
-  courtId: string;
 };
 
 export type MyLawyerProfile = {

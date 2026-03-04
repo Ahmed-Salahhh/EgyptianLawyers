@@ -1,3 +1,22 @@
+// Mirrors backend PaginatedResult<T>
+export type PaginatedResult<T> = {
+  data: T[];
+  totalCount: number;
+  pageIndex: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
+export type FeedPage = {
+  items: HelpPostFeedItem[];
+  totalCount: number;
+  pageIndex: number;
+  totalPages: number;
+  hasNextPage: boolean;
+};
+
 export type HelpPostFeedItem = {
   id: string;
   description: string;
@@ -17,7 +36,7 @@ export type HelpPostReply = {
   lawyerId: string;
   lawyerFullName: string;
   lawyerWhatsAppNumber: string;
-  comment: string;
+  comment: string | null;
   attachmentUrl: string | null;
   createdAt: string;
 };
@@ -44,25 +63,20 @@ export type CreateHelpPostRequest = {
   attachmentUrl?: string | null;
 };
 
-type HelpPostsFeedResponse =
-  | HelpPostFeedItem[]
-  | {
-      data?: HelpPostFeedItem[];
-      items?: HelpPostFeedItem[];
-      helpPosts?: HelpPostFeedItem[];
-    };
-
-export function normalizeHelpPostsFeed(response: HelpPostsFeedResponse): HelpPostFeedItem[] {
-  if (Array.isArray(response)) {
-    return response;
+export function normalizeFeedPage(raw: unknown): FeedPage {
+  if (Array.isArray(raw)) {
+    return { items: raw as HelpPostFeedItem[], totalCount: raw.length, pageIndex: 1, totalPages: 1, hasNextPage: false };
   }
-
-  return response.items ?? response.data ?? response.helpPosts ?? [];
+  const paginated = raw as PaginatedResult<HelpPostFeedItem>;
+  return {
+    items: Array.isArray(paginated.data) ? paginated.data : [],
+    totalCount: paginated.totalCount ?? 0,
+    pageIndex: paginated.pageIndex ?? 1,
+    totalPages: paginated.totalPages ?? 1,
+    hasNextPage: paginated.hasNextPage ?? false,
+  };
 }
 
-export function normalizeHelpPostDetails(response: HelpPostDetails): HelpPostDetails {
-  return {
-    ...response,
-    replies: response.replies ?? [],
-  };
+export function normalizeHelpPostDetails(raw: HelpPostDetails): HelpPostDetails {
+  return { ...raw, replies: raw.replies ?? [] };
 }

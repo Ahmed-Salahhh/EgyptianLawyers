@@ -1,16 +1,28 @@
 import {
   normalizeHelpPostDetails,
-  normalizeHelpPostsFeed,
+  normalizeFeedPage,
   type CreateHelpPostRequest,
+  type FeedPage,
   type HelpPostDetails,
-  type HelpPostFeedItem,
 } from "./types";
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://egyptianlawyers-001-site1.stempurl.com";
 
-export async function fetchHelpPostsFeed(token: string): Promise<HelpPostFeedItem[]> {
-  const response = await fetch(`${API_BASE_URL}/api/help-posts/feed`, {
+export async function fetchHelpPostsFeed(
+  token: string,
+  pageIndex = 1,
+  pageSize = 20,
+  filters?: { courtId?: string; cityId?: string },
+): Promise<FeedPage> {
+  const params = new URLSearchParams({
+    pageIndex: String(pageIndex),
+    pageSize: String(pageSize),
+  });
+  if (filters?.courtId) params.set("courtId", filters.courtId);
+  if (filters?.cityId) params.set("cityId", filters.cityId);
+
+  const response = await fetch(`${API_BASE_URL}/api/help-posts/feed?${params.toString()}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -19,11 +31,12 @@ export async function fetchHelpPostsFeed(token: string): Promise<HelpPostFeedIte
   });
 
   if (!response.ok) {
-    throw new Error("FAILED_TO_FETCH_POSTS");
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to load feed (HTTP ${response.status}): ${body}`);
   }
 
-  const data = (await response.json()) as unknown;
-  return normalizeHelpPostsFeed(data as Parameters<typeof normalizeHelpPostsFeed>[0]);
+  const raw = (await response.json()) as unknown;
+  return normalizeFeedPage(raw);
 }
 
 export async function fetchHelpPostById(token: string, postId: string): Promise<HelpPostDetails> {
@@ -36,7 +49,8 @@ export async function fetchHelpPostById(token: string, postId: string): Promise<
   });
 
   if (!response.ok) {
-    throw new Error("FAILED_TO_FETCH_POST_DETAILS");
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to load post (HTTP ${response.status}): ${body}`);
   }
 
   const data = (await response.json()) as HelpPostDetails;
@@ -55,6 +69,7 @@ export async function createHelpPost(token: string, payload: CreateHelpPostReque
   });
 
   if (!response.ok) {
-    throw new Error("FAILED_TO_CREATE_POST");
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to create post (HTTP ${response.status}): ${body}`);
   }
 }
