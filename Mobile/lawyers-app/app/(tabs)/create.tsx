@@ -1,6 +1,9 @@
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,11 +11,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { useSession } from "@/lib/auth/session";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
 import type { LookupCity } from "@/lib/features/lookups/types";
 import { createHelpPost } from "@/lib/features/posts/api";
+import type { PickedFile } from "@/lib/features/posts/types";
 
 export default function CreatePostScreen() {
   const router = useRouter();
@@ -22,15 +25,13 @@ export default function CreatePostScreen() {
   const [isLoadingLookups, setIsLoadingLookups] = useState(false);
   const [lookupsError, setLookupsError] = useState<string | null>(null);
 
-  // City is selected first; Court is filtered by the selected city.
   const [selectedCityId, setSelectedCityId] = useState<string>("");
   const [selectedCourtId, setSelectedCourtId] = useState<string>("");
   const [description, setDescription] = useState("");
-  const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   const selectedCity = useMemo(
     () => cities.find((c) => c.id === selectedCityId) ?? null,
@@ -42,10 +43,8 @@ export default function CreatePostScreen() {
       setLookupsError("No auth token available.");
       return;
     }
-
     setIsLoadingLookups(true);
     setLookupsError(null);
-
     try {
       const data = await fetchCourtsAndCities(token);
       setCities(data);
@@ -64,7 +63,31 @@ export default function CreatePostScreen() {
 
   const handleSelectCity = (cityId: string) => {
     setSelectedCityId(cityId);
-    setSelectedCourtId(""); // reset court when city changes
+    setSelectedCourtId("");
+  };
+
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      setSubmitError("Permission to access photos is required.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const ext = asset.uri.split(".").pop() ?? "jpg";
+      setPickedFile({
+        uri: asset.uri,
+        name: asset.fileName ?? `photo.${ext}`,
+        mimeType: asset.mimeType ?? `image/${ext}`,
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -72,29 +95,28 @@ export default function CreatePostScreen() {
       setSubmitError("No auth token available.");
       return;
     }
-
     if (!selectedCityId || !selectedCourtId || !description.trim()) {
-      setSubmitError("Please select city, court, and enter a description.");
+      setSubmitError("Please select a city, a court, and enter a description.");
       return;
     }
 
     setSubmitError(null);
-    setSubmitSuccess(null);
     setIsSubmitting(true);
 
     try {
-      await createHelpPost(token, {
-        courtId: selectedCourtId,
-        cityId: selectedCityId,
-        description: description.trim(),
-        attachmentUrl: attachmentUrl.trim() || undefined,
-      });
-
+      await createHelpPost(
+        token,
+        {
+          courtId: selectedCourtId,
+          cityId: selectedCityId,
+          description: description.trim(),
+        },
+        pickedFile,
+      );
       setDescription("");
-      setAttachmentUrl("");
       setSelectedCityId("");
       setSelectedCourtId("");
-      setSubmitSuccess("Post created successfully.");
+      setPickedFile(null);
       router.push("/(tabs)");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create post.";
@@ -106,10 +128,13 @@ export default function CreatePostScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* ── Hero ── */}
       <View style={styles.heroCard}>
         <Text style={styles.heroLabel}>New Request</Text>
         <Text style={styles.heroTitle}>Publish a Help Post</Text>
-        <Text style={styles.heroSub}>Select your city and court, then describe what you need.</Text>
+        <Text style={styles.heroSub}>
+          Select your city and court, then describe what you need.
+        </Text>
       </View>
 
       {isLoadingLookups ? (
@@ -179,6 +204,7 @@ export default function CreatePostScreen() {
           {/* Step 3: Details */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>3) Details</Text>
+
             <TextInput
               multiline
               numberOfLines={5}
@@ -188,16 +214,19 @@ export default function CreatePostScreen() {
               style={[styles.input, styles.textArea]}
             />
 
-            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
-              Attachment URL (optional)
-            </Text>
-            <TextInput
-              value={attachmentUrl}
-              onChangeText={setAttachmentUrl}
-              placeholder="https://..."
-              autoCapitalize="none"
-              style={styles.input}
-            />
+            {/* Image picker */}
+            {pickedFile ? (
+              <View style={styles.previewContainer}>
+                <Image source={{ uri: pickedFile.uri }} style={styles.previewImage} resizeMode="cover" />
+                <Pressable style={styles.removeImageButton} onPress={() => setPickedFile(null)}>
+                  <Text style={styles.removeImageText}>✕  Remove image</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable style={styles.uploadButton} onPress={handlePickImage}>
+                <Text style={styles.uploadButtonText}>🖼️  Attach an image (optional)</Text>
+              </Pressable>
+            )}
 
             <Pressable
               onPress={handleSubmit}
@@ -210,7 +239,6 @@ export default function CreatePostScreen() {
             </Pressable>
 
             {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
-            {submitSuccess ? <Text style={styles.successText}>{submitSuccess}</Text> : null}
           </View>
         </>
       )}
@@ -262,6 +290,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#fbfdff",
   },
   textArea: { minHeight: 100, textAlignVertical: "top" },
+  uploadButton: {
+    marginTop: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#1f5bd8",
+    borderStyle: "dashed",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: "#f0f5ff",
+  },
+  uploadButtonText: { color: "#1f5bd8", fontWeight: "600", fontSize: 14 },
+  previewContainer: { marginTop: 10, gap: 8 },
+  previewImage: {
+    width: "100%",
+    height: 180,
+    borderRadius: 10,
+    backgroundColor: "#e5ebf6",
+  },
+  removeImageButton: {
+    alignSelf: "flex-start",
+    borderRadius: 8,
+    backgroundColor: "#fce8ec",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  removeImageText: { color: "#b13550", fontWeight: "600", fontSize: 13 },
   primaryButton: {
     marginTop: 14,
     borderRadius: 10,
@@ -281,6 +336,5 @@ const styles = StyleSheet.create({
   },
   retryButtonText: { color: "#fff", fontWeight: "700" },
   errorText: { marginTop: 10, color: "#b13550" },
-  successText: { marginTop: 10, color: "#1e7a3e" },
   row: { flexDirection: "row", alignItems: "center", gap: 8 },
 });

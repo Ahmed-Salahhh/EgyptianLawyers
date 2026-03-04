@@ -1,3 +1,4 @@
+import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
 import { fetchHelpPostsFeed } from "@/lib/features/posts/api";
 import type { HelpPostFeedItem } from "@/lib/features/posts/types";
@@ -196,6 +197,9 @@ function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike
       <Text style={styles.postDescription} numberOfLines={3}>
         {item.description}
       </Text>
+
+      {/* Attachment thumbnail / badge — tapping the card navigates to the detail screen */}
+      <AttachmentPreview url={item.attachmentUrl} variant="compact" />
 
       {/* Author + reply count */}
       <View style={styles.postFooter}>

@@ -1,13 +1,31 @@
 import {
   normalizeHelpPostDetails,
   normalizeFeedPage,
-  type CreateHelpPostRequest,
+  type CreateHelpPostFields,
   type FeedPage,
   type HelpPostDetails,
+  type PickedFile,
 } from "./types";
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://egyptianlawyers-001-site1.stempurl.com";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Appends a PickedFile to a FormData instance using React Native's file-object
+ * format ({ uri, name, type }).  The Content-Type header must NOT be set manually
+ * so that fetch can insert the correct multipart boundary automatically.
+ */
+function appendFile(form: FormData, file: PickedFile) {
+  form.append("file", {
+    uri: file.uri,
+    name: file.name,
+    type: file.mimeType,
+  } as unknown as Blob);
+}
+
+// ── Feed ──────────────────────────────────────────────────────────────────────
 
 export async function fetchHelpPostsFeed(
   token: string,
@@ -39,6 +57,8 @@ export async function fetchHelpPostsFeed(
   return normalizeFeedPage(raw);
 }
 
+// ── Single post ───────────────────────────────────────────────────────────────
+
 export async function fetchHelpPostById(token: string, postId: string): Promise<HelpPostDetails> {
   const response = await fetch(`${API_BASE_URL}/api/help-posts/${postId}`, {
     method: "GET",
@@ -57,19 +77,58 @@ export async function fetchHelpPostById(token: string, postId: string): Promise<
   return normalizeHelpPostDetails(data);
 }
 
-export async function createHelpPost(token: string, payload: CreateHelpPostRequest): Promise<void> {
+// ── Create post ───────────────────────────────────────────────────────────────
+
+export async function createHelpPost(
+  token: string,
+  fields: CreateHelpPostFields,
+  file?: PickedFile | null,
+): Promise<void> {
+  const form = new FormData();
+  form.append("description", fields.description);
+  form.append("courtId", fields.courtId);
+  form.append("cityId", fields.cityId);
+  if (file) appendFile(form, file);
+
   const response = await fetch(`${API_BASE_URL}/api/help-posts`, {
     method: "POST",
+    // DO NOT set Content-Type — fetch adds the multipart boundary automatically.
     headers: {
-      "Content-Type": "application/json",
       Accept: "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(payload),
+    body: form,
   });
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(`Failed to create post (HTTP ${response.status}): ${body}`);
+  }
+}
+
+// ── Reply to post ─────────────────────────────────────────────────────────────
+
+export async function replyToPost(
+  token: string,
+  helpPostId: string,
+  comment: string | null,
+  file?: PickedFile | null,
+): Promise<void> {
+  const form = new FormData();
+  if (comment?.trim()) form.append("comment", comment.trim());
+  if (file) appendFile(form, file);
+
+  const response = await fetch(`${API_BASE_URL}/api/help-posts/${helpPostId}/replies`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to submit reply (HTTP ${response.status}): ${body}`);
   }
 }

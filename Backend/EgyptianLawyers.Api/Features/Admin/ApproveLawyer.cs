@@ -49,13 +49,11 @@ public sealed class ApproveLawyerHandler : IRequestHandler<ApproveLawyerCommand,
         lawyer.IsVerified = true;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        if (!string.IsNullOrEmpty(lawyer.FcmToken))
-        {
-            await _notificationService.SendAccountApprovedNotificationAsync(
-                lawyer.FcmToken,
-                cancellationToken
-            );
-        }
+        await _notificationService.SendAccountApprovedNotificationAsync(
+            lawyer.Id,
+            lawyer.FcmToken,
+            cancellationToken
+        );
 
         return Unit.Value;
     }

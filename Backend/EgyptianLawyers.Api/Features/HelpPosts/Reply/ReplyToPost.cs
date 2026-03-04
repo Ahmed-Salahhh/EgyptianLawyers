@@ -80,32 +80,36 @@ public sealed class ReplyToPostHandler : IRequestHandler<ReplyToPostCommand, Rep
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ICloudinaryService _cloudinaryService;
+    private readonly INotificationService _notificationService;
 
-    public ReplyToPostHandler(ApplicationDbContext dbContext, ICloudinaryService cloudinaryService)
+    public ReplyToPostHandler(
+        ApplicationDbContext dbContext,
+        ICloudinaryService cloudinaryService,
+        INotificationService notificationService)
     {
         _dbContext = dbContext;
         _cloudinaryService = cloudinaryService;
+        _notificationService = notificationService;
     }
 
     public async Task<ReplyToPostResult> Handle(
         ReplyToPostCommand request,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
-        var post = await _dbContext.HelpPosts.FirstOrDefaultAsync(
-            p => p.Id == request.HelpPostId,
-            cancellationToken
-        );
+        // Fetch post (we need the author's LawyerId for the notification)
+        var post = await _dbContext.HelpPosts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == request.HelpPostId, cancellationToken);
 
         if (post is null)
             throw new NotFoundException(new NotFoundError("HelpPost", request.HelpPostId));
 
-        var lawyer = await _dbContext.Lawyers.FirstOrDefaultAsync(
-            l => l.IdentityUserId == request.IdentityUserId,
-            cancellationToken
-        );
+        // Fetch commenter
+        var commenter = await _dbContext.Lawyers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.IdentityUserId == request.IdentityUserId, cancellationToken);
 
-        if (lawyer is null)
+        if (commenter is null)
             throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
 
         // Upload attachment to Cloudinary if one was provided.
@@ -114,15 +118,14 @@ public sealed class ReplyToPostHandler : IRequestHandler<ReplyToPostCommand, Rep
         {
             attachmentUrl = await _cloudinaryService.UploadAsync(
                 request.File,
-                cancellationToken: cancellationToken
-            );
+                cancellationToken: cancellationToken);
         }
 
         var reply = new HelpPostReply
         {
             Id = Guid.NewGuid(),
             HelpPostId = request.HelpPostId,
-            LawyerId = lawyer.Id,
+            LawyerId = commenter.Id,
             Comment = request.Comment,
             AttachmentUrl = attachmentUrl,
             CreatedAt = DateTime.UtcNow,
@@ -130,6 +133,27 @@ public sealed class ReplyToPostHandler : IRequestHandler<ReplyToPostCommand, Rep
 
         _dbContext.HelpPostReplies.Add(reply);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // ── Notify post author — skip if the commenter IS the author ──────────
+        if (commenter.Id != post.LawyerId)
+        {
+            // Fetch only what we need from the author (FcmToken for push)
+            var author = await _dbContext.Lawyers
+                .AsNoTracking()
+                .Where(l => l.Id == post.LawyerId)
+                .Select(l => new { l.Id, l.FcmToken })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (author is not null)
+            {
+                await _notificationService.SendCommentNotificationAsync(
+                    postAuthorId: author.Id,
+                    postId: post.Id,
+                    commenterName: commenter.FullName,
+                    authorFcmToken: author.FcmToken,
+                    cancellationToken: cancellationToken);
+            }
+        }
 
         return new ReplyToPostResult(reply.Id);
     }

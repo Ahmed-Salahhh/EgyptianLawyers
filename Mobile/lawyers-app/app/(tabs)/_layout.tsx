@@ -53,6 +53,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Notifications",
+          tabBarLabel: "Alerts",
+          headerTitle: "Notifications",
+        }}
+      />
+      <Tabs.Screen
         name="two"
         options={{
           title: "My Profile",

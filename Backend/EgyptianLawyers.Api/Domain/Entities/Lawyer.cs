@@ -16,4 +16,8 @@ public class Lawyer
     public List<City> ActiveCities { get; set; } = [];
     public List<HelpPost> HelpPosts { get; set; } = [];
     public List<HelpPostReply> HelpPostReplies { get; set; } = [];
+    public List<UserNotification> Notifications { get; set; } = [];
+
+    // Profile view tracking
+    public List<ProfileView> ProfileViewsReceived { get; set; } = [];
 }

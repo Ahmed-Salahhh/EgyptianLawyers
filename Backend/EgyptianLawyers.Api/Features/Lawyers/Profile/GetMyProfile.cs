@@ -15,17 +15,23 @@ public sealed class GetMyProfileHandler : IRequestHandler<GetMyProfileQuery, Law
 
     public GetMyProfileHandler(ApplicationDbContext dbContext) => _dbContext = dbContext;
 
-    public async Task<LawyerProfileResult> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
+    public async Task<LawyerProfileResult> Handle(
+        GetMyProfileQuery request,
+        CancellationToken cancellationToken
+    )
     {
-        var lawyer = await _dbContext.Lawyers
-            .Include(l => l.ActiveCities)
-            .FirstOrDefaultAsync(l => l.IdentityUserId == request.IdentityUserId, cancellationToken);
+        var lawyer = await _dbContext
+            .Lawyers.Include(l => l.ActiveCities)
+            .FirstOrDefaultAsync(
+                l => l.IdentityUserId == request.IdentityUserId,
+                cancellationToken
+            );
 
         if (lawyer is null)
             throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
 
-        var activeCities = lawyer.ActiveCities
-            .Select(c => new LawyerCityDto(c.Id, c.Name))
+        var activeCities = lawyer
+            .ActiveCities.Select(c => new LawyerCityDto(c.Id, c.Name))
             .ToList();
 
         return new LawyerProfileResult(
@@ -36,7 +42,8 @@ public sealed class GetMyProfileHandler : IRequestHandler<GetMyProfileQuery, Law
             lawyer.WhatsAppNumber,
             lawyer.IsVerified,
             lawyer.CreatedAt,
-            activeCities);
+            activeCities
+        );
     }
 }
 
@@ -44,12 +51,15 @@ public sealed class GetMyProfileEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/lawyers/me", async (HttpContext ctx, IMediator mediator) =>
-            {
-                var identityUserId = ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-                var result = await mediator.Send(new GetMyProfileQuery(identityUserId));
-                return Results.Ok(result);
-            })
+        app.MapGet(
+                "/api/lawyers/me",
+                async (HttpContext ctx, IMediator mediator) =>
+                {
+                    var identityUserId = ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+                    var result = await mediator.Send(new GetMyProfileQuery(identityUserId));
+                    return Results.Ok(result);
+                }
+            )
             .RequireAuthorization()
             .WithName("GetMyProfile")
             .WithTags("Lawyers");

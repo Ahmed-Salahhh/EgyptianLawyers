@@ -1,4 +1,6 @@
+using System.Text.Json;
 using EgyptianLawyers.Api.Data;
+using EgyptianLawyers.Api.Domain.Entities;
 using FirebaseAdmin.Messaging;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,77 +13,180 @@ public sealed class FcmNotificationService : INotificationService
 
     public FcmNotificationService(
         ApplicationDbContext dbContext,
-        ILogger<FcmNotificationService> logger
-    )
+        ILogger<FcmNotificationService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
     }
 
+    // ── New post ──────────────────────────────────────────────────────────────
+
     public async Task SendNewPostNotificationAsync(
         Guid postId,
         string description,
         Guid cityId,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
-        // Collect FCM tokens of all verified, non-suspended lawyers active in this city
-        var tokens = await _dbContext
-            .Lawyers.Where(l =>
-                l.IsVerified
-                && !l.IsSuspended
-                && l.FcmToken != null
-                && l.ActiveCities.Any(c => c.Id == cityId)
-            )
-            .Select(l => l.FcmToken!)
+        const string title = "New Help Request";
+
+        // Fetch ALL eligible lawyers (verified, active in city).
+        // We need IDs for in-app records and FCM tokens for push.
+        var recipients = await _dbContext.Lawyers
+            .Where(l =>
+                l.IsVerified &&
+                !l.IsSuspended &&
+                l.ActiveCities.Any(c => c.Id == cityId))
+            .Select(l => new { l.Id, l.FcmToken })
             .ToListAsync(cancellationToken);
+
+        if (recipients.Count == 0)
+        {
+            _logger.LogInformation(
+                "No eligible lawyers found for city {CityId}. Skipping notification.", cityId);
+            return;
+        }
+
+        // ── Persist in-app notifications for every recipient ─────────────────
+        var body = description.Length > 150 ? string.Concat(description.AsSpan(0, 150), "…") : description;
+        var dataPayload = JsonSerializer.Serialize(new { postId = postId.ToString() });
+
+        var inAppRecords = recipients.Select(r => new UserNotification
+        {
+            Id = Guid.NewGuid(),
+            LawyerId = r.Id,
+            Title = title,
+            Body = body,
+            DataPayload = dataPayload,
+            CreatedAt = DateTime.UtcNow,
+        }).ToList();
+
+        _dbContext.UserNotifications.AddRange(inAppRecords);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Saved {Count} in-app notifications for post {PostId}.", inAppRecords.Count, postId);
+
+        // ── Send FCM push to recipients who have a device token ───────────────
+        var tokens = recipients
+            .Where(r => r.FcmToken != null)
+            .Select(r => r.FcmToken!)
+            .ToList();
 
         if (tokens.Count == 0)
         {
             _logger.LogInformation(
-                "No FCM tokens found for city {CityId}. Skipping notification.",
-                cityId
-            );
+                "No FCM tokens available for city {CityId}. Push skipped.", cityId);
             return;
         }
 
         var message = new MulticastMessage
         {
             Tokens = tokens,
-            Notification = new Notification { Title = "New Help Request", Body = description },
+            Notification = new Notification { Title = title, Body = description },
             Data = new Dictionary<string, string> { ["postId"] = postId.ToString() },
         };
-        await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(
-            message,
-            cancellationToken
-        );
+
+        await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message, cancellationToken);
 
         _logger.LogInformation(
-            "Push notification queued for post {PostId} to {Count} lawyers in city {CityId}.",
-            postId,
-            tokens.Count,
-            cityId
-        );
+            "FCM push queued for post {PostId} to {Count} devices in city {CityId}.",
+            postId, tokens.Count, cityId);
     }
 
+    // ── Account approved ──────────────────────────────────────────────────────
+
     public async Task SendAccountApprovedNotificationAsync(
-        string fcmToken,
-        CancellationToken cancellationToken
-    )
+        Guid lawyerId,
+        string? fcmToken,
+        CancellationToken cancellationToken)
     {
+        const string title = "Account Verified ✅";
+        const string body =
+            "Your account has been approved by the admin. You can now view and accept help requests!";
+
+        // ── Persist in-app notification ───────────────────────────────────────
+        _dbContext.UserNotifications.Add(new UserNotification
+        {
+            Id = Guid.NewGuid(),
+            LawyerId = lawyerId,
+            Title = title,
+            Body = body,
+            DataPayload = null,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Saved approval in-app notification for lawyer {LawyerId}.", lawyerId);
+
+        // ── FCM push (optional) ───────────────────────────────────────────────
+        if (string.IsNullOrEmpty(fcmToken))
+        {
+            _logger.LogInformation(
+                "Lawyer {LawyerId} has no FCM token. Push skipped.", lawyerId);
+            return;
+        }
+
         var message = new Message
         {
             Token = fcmToken,
-            Notification = new Notification
-            {
-                Title = "Account Verified ✅",
-                Body =
-                    "Your account has been approved by the admin. You can now view and accept help requests!",
-            },
+            Notification = new Notification { Title = title, Body = body },
         };
 
         await FirebaseMessaging.DefaultInstance.SendAsync(message, cancellationToken);
 
-        _logger.LogInformation("Approval notification sent to token: {FcmToken}", fcmToken);
+        _logger.LogInformation(
+            "FCM approval push sent for lawyer {LawyerId}.", lawyerId);
+    }
+
+    // ── New comment on post ───────────────────────────────────────────────────
+
+    public async Task SendCommentNotificationAsync(
+        Guid postAuthorId,
+        Guid postId,
+        string commenterName,
+        string? authorFcmToken,
+        CancellationToken cancellationToken)
+    {
+        const string title = "New Comment";
+        var body = $"{commenterName} commented on your help request.";
+        var dataPayload = JsonSerializer.Serialize(new { postId = postId.ToString() });
+
+        // ── Persist in-app notification ───────────────────────────────────────
+        _dbContext.UserNotifications.Add(new UserNotification
+        {
+            Id = Guid.NewGuid(),
+            LawyerId = postAuthorId,
+            Title = title,
+            Body = body,
+            DataPayload = dataPayload,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Saved comment in-app notification for lawyer {LawyerId} on post {PostId}.",
+            postAuthorId, postId);
+
+        // ── FCM push (optional) ───────────────────────────────────────────────
+        if (string.IsNullOrEmpty(authorFcmToken))
+        {
+            _logger.LogInformation(
+                "Post author {LawyerId} has no FCM token. Push skipped.", postAuthorId);
+            return;
+        }
+
+        var message = new Message
+        {
+            Token = authorFcmToken,
+            Notification = new Notification { Title = title, Body = body },
+            Data = new Dictionary<string, string> { ["postId"] = postId.ToString() },
+        };
+
+        await FirebaseMessaging.DefaultInstance.SendAsync(message, cancellationToken);
+
+        _logger.LogInformation(
+            "FCM comment push sent to post author {LawyerId} for post {PostId}.",
+            postAuthorId, postId);
     }
 }

@@ -56,11 +56,17 @@ export type HelpPostDetails = {
   replies: HelpPostReply[];
 };
 
-export type CreateHelpPostRequest = {
+/** A file selected via expo-document-picker (or any compatible picker). */
+export type PickedFile = {
+  uri: string;
+  name: string;
+  mimeType: string;
+};
+
+export type CreateHelpPostFields = {
   courtId: string;
   cityId: string;
   description: string;
-  attachmentUrl?: string | null;
 };
 
 export function normalizeFeedPage(raw: unknown): FeedPage {
