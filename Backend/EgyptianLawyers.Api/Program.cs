@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using EgyptianLawyers.Api.Behaviors;
 using EgyptianLawyers.Api.Common;
+using EgyptianLawyers.Api.Configurations;
 using EgyptianLawyers.Api.Data;
 using EgyptianLawyers.Api.Domain.Entities;
 using EgyptianLawyers.Api.Errors;
@@ -22,17 +23,13 @@ var builder = WebApplication.CreateBuilder(args);
 var firebaseKeyPath = Path.Combine(builder.Environment.ContentRootPath, "firebase-admin-key.json");
 if (File.Exists(firebaseKeyPath))
 {
-    FirebaseApp.Create(new AppOptions
-    {
-        Credential = GoogleCredential.FromFile(firebaseKeyPath)
-    });
+    FirebaseApp.Create(new AppOptions { Credential = GoogleCredential.FromFile(firebaseKeyPath) });
 }
 else
 {
     // A warning so you know if the file goes missing on SmarterASP later
     Console.WriteLine("WARNING: firebase-admin-key.json not found. Push notifications will fail.");
 }
-
 
 // DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -82,17 +79,26 @@ builder.Services.AddAuthorization(options =>
 {
     // Verified: account has been approved by admin.
     // Suspended lawyers still pass (they can read the app, but not write).
-    options.AddPolicy(PolicyNames.RequireVerified, policy =>
-        policy.RequireAssertion(ctx =>
-            ctx.User.IsInRole("Admin") ||
-            ctx.User.FindFirstValue("IsVerified") == "True"));
+    options.AddPolicy(
+        PolicyNames.RequireVerified,
+        policy =>
+            policy.RequireAssertion(ctx =>
+                ctx.User.IsInRole("Admin") || ctx.User.FindFirstValue("IsVerified") == "True"
+            )
+    );
 
     // Active: verified AND not suspended — required for all write operations.
-    options.AddPolicy(PolicyNames.RequireActive, policy =>
-        policy.RequireAssertion(ctx =>
-            ctx.User.IsInRole("Admin") ||
-            (ctx.User.FindFirstValue("IsVerified") == "True" &&
-             ctx.User.FindFirstValue("IsSuspended") == "False")));
+    options.AddPolicy(
+        PolicyNames.RequireActive,
+        policy =>
+            policy.RequireAssertion(ctx =>
+                ctx.User.IsInRole("Admin")
+                || (
+                    ctx.User.FindFirstValue("IsVerified") == "True"
+                    && ctx.User.FindFirstValue("IsSuspended") == "False"
+                )
+            )
+    );
 });
 
 builder.Services.AddCors(options =>
@@ -113,6 +119,13 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBeh
 
 // Notification service
 builder.Services.AddScoped<INotificationService, FcmNotificationService>();
+
+// Cloudinary configuration
+builder.Services.Configure<CloudinaryOptions>(cfg =>
+    builder.Configuration.GetSection(CloudinaryOptions.SectionName)
+);
+
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
 
 // Exceptions, Swagger
 builder.Services.AddProblemDetails();
