@@ -33,3 +33,20 @@ export type UpdateMyLawyerProfileRequest = {
   whatsAppNumber: string;
   cityIds: string[];
 };
+
+export type ProfileViewer = {
+  id: string;
+  fullName: string;
+  lastViewedAt: string;
+  viewCount: number;
+};
+
+export type ProfileViewersPage = {
+  data: ProfileViewer[];
+  totalCount: number;
+  pageIndex: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};

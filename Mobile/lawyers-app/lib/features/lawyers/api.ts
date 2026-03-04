@@ -1,5 +1,6 @@
 import type {
   MyLawyerProfile,
+  ProfileViewersPage,
   RegisterLawyerRequest,
   RegisterLawyerResponse,
   UpdateMyLawyerProfileRequest,
@@ -41,6 +42,32 @@ export async function fetchMyLawyerProfile(token: string): Promise<MyLawyerProfi
   }
 
   return (await response.json()) as MyLawyerProfile;
+}
+
+export async function getProfileViewers(
+  token: string,
+  pageIndex = 1,
+  pageSize = 20,
+): Promise<ProfileViewersPage> {
+  const params = new URLSearchParams({
+    pageIndex: String(pageIndex),
+    pageSize: String(pageSize),
+  });
+
+  const response = await fetch(`${API_BASE_URL}/api/lawyers/viewers?${params.toString()}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to load profile viewers (HTTP ${response.status}): ${body}`);
+  }
+
+  return (await response.json()) as ProfileViewersPage;
 }
 
 export async function updateMyLawyerProfile(

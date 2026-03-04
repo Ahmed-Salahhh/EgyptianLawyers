@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -168,6 +169,23 @@ export default function ProfileTab() {
           <Text style={styles.heroPillText}>Syndicate: {profile.syndicateCardNumber}</Text>
         </View>
       </View>
+
+      {/* ── Who viewed your profile ── */}
+      {!isEditing && (
+        <Pressable
+          style={({ pressed }) => [styles.viewersCard, pressed && { opacity: 0.82 }]}
+          onPress={() => router.push("/profile-viewers")}
+        >
+          <View style={styles.viewersIconWrap}>
+            <Ionicons name="eye-outline" size={22} color={C.primary} />
+          </View>
+          <View style={styles.viewersTextWrap}>
+            <Text style={styles.viewersTitle}>Who viewed your profile</Text>
+            <Text style={styles.viewersSub}>See lawyers who visited your page</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.textSecondary} />
+        </Pressable>
+      )}
 
       {/* ── Info card ── */}
       {!isEditing && (
@@ -448,4 +466,30 @@ const styles = StyleSheet.create({
   // Misc
   helperText: { color: C.textSecondary, fontSize: 14 },
   errorText: { color: C.danger, textAlign: "center", fontSize: 15 },
+
+  // Profile viewers teaser card
+  viewersCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 12,
+    backgroundColor: C.card,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  viewersIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewersTextWrap: { flex: 1, gap: 2 },
+  viewersTitle: { fontSize: 15, fontWeight: "700", color: C.primary },
+  viewersSub: { fontSize: 12, color: C.textSecondary },
 });
