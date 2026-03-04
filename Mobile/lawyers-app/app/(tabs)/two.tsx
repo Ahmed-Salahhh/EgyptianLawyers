@@ -15,10 +15,23 @@ import type { LookupCity } from "@/lib/features/lookups/types";
 import { fetchMyLawyerProfile, updateMyLawyerProfile } from "@/lib/features/lawyers/api";
 import type { MyLawyerProfile } from "@/lib/features/lawyers/types";
 
-type CityOption = {
-  id: string;
-  name: string;
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const C = {
+  primary: "#0A2540",
+  accent: "#0070F3",
+  bg: "#F5F7FA",
+  card: "#FFFFFF",
+  textPrimary: "#111827",
+  textSecondary: "#6B7280",
+  border: "#E5E7EB",
+  inputBorder: "#D1D5DB",
+  danger: "#DC2626",
+  dangerBg: "#FEF2F2",
+  success: "#059669",
+  successBg: "#ECFDF5",
 };
+
+type CityOption = { id: string; name: string };
 
 export default function ProfileTab() {
   const router = useRouter();
@@ -35,10 +48,8 @@ export default function ProfileTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<{ text: string; success: boolean } | null>(null);
 
-  // Cities are the top-level lookup items; each city has courts nested under it.
-  // For profile editing we only need to let the lawyer pick which cities they are active in.
   const cityOptions = useMemo<CityOption[]>(
     () => cities.map((c) => ({ id: c.id, name: c.name })),
     [cities],
@@ -90,13 +101,10 @@ export default function ProfileTab() {
   };
 
   const handleSave = async () => {
-    if (!token) {
-      setError("No auth token available.");
-      return;
-    }
+    if (!token) return;
 
     if (!title.trim() || !whatsAppNumber.trim() || cityIds.length === 0) {
-      setSaveMessage("Please fill title, WhatsApp and select at least one city.");
+      setSaveMessage({ text: "Please fill in title, WhatsApp, and select at least one city.", success: false });
       return;
     }
 
@@ -110,11 +118,11 @@ export default function ProfileTab() {
         cityIds,
       });
 
-      setSaveMessage("Profile updated successfully.");
+      setSaveMessage({ text: "Profile updated successfully.", success: true });
       setIsEditing(false);
       await loadProfile();
     } catch {
-      setSaveMessage("Failed to update profile.");
+      setSaveMessage({ text: "Failed to update profile.", success: false });
     } finally {
       setIsSaving(false);
     }
@@ -128,7 +136,7 @@ export default function ProfileTab() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1f5bd8" />
+        <ActivityIndicator size="large" color={C.primary} />
         <Text style={styles.helperText}>Loading profile...</Text>
       </View>
     );
@@ -138,8 +146,8 @@ export default function ProfileTab() {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>{error ?? "Failed to load profile."}</Text>
-        <Pressable onPress={loadProfile} style={styles.retryButton}>
-          <Text style={styles.retryText}>Retry</Text>
+        <Pressable onPress={loadProfile} style={styles.primaryButton}>
+          <Text style={styles.primaryButtonText}>Retry</Text>
         </Pressable>
       </View>
     );
@@ -147,27 +155,39 @@ export default function ProfileTab() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* ── Hero ── */}
       <View style={styles.heroCard}>
-        <Text style={styles.heroLabel}>Verified Lawyer</Text>
+        <View style={styles.avatarCircle}>
+          <Text style={styles.avatarInitial}>
+            {profile.fullName.trim().charAt(0).toUpperCase()}
+          </Text>
+        </View>
         <Text style={styles.heroName}>{profile.fullName}</Text>
-        <Text style={styles.heroMeta}>Syndicate: {profile.syndicateCardNumber}</Text>
+        <Text style={styles.heroTitle}>{profile.title || "Lawyer"}</Text>
+        <View style={styles.heroPill}>
+          <Text style={styles.heroPillText}>Syndicate: {profile.syndicateCardNumber}</Text>
+        </View>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Title</Text>
-        <Text style={styles.value}>{profile.title || "-"}</Text>
+      {/* ── Info card ── */}
+      {!isEditing && (
+        <View style={styles.card}>
+          <InfoRow label="Title" value={profile.title || "—"} />
+          <Divider />
+          <InfoRow label="WhatsApp" value={profile.whatsAppNumber || "—"} />
+          <Divider />
+          <InfoRow
+            label="Active Cities"
+            value={
+              profile.activeCities.length
+                ? profile.activeCities.map((c) => c.name).join(", ")
+                : "—"
+            }
+          />
+        </View>
+      )}
 
-        <Text style={styles.label}>WhatsApp</Text>
-        <Text style={styles.value}>{profile.whatsAppNumber || "-"}</Text>
-
-        <Text style={styles.label}>Active Cities</Text>
-        <Text style={styles.value}>
-          {profile.activeCities.length
-            ? profile.activeCities.map((city) => city.name).join(", ")
-            : "-"}
-        </Text>
-      </View>
-
+      {/* ── Edit button or edit form ── */}
       {!isEditing ? (
         <Pressable
           onPress={() => {
@@ -175,26 +195,32 @@ export default function ProfileTab() {
             setSaveMessage(null);
             setIsEditing(true);
           }}
-          style={styles.editButton}
+          style={styles.primaryButton}
         >
-          <Text style={styles.editText}>Edit Profile</Text>
+          <Text style={styles.primaryButtonText}>Edit Profile</Text>
         </Pressable>
       ) : (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Edit Profile</Text>
 
-          <Text style={styles.label}>Title</Text>
-          <TextInput value={title} onChangeText={setTitle} style={styles.input} />
+          <Text style={styles.fieldLabel}>Title</Text>
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            style={styles.input}
+            placeholderTextColor={C.textSecondary}
+          />
 
-          <Text style={styles.label}>WhatsApp Number</Text>
+          <Text style={styles.fieldLabel}>WhatsApp Number</Text>
           <TextInput
             value={whatsAppNumber}
             onChangeText={setWhatsAppNumber}
             keyboardType="phone-pad"
             style={styles.input}
+            placeholderTextColor={C.textSecondary}
           />
 
-          <Text style={styles.label}>Active Cities</Text>
+          <Text style={styles.fieldLabel}>Active Cities</Text>
           <View style={styles.citiesWrap}>
             {cityOptions.map((city) => {
               const selected = cityIds.includes(city.id);
@@ -202,15 +228,29 @@ export default function ProfileTab() {
                 <Pressable
                   key={city.id}
                   onPress={() => toggleCity(city.id)}
-                  style={[styles.cityChip, selected ? styles.cityChipActive : null]}
+                  style={[styles.cityChip, selected && styles.cityChipActive]}
                 >
-                  <Text style={[styles.cityText, selected ? styles.cityTextActive : null]}>
+                  <Text style={[styles.cityChipText, selected && styles.cityChipTextActive]}>
                     {city.name}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
+
+          {saveMessage ? (
+            <View style={[
+              styles.messageBox,
+              saveMessage.success ? styles.messageBoxSuccess : styles.messageBoxError,
+            ]}>
+              <Text style={[
+                styles.messageText,
+                saveMessage.success ? styles.messageTextSuccess : styles.messageTextError,
+              ]}>
+                {saveMessage.text}
+              </Text>
+            </View>
+          ) : null}
 
           <View style={styles.actionsRow}>
             <Pressable
@@ -219,205 +259,193 @@ export default function ProfileTab() {
                 setSaveMessage(null);
                 setIsEditing(false);
               }}
-              style={styles.cancelButton}
+              style={styles.outlineButton}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.outlineButtonText}>Cancel</Text>
             </Pressable>
 
             <Pressable
               onPress={handleSave}
               disabled={isSaving}
-              style={[styles.saveButton, isSaving ? { opacity: 0.7 } : null]}
+              style={[styles.primaryButton, styles.flexButton, isSaving && { opacity: 0.7 }]}
             >
-              <Text style={styles.saveText}>{isSaving ? "Saving..." : "Save Changes"}</Text>
+              {isSaving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Save Changes</Text>
+              )}
             </Pressable>
           </View>
-
-          {saveMessage ? <Text style={styles.helperText}>{saveMessage}</Text> : null}
         </View>
       )}
 
+      {/* ── Logout ── */}
       <Pressable onPress={handleLogout} style={styles.logoutButton}>
-        <Text style={styles.logoutText}>Logout</Text>
+        <Text style={styles.logoutText}>Log Out</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
+// ── Small sub-components ──────────────────────────────────────────────────────
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
+
+function Divider() {
+  return <View style={styles.divider} />;
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f4f7fc",
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 110,
-    gap: 12,
-  },
+  container: { flex: 1, backgroundColor: C.bg },
+  content: { padding: 16, paddingBottom: 110, gap: 12 },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f4f7fc",
-    padding: 16,
+    backgroundColor: C.bg,
+    padding: 24,
+    gap: 14,
   },
+
+  // Hero
   heroCard: {
-    borderRadius: 22,
-    padding: 18,
-    backgroundColor: "#113e87",
+    borderRadius: 16,
+    padding: 20,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    gap: 6,
   },
-  heroLabel: {
-    color: "#b9cef8",
-    fontWeight: "600",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  heroName: {
-    marginTop: 4,
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  heroMeta: {
-    marginTop: 8,
-    color: "#d9e6ff",
-  },
-  card: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#dbe5f6",
-    backgroundColor: "#fff",
-    padding: 15,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1a2f52",
+  avatarCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 4,
   },
-  label: {
-    marginTop: 8,
-    marginBottom: 6,
-    fontSize: 13,
-    color: "#5b7297",
-    fontWeight: "600",
+  avatarInitial: { color: "#FFFFFF", fontSize: 28, fontWeight: "800" },
+  heroName: { color: "#FFFFFF", fontSize: 22, fontWeight: "800", textAlign: "center" },
+  heroTitle: { color: "rgba(255,255,255,0.7)", fontSize: 14, textAlign: "center" },
+  heroPill: {
+    marginTop: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: 14,
+    paddingVertical: 5,
   },
-  value: {
-    fontSize: 16,
+  heroPillText: { color: "rgba(255,255,255,0.85)", fontWeight: "600", fontSize: 12 },
+
+  // Card
+  card: {
+    borderRadius: 12,
+    backgroundColor: C.card,
+    padding: 16,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary },
+
+  // Info rows
+  infoRow: { gap: 2 },
+  infoLabel: { fontSize: 11, fontWeight: "700", color: C.textSecondary, textTransform: "uppercase", letterSpacing: 0.5 },
+  infoValue: { fontSize: 15, fontWeight: "600", color: C.textPrimary },
+  divider: { height: 1, backgroundColor: C.border },
+
+  // Form
+  fieldLabel: {
+    fontSize: 13,
     fontWeight: "600",
-    color: "#1a2f52",
+    color: C.textSecondary,
+    marginBottom: -4,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#d2deef",
-    borderRadius: 10,
+    borderColor: C.inputBorder,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fbfdff",
-    color: "#1f2e49",
+    paddingVertical: 11,
+    backgroundColor: C.bg,
+    color: C.textPrimary,
+    fontSize: 14,
   },
   citiesWrap: {
-    marginTop: 6,
-    gap: 8,
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 8,
   },
   cityChip: {
     borderWidth: 1,
-    borderColor: "#d7e1f3",
-    backgroundColor: "#f9fbff",
-    borderRadius: 10,
-    paddingHorizontal: 10,
+    borderColor: C.border,
+    backgroundColor: C.bg,
+    borderRadius: 8,
+    paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  cityChipActive: {
-    borderColor: "#1f5bd8",
-    backgroundColor: "#eaf1ff",
-  },
-  cityText: {
-    color: "#2c3f61",
-    fontSize: 13,
-  },
-  cityTextActive: {
-    color: "#1744a9",
-    fontWeight: "700",
-  },
-  editButton: {
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: "#1f5bd8",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  editText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  actionsRow: {
-    marginTop: 14,
-    flexDirection: "row",
-    gap: 10,
-  },
-  cancelButton: {
-    flex: 1,
-    height: 44,
-    borderRadius: 10,
+  cityChipActive: { borderColor: C.primary, backgroundColor: "#EFF6FF" },
+  cityChipText: { color: C.textSecondary, fontSize: 13 },
+  cityChipTextActive: { color: C.primary, fontWeight: "700" },
+
+  // Messages
+  messageBox: {
+    borderRadius: 8,
+    padding: 12,
     borderWidth: 1,
-    borderColor: "#cad8f1",
-    backgroundColor: "#f7faff",
+  },
+  messageBoxSuccess: { borderColor: "#A7F3D0", backgroundColor: C.successBg },
+  messageBoxError: { borderColor: "#FECACA", backgroundColor: C.dangerBg },
+  messageText: { fontSize: 13, fontWeight: "600" },
+  messageTextSuccess: { color: C.success },
+  messageTextError: { color: C.danger },
+
+  // Buttons
+  actionsRow: { flexDirection: "row", gap: 10, marginTop: 4 },
+  flexButton: { flex: 1 },
+  primaryButton: {
+    borderRadius: 10,
+    backgroundColor: C.primary,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 20,
   },
-  cancelText: {
-    color: "#35507b",
-    fontWeight: "700",
-  },
-  saveButton: {
+  primaryButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  outlineButton: {
     flex: 1,
-    height: 44,
+    height: 48,
     borderRadius: 10,
-    backgroundColor: "#1f5bd8",
+    borderWidth: 1.5,
+    borderColor: C.border,
+    backgroundColor: C.card,
     alignItems: "center",
     justifyContent: "center",
   },
-  saveText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  helperText: {
-    marginTop: 10,
-    color: "#60769a",
-  },
-  errorText: {
-    color: "#b13550",
-    marginBottom: 10,
-  },
-  retryButton: {
-    borderRadius: 10,
-    backgroundColor: "#1f5bd8",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  retryText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
+  outlineButtonText: { color: C.textPrimary, fontWeight: "700", fontSize: 15 },
   logoutButton: {
-    marginTop: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e4c4cc",
-    backgroundColor: "#fff2f5",
-    height: 46,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#FECACA",
+    backgroundColor: C.dangerBg,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
   },
-  logoutText: {
-    color: "#b13550",
-    fontSize: 15,
-    fontWeight: "700",
-  },
+  logoutText: { color: C.danger, fontSize: 15, fontWeight: "700" },
+
+  // Misc
+  helperText: { color: C.textSecondary, fontSize: 14 },
+  errorText: { color: C.danger, textAlign: "center", fontSize: 15 },
 });

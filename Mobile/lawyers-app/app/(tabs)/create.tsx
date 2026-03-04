@@ -17,6 +17,20 @@ import type { LookupCity } from "@/lib/features/lookups/types";
 import { createHelpPost } from "@/lib/features/posts/api";
 import type { PickedFile } from "@/lib/features/posts/types";
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const C = {
+  primary: "#0A2540",
+  accent: "#0070F3",
+  bg: "#F5F7FA",
+  card: "#FFFFFF",
+  textPrimary: "#111827",
+  textSecondary: "#6B7280",
+  border: "#E5E7EB",
+  inputBorder: "#D1D5DB",
+  danger: "#DC2626",
+  dangerBg: "#FEF2F2",
+};
+
 export default function CreatePostScreen() {
   const router = useRouter();
   const { token } = useSession();
@@ -130,7 +144,7 @@ export default function CreatePostScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* ── Hero ── */}
       <View style={styles.heroCard}>
-        <Text style={styles.heroLabel}>New Request</Text>
+        <Text style={styles.heroEyebrow}>New Request</Text>
         <Text style={styles.heroTitle}>Publish a Help Post</Text>
         <Text style={styles.heroSub}>
           Select your city and court, then describe what you need.
@@ -140,22 +154,23 @@ export default function CreatePostScreen() {
       {isLoadingLookups ? (
         <View style={styles.card}>
           <View style={styles.row}>
-            <ActivityIndicator size="small" color="#1f5bd8" />
+            <ActivityIndicator size="small" color={C.primary} />
             <Text style={styles.helperText}>Loading cities and courts...</Text>
           </View>
         </View>
       ) : lookupsError ? (
-        <View style={styles.card}>
+        <View style={styles.errorCard}>
           <Text style={styles.errorText}>{lookupsError}</Text>
-          <Pressable style={styles.retryButton} onPress={loadLookups}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+          <Pressable style={styles.dangerButton} onPress={loadLookups}>
+            <Text style={styles.dangerButtonText}>Retry</Text>
           </Pressable>
         </View>
       ) : (
         <>
-          {/* Step 1: Select City */}
+          {/* Step 1 */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>1) Select City</Text>
+            <Text style={styles.stepLabel}>Step 1</Text>
+            <Text style={styles.sectionTitle}>Select City</Text>
             {cities.length === 0 ? (
               <Text style={styles.helperText}>No cities available.</Text>
             ) : (
@@ -165,9 +180,9 @@ export default function CreatePostScreen() {
                   <Pressable
                     key={city.id}
                     onPress={() => handleSelectCity(city.id)}
-                    style={[styles.choice, active ? styles.choiceActive : null]}
+                    style={[styles.choice, active && styles.choiceActive]}
                   >
-                    <Text style={[styles.choiceText, active ? styles.choiceTextActive : null]}>
+                    <Text style={[styles.choiceText, active && styles.choiceTextActive]}>
                       {city.name}
                     </Text>
                   </Pressable>
@@ -176,9 +191,10 @@ export default function CreatePostScreen() {
             )}
           </View>
 
-          {/* Step 2: Select Court */}
+          {/* Step 2 */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>2) Select Court</Text>
+            <Text style={styles.stepLabel}>Step 2</Text>
+            <Text style={styles.sectionTitle}>Select Court</Text>
             {!selectedCity ? (
               <Text style={styles.helperText}>Pick a city first.</Text>
             ) : selectedCity.courts.length === 0 ? (
@@ -190,9 +206,9 @@ export default function CreatePostScreen() {
                   <Pressable
                     key={court.id}
                     onPress={() => setSelectedCourtId(court.id)}
-                    style={[styles.choice, active ? styles.choiceActive : null]}
+                    style={[styles.choice, active && styles.choiceActive]}
                   >
-                    <Text style={[styles.choiceText, active ? styles.choiceTextActive : null]}>
+                    <Text style={[styles.choiceText, active && styles.choiceTextActive]}>
                       {court.name}
                     </Text>
                   </Pressable>
@@ -201,9 +217,10 @@ export default function CreatePostScreen() {
             )}
           </View>
 
-          {/* Step 3: Details */}
+          {/* Step 3 */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>3) Details</Text>
+            <Text style={styles.stepLabel}>Step 3</Text>
+            <Text style={styles.sectionTitle}>Details</Text>
 
             <TextInput
               multiline
@@ -211,13 +228,18 @@ export default function CreatePostScreen() {
               value={description}
               onChangeText={setDescription}
               placeholder="Describe the legal help request..."
+              placeholderTextColor={C.textSecondary}
               style={[styles.input, styles.textArea]}
             />
 
             {/* Image picker */}
             {pickedFile ? (
               <View style={styles.previewContainer}>
-                <Image source={{ uri: pickedFile.uri }} style={styles.previewImage} resizeMode="cover" />
+                <Image
+                  source={{ uri: pickedFile.uri }}
+                  style={styles.previewImage}
+                  resizeMode="cover"
+                />
                 <Pressable style={styles.removeImageButton} onPress={() => setPickedFile(null)}>
                   <Text style={styles.removeImageText}>✕  Remove image</Text>
                 </Pressable>
@@ -231,14 +253,16 @@ export default function CreatePostScreen() {
             <Pressable
               onPress={handleSubmit}
               disabled={isSubmitting}
-              style={[styles.primaryButton, isSubmitting ? { opacity: 0.7 } : null]}
+              style={[styles.primaryButton, isSubmitting && { opacity: 0.7 }]}
             >
-              <Text style={styles.primaryButtonText}>
-                {isSubmitting ? "Submitting..." : "Publish Post"}
-              </Text>
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Publish Post</Text>
+              )}
             </Pressable>
 
-            {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
+            {submitError ? <Text style={styles.inlineError}>{submitError}</Text> : null}
           </View>
         </>
       )}
@@ -247,94 +271,131 @@ export default function CreatePostScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f7fc" },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 16, paddingBottom: 110, gap: 12 },
-  heroCard: { borderRadius: 22, padding: 18, backgroundColor: "#113e87" },
-  heroLabel: {
-    color: "#b9cef8",
+
+  // Hero
+  heroCard: {
+    borderRadius: 16,
+    padding: 20,
+    backgroundColor: C.primary,
+    gap: 6,
+  },
+  heroEyebrow: {
+    color: "rgba(255,255,255,0.6)",
     fontWeight: "600",
-    fontSize: 12,
+    fontSize: 11,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 1,
   },
-  heroTitle: { marginTop: 4, color: "#ffffff", fontSize: 28, fontWeight: "700" },
-  heroSub: { marginTop: 6, color: "#d9e6ff" },
+  heroTitle: { color: "#FFFFFF", fontSize: 26, fontWeight: "800", lineHeight: 32 },
+  heroSub: { color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 20 },
+
+  // Card
   card: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#dbe5f6",
-    backgroundColor: "#fff",
-    padding: 15,
+    borderRadius: 12,
+    backgroundColor: C.card,
+    padding: 16,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#1a2f52", marginBottom: 8 },
+  stepLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: C.accent,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary, marginTop: -2 },
+
+  // Choice chips
   choice: {
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#d7e1f3",
+    borderColor: C.border,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
-    backgroundColor: "#f9fbff",
+    paddingVertical: 11,
+    backgroundColor: C.bg,
   },
-  choiceActive: { borderColor: "#1f5bd8", backgroundColor: "#eaf1ff" },
-  choiceText: { color: "#2c3f61" },
-  choiceTextActive: { color: "#1842a8", fontWeight: "700" },
-  helperText: { color: "#60769a" },
+  choiceActive: { borderColor: C.primary, backgroundColor: "#EFF6FF" },
+  choiceText: { color: C.textSecondary, fontSize: 14 },
+  choiceTextActive: { color: C.primary, fontWeight: "700" },
+
+  // Input
   input: {
     borderWidth: 1,
-    borderColor: "#d2deef",
-    borderRadius: 10,
+    borderColor: C.inputBorder,
+    borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: "#1f2e49",
-    backgroundColor: "#fbfdff",
+    color: C.textPrimary,
+    backgroundColor: C.bg,
+    fontSize: 14,
   },
-  textArea: { minHeight: 100, textAlignVertical: "top" },
+  textArea: { minHeight: 110, textAlignVertical: "top" },
+
+  // Upload
   uploadButton: {
-    marginTop: 10,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#1f5bd8",
+    borderColor: C.accent,
     borderStyle: "dashed",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: "center",
-    backgroundColor: "#f0f5ff",
+    backgroundColor: "#F0F9FF",
   },
-  uploadButtonText: { color: "#1f5bd8", fontWeight: "600", fontSize: 14 },
-  previewContainer: { marginTop: 10, gap: 8 },
+  uploadButtonText: { color: C.accent, fontWeight: "600", fontSize: 14 },
+  previewContainer: { gap: 8 },
   previewImage: {
     width: "100%",
     height: 180,
-    borderRadius: 10,
-    backgroundColor: "#e5ebf6",
+    borderRadius: 8,
+    backgroundColor: C.border,
   },
   removeImageButton: {
     alignSelf: "flex-start",
     borderRadius: 8,
-    backgroundColor: "#fce8ec",
+    backgroundColor: "#FEE2E2",
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  removeImageText: { color: "#b13550", fontWeight: "600", fontSize: 13 },
+  removeImageText: { color: C.danger, fontWeight: "600", fontSize: 13 },
+
+  // Primary button
   primaryButton: {
-    marginTop: 14,
+    marginTop: 4,
     borderRadius: 10,
-    backgroundColor: "#1f5bd8",
-    height: 46,
+    backgroundColor: C.primary,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
   },
   primaryButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  retryButton: {
-    marginTop: 8,
+
+  // Error
+  errorCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    backgroundColor: C.dangerBg,
+    padding: 14,
+  },
+  errorText: { color: C.danger, lineHeight: 20, fontSize: 14, marginBottom: 10 },
+  dangerButton: {
     alignSelf: "flex-start",
-    borderRadius: 10,
-    backgroundColor: "#1f5bd8",
+    borderRadius: 8,
+    backgroundColor: C.danger,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  retryButtonText: { color: "#fff", fontWeight: "700" },
-  errorText: { marginTop: 10, color: "#b13550" },
+  dangerButtonText: { color: "#fff", fontWeight: "700" },
+  inlineError: { color: C.danger, fontSize: 13, marginTop: 4 },
+
+  // Misc
+  helperText: { color: C.textSecondary, fontSize: 13 },
   row: { flexDirection: "row", alignItems: "center", gap: 8 },
 });

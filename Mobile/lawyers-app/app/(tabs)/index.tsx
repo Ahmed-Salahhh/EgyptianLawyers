@@ -16,6 +16,19 @@ import {
 
 const PAGE_SIZE = 20;
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const C = {
+  primary: "#0A2540",
+  accent: "#0070F3",
+  bg: "#F5F7FA",
+  card: "#FFFFFF",
+  textPrimary: "#111827",
+  textSecondary: "#6B7280",
+  border: "#E5E7EB",
+  danger: "#DC2626",
+  dangerBg: "#FEF2F2",
+};
+
 function formatRelativeDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
@@ -76,7 +89,6 @@ export default function HomeScreen() {
     [token],
   );
 
-  // Initial load
   useEffect(() => {
     setIsLoading(true);
     loadPage(1, false);
@@ -97,7 +109,7 @@ export default function HomeScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1f5bd8" />
+        <ActivityIndicator size="large" color={C.primary} />
         <Text style={styles.loadingText}>Loading feed...</Text>
       </View>
     );
@@ -113,8 +125,8 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={["#1f5bd8"]}
-            tintColor="#1f5bd8"
+            colors={[C.primary]}
+            tintColor={C.primary}
           />
         }
         onEndReached={handleLoadMore}
@@ -123,14 +135,16 @@ export default function HomeScreen() {
           <>
             {/* ── Hero ── */}
             <View style={styles.heroCard}>
-              <Text style={styles.heroLabel}>Lawyers Network</Text>
+              <Text style={styles.heroEyebrow}>Egyptian Lawyers Network</Text>
               <Text style={styles.heroTitle}>Live Help Feed</Text>
               <Text style={styles.heroSub}>
-                Browse requests and respond quickly by city and court.
+                Browse requests and offer help by city and court.
               </Text>
-              <Text style={styles.heroMeta}>
-                Welcome, {profile?.fullName ?? "Lawyer"}
-              </Text>
+              {profile?.fullName ? (
+                <View style={styles.heroPill}>
+                  <Text style={styles.heroPillText}>Welcome, {profile.fullName}</Text>
+                </View>
+              ) : null}
             </View>
 
             {/* ── Error ── */}
@@ -148,16 +162,14 @@ export default function HomeScreen() {
           !error ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyTitle}>No posts yet</Text>
-              <Text style={styles.emptySubtitle}>
-                New help requests will appear here.
-              </Text>
+              <Text style={styles.emptySubtitle}>New help requests will appear here.</Text>
             </View>
           ) : null
         }
         ListFooterComponent={
           isLoadingMore ? (
             <View style={styles.footerLoader}>
-              <ActivityIndicator size="small" color="#1f5bd8" />
+              <ActivityIndicator size="small" color={C.primary} />
             </View>
           ) : null
         }
@@ -178,16 +190,16 @@ function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike
           params: { postId: item.id },
         })
       }
-      style={({ pressed }) => [styles.postCard, pressed ? { opacity: 0.88 } : null]}
+      style={({ pressed }) => [styles.postCard, pressed && { opacity: 0.88 }]}
     >
-      {/* Court + City badges */}
+      {/* Court + City + Date row */}
       <View style={styles.postTop}>
         <View style={styles.badgeRow}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.courtName}</Text>
+          <View style={styles.courtBadge}>
+            <Text style={styles.courtBadgeText}>{item.courtName}</Text>
           </View>
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>{item.cityName}</Text>
+          <View style={styles.cityPill}>
+            <Text style={styles.cityPillText}>{item.cityName}</Text>
           </View>
         </View>
         <Text style={styles.dateText}>{formatRelativeDate(item.createdAt)}</Text>
@@ -198,14 +210,14 @@ function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike
         {item.description}
       </Text>
 
-      {/* Attachment thumbnail / badge — tapping the card navigates to the detail screen */}
+      {/* Attachment */}
       <AttachmentPreview url={item.attachmentUrl} variant="compact" />
 
-      {/* Author + reply count */}
+      {/* Footer */}
       <View style={styles.postFooter}>
-        <Text style={styles.authorText}>By {item.lawyerFullName}</Text>
-        <View style={styles.replyBadge}>
-          <Text style={styles.replyBadgeText}>
+        <Text style={styles.authorText}>{item.lawyerFullName}</Text>
+        <View style={styles.replyChip}>
+          <Text style={styles.replyChipText}>
             {item.replyCount === 0
               ? "No replies"
               : item.replyCount === 1
@@ -219,116 +231,145 @@ function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f7fc" },
+  container: { flex: 1, backgroundColor: C.bg },
   listContent: { padding: 16, paddingBottom: 110, gap: 12 },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f4f7fc",
+    backgroundColor: C.bg,
+    padding: 24,
   },
-  loadingText: { marginTop: 10, color: "#5d7296" },
+  loadingText: { marginTop: 10, color: C.textSecondary, fontSize: 14 },
 
   // Hero
   heroCard: {
-    borderRadius: 22,
-    padding: 18,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 4,
-    backgroundColor: "#113e87",
+    backgroundColor: C.primary,
+    gap: 6,
   },
-  heroLabel: {
-    color: "#b9cef8",
+  heroEyebrow: {
+    color: "rgba(255,255,255,0.6)",
     fontWeight: "600",
-    fontSize: 12,
+    fontSize: 11,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 1,
   },
-  heroTitle: { marginTop: 4, color: "#ffffff", fontSize: 28, fontWeight: "700" },
-  heroSub: { marginTop: 6, color: "#d9e6ff", fontSize: 14 },
-  heroMeta: { marginTop: 14, color: "#e6efff", fontWeight: "600" },
+  heroTitle: { color: "#FFFFFF", fontSize: 26, fontWeight: "800", lineHeight: 32 },
+  heroSub: { color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 20 },
+  heroPill: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  heroPillText: { color: "#FFFFFF", fontWeight: "600", fontSize: 13 },
 
   // Error
   errorCard: {
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#f1c7d0",
-    backgroundColor: "#fff3f6",
+    borderColor: "#FECACA",
+    backgroundColor: C.dangerBg,
     padding: 14,
     marginBottom: 4,
   },
-  errorText: { color: "#b13550", marginBottom: 10, lineHeight: 20 },
+  errorText: { color: C.danger, marginBottom: 10, lineHeight: 20, fontSize: 14 },
   retryButton: {
     alignSelf: "flex-start",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: "#c9415b",
+    backgroundColor: C.danger,
   },
   retryText: { color: "#fff", fontWeight: "700" },
 
   // Empty
   emptyCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#d7e1f3",
-    backgroundColor: "#fff",
-    padding: 20,
+    borderColor: C.border,
+    backgroundColor: C.card,
+    padding: 28,
     alignItems: "center",
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: "#1a2f52" },
-  emptySubtitle: { marginTop: 4, color: "#60769a", textAlign: "center" },
+  emptyTitle: { fontSize: 16, fontWeight: "700", color: C.textPrimary },
+  emptySubtitle: { color: C.textSecondary, textAlign: "center", lineHeight: 22, fontSize: 14 },
 
   // Post card
   postCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#dbe5f6",
-    backgroundColor: "#fff",
-    padding: 15,
+    borderRadius: 12,
+    backgroundColor: C.card,
+    padding: 16,
+    gap: 10,
+    // Shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   postTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 10,
     gap: 8,
   },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, flex: 1 },
-  badge: {
+  courtBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "#e8f0ff",
+    borderRadius: 6,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
   },
-  badgeText: { color: "#1744a9", fontWeight: "700", fontSize: 12 },
-  pill: {
+  courtBadgeText: { color: "#1D4ED8", fontWeight: "700", fontSize: 12 },
+  cityPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "#eff4fd",
+    borderRadius: 6,
+    backgroundColor: C.bg,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  pillText: { color: "#4d668f", fontSize: 12, fontWeight: "600" },
-  dateText: { color: "#8fa3c4", fontSize: 11, marginTop: 2, flexShrink: 0 },
-  postDescription: { fontSize: 15, fontWeight: "600", color: "#17315c", lineHeight: 22 },
+  cityPillText: { color: C.textSecondary, fontSize: 12, fontWeight: "600" },
+  dateText: { color: C.textSecondary, fontSize: 11, marginTop: 2, flexShrink: 0 },
+  postDescription: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: C.textPrimary,
+    lineHeight: 22,
+  },
   postFooter: {
-    marginTop: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "#edf1fa",
+    borderTopColor: C.border,
     paddingTop: 10,
+    marginTop: 2,
   },
-  authorText: { color: "#5f7498", fontSize: 13 },
-  replyBadge: {
+  authorText: { color: C.textSecondary, fontSize: 13 },
+  replyChip: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "#f0f5ff",
+    borderRadius: 6,
+    backgroundColor: C.bg,
     borderWidth: 1,
-    borderColor: "#dce8ff",
+    borderColor: C.border,
   },
-  replyBadgeText: { color: "#3b63c8", fontSize: 12, fontWeight: "600" },
+  replyChipText: { color: C.textSecondary, fontSize: 12, fontWeight: "600" },
 
   footerLoader: { paddingVertical: 20, alignItems: "center" },
 });

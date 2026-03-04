@@ -1,71 +1,98 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
+
+const ACTIVE_COLOR = "#0A2540";
+const INACTIVE_COLOR = "#9CA3AF";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerTitleStyle: { fontWeight: "700", color: "#0f274d", fontSize: 22 },
+        headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 18 },
         headerShadowVisible: false,
-        tabBarActiveTintColor: "#1d4ed8",
-        tabBarInactiveTintColor: "#7b8dad",
+        headerStyle: { backgroundColor: "#FFFFFF" },
+        headerTitleAlign: "center",
+        tabBarActiveTintColor: ACTIVE_COLOR,
+        tabBarInactiveTintColor: INACTIVE_COLOR,
         tabBarStyle: {
-          position: "absolute",
-          marginHorizontal: 16,
-          marginBottom: 16,
-          borderRadius: 16,
-          height: 70,
-          paddingBottom: 8,
-          paddingTop: 8,
+          backgroundColor: "#FFFFFF",
           borderTopWidth: 0,
-          backgroundColor: "#ffffff",
-          shadowColor: "#102a56",
-          shadowOpacity: 0.12,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: 4 },
-          elevation: 8,
+          // iOS shadow
+          shadowColor: "#000000",
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -3 },
+          // Android shadow
+          elevation: 12,
+          height: 62,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "600",
         },
         sceneStyle: {
-          backgroundColor: "#f4f7fc",
-        },
-        headerStyle: {
-          backgroundColor: "#f4f7fc",
+          backgroundColor: "#F5F7FA",
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Feed",
           tabBarLabel: "Feed",
-          headerTitle: "Community",
+          headerTitle: "Community Feed",
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={(focused ? "home" : "home-outline") as IoniconsName}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
-          title: "New Post",
           tabBarLabel: "Create",
-          headerTitle: "Create Request",
+          headerTitle: "New Help Request",
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={(focused ? "add-circle" : "add-circle-outline") as IoniconsName}
+              size={26}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: "Notifications",
-          tabBarLabel: "Alerts",
+          tabBarLabel: "Notifications",
           headerTitle: "Notifications",
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={(focused ? "notifications" : "notifications-outline") as IoniconsName}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="two"
         options={{
-          title: "My Profile",
           tabBarLabel: "Profile",
           headerTitle: "My Profile",
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={(focused ? "person" : "person-outline") as IoniconsName}
+              size={24}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>

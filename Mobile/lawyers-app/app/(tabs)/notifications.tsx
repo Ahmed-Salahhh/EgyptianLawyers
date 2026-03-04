@@ -22,6 +22,21 @@ import {
 
 const PAGE_SIZE = 20;
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const C = {
+  primary: "#0A2540",
+  accent: "#0070F3",
+  bg: "#F5F7FA",
+  card: "#FFFFFF",
+  textPrimary: "#111827",
+  textSecondary: "#6B7280",
+  border: "#E5E7EB",
+  unreadBg: "#EFF6FF",
+  unreadBorder: "#BFDBFE",
+  danger: "#DC2626",
+  dangerBg: "#FEF2F2",
+};
+
 function formatRelativeDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
@@ -51,7 +66,7 @@ export default function NotificationsScreen() {
 
   const currentPage = useRef(1);
 
-  // ── Data loading ────────────────────────────────────────────────────────────
+  // ── Data loading ─────────────────────────────────────────────────────────────
 
   const loadPage = useCallback(
     async (page: number, append: boolean) => {
@@ -102,26 +117,22 @@ export default function NotificationsScreen() {
     loadPage(currentPage.current + 1, true);
   }, [hasNextPage, isLoadingMore, isRefreshing, loadPage]);
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
+  // ── Actions ──────────────────────────────────────────────────────────────────
 
   const handleTap = useCallback(
     async (item: UserNotification) => {
       if (!token) return;
 
-      // Optimistically mark as read in local state
       if (!item.isRead) {
         setItems((prev) =>
           prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n)),
         );
         setUnreadCount((c) => Math.max(0, c - 1));
-
-        // Fire-and-forget — no need to block navigation
         markNotificationAsRead(token, item.id).catch((err) =>
           console.warn("[Notifications] Failed to mark as read:", err),
         );
       }
 
-      // Navigate to post if dataPayload carries a postId
       const payload = parseNotificationPayload(item.dataPayload);
       if (payload.postId) {
         router.push({
@@ -147,12 +158,12 @@ export default function NotificationsScreen() {
     }
   }, [token, unreadCount, isMarkingAll]);
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1f5bd8" />
+        <ActivityIndicator size="large" color={C.primary} />
         <Text style={styles.loadingText}>Loading notifications...</Text>
       </View>
     );
@@ -168,8 +179,8 @@ export default function NotificationsScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={["#1f5bd8"]}
-            tintColor="#1f5bd8"
+            colors={[C.primary]}
+            tintColor={C.primary}
           />
         }
         onEndReached={handleLoadMore}
@@ -196,7 +207,7 @@ export default function NotificationsScreen() {
         ListFooterComponent={
           isLoadingMore ? (
             <View style={styles.footerLoader}>
-              <ActivityIndicator size="small" color="#1f5bd8" />
+              <ActivityIndicator size="small" color={C.primary} />
             </View>
           ) : null
         }
@@ -221,36 +232,31 @@ type ListHeaderProps = {
 function ListHeader({ unreadCount, isMarkingAll, error, onMarkAll, onRetry }: ListHeaderProps) {
   return (
     <>
-      {/* ── Hero ── */}
-      <View style={styles.heroCard}>
-        <Text style={styles.heroLabel}>In-App</Text>
-        <Text style={styles.heroTitle}>Notifications</Text>
+      {/* ── Summary row ── */}
+      <View style={styles.summaryRow}>
+        {unreadCount > 0 ? (
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadBadgeText}>{unreadCount} unread</Text>
+          </View>
+        ) : (
+          <Text style={styles.allReadText}>All caught up ✓</Text>
+        )}
 
-        <View style={styles.heroRow}>
-          {unreadCount > 0 ? (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>{unreadCount} unread</Text>
-            </View>
+        <Pressable
+          onPress={onMarkAll}
+          disabled={unreadCount === 0 || isMarkingAll}
+          style={({ pressed }) => [
+            styles.markAllButton,
+            (unreadCount === 0 || isMarkingAll) && { opacity: 0.4 },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          {isMarkingAll ? (
+            <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.allReadText}>All caught up ✓</Text>
+            <Text style={styles.markAllButtonText}>Mark all as read</Text>
           )}
-
-          <Pressable
-            onPress={onMarkAll}
-            disabled={unreadCount === 0 || isMarkingAll}
-            style={({ pressed }) => [
-              styles.markAllButton,
-              (unreadCount === 0 || isMarkingAll) && { opacity: 0.45 },
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            {isMarkingAll ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.markAllButtonText}>Mark all as read</Text>
-            )}
-          </Pressable>
-        </View>
+        </Pressable>
       </View>
 
       {/* ── Error ── */}
@@ -280,11 +286,13 @@ function NotificationItem({ item, onPress }: NotificationItemProps) {
       style={({ pressed }) => [
         styles.notifCard,
         !item.isRead && styles.notifCardUnread,
-        pressed && { opacity: 0.85 },
+        pressed && { opacity: 0.82 },
       ]}
     >
-      {/* Unread dot */}
-      {!item.isRead && <View style={styles.unreadDot} />}
+      {/* Unread indicator */}
+      <View style={styles.notifLeft}>
+        {!item.isRead ? <View style={styles.unreadDot} /> : <View style={styles.readDotPlaceholder} />}
+      </View>
 
       <View style={styles.notifContent}>
         <View style={styles.notifTopRow}>
@@ -302,7 +310,7 @@ function NotificationItem({ item, onPress }: NotificationItemProps) {
         </Text>
 
         {hasPostLink ? (
-          <Text style={styles.notifCta}>Tap to view post →</Text>
+          <Text style={styles.notifCta}>View post →</Text>
         ) : null}
       </View>
     </Pressable>
@@ -312,111 +320,119 @@ function NotificationItem({ item, onPress }: NotificationItemProps) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f7fc" },
-  listContent: { padding: 16, paddingBottom: 110, gap: 10 },
+  container: { flex: 1, backgroundColor: C.bg },
+  listContent: { padding: 16, paddingBottom: 110, gap: 8 },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f4f7fc",
+    backgroundColor: C.bg,
+    padding: 24,
   },
-  loadingText: { marginTop: 10, color: "#5d7296" },
+  loadingText: { marginTop: 10, color: C.textSecondary, fontSize: 14 },
 
-  // Hero
-  heroCard: {
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 4,
-    backgroundColor: "#113e87",
-    gap: 14,
-  },
-  heroLabel: {
-    color: "#b9cef8",
-    fontWeight: "600",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  heroTitle: { color: "#ffffff", fontSize: 28, fontWeight: "700", marginTop: -8 },
-  heroRow: {
+  // Summary row
+  summaryRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    paddingVertical: 8,
+    marginBottom: 8,
   },
   unreadBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: C.unreadBg,
+    borderWidth: 1,
+    borderColor: C.unreadBorder,
   },
-  unreadBadgeText: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  allReadText: { color: "#a8c4f0", fontSize: 13, fontWeight: "600" },
+  unreadBadgeText: { color: C.accent, fontWeight: "700", fontSize: 13 },
+  allReadText: { color: C.textSecondary, fontSize: 13, fontWeight: "600" },
   markAllButton: {
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    backgroundColor: C.primary,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    minWidth: 110,
+    paddingVertical: 9,
+    minWidth: 130,
     alignItems: "center",
   },
   markAllButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
 
   // Error
   errorCard: {
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#f1c7d0",
-    backgroundColor: "#fff3f6",
+    borderColor: "#FECACA",
+    backgroundColor: C.dangerBg,
     padding: 14,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  errorText: { color: "#b13550", marginBottom: 10, lineHeight: 20 },
+  errorText: { color: C.danger, marginBottom: 10, lineHeight: 20, fontSize: 14 },
   retryButton: {
     alignSelf: "flex-start",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: "#c9415b",
+    backgroundColor: C.danger,
   },
   retryText: { color: "#fff", fontWeight: "700" },
 
   // Empty
   emptyCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#d7e1f3",
-    backgroundColor: "#fff",
-    padding: 24,
+    borderColor: C.border,
+    backgroundColor: C.card,
+    padding: 32,
     alignItems: "center",
-    gap: 6,
+    gap: 8,
+    // Shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: "#1a2f52" },
-  emptySubtitle: { color: "#60769a", textAlign: "center", lineHeight: 20 },
+  emptyTitle: { fontSize: 16, fontWeight: "700", color: C.textPrimary },
+  emptySubtitle: { color: C.textSecondary, textAlign: "center", lineHeight: 22, fontSize: 14 },
 
   // Notification card
   notifCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#dbe5f6",
-    backgroundColor: "#ffffff",
+    borderColor: C.border,
+    backgroundColor: C.card,
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingRight: 14,
+    paddingLeft: 10,
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 10,
+    // Shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   notifCardUnread: {
-    backgroundColor: "#eef4ff",
-    borderColor: "#b8d0f8",
+    backgroundColor: C.unreadBg,
+    borderColor: C.unreadBorder,
+  },
+  notifLeft: {
+    width: 20,
+    alignItems: "center",
+    paddingTop: 4,
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#1f5bd8",
-    marginTop: 6,
-    flexShrink: 0,
+    backgroundColor: C.accent,
+  },
+  readDotPlaceholder: {
+    width: 8,
+    height: 8,
   },
   notifContent: { flex: 1, gap: 4 },
   notifTopRow: {
@@ -428,27 +444,27 @@ const styles = StyleSheet.create({
   notifTitle: {
     flex: 1,
     fontSize: 14,
-    color: "#2c3f61",
+    color: C.textPrimary,
     fontWeight: "600",
   },
   notifTitleUnread: {
-    color: "#0f274d",
+    color: C.primary,
     fontWeight: "800",
   },
   notifTime: {
     fontSize: 11,
-    color: "#8fa3c4",
+    color: C.textSecondary,
     flexShrink: 0,
     marginTop: 1,
   },
   notifBody: {
     fontSize: 13,
-    color: "#4d6080",
-    lineHeight: 19,
+    color: C.textSecondary,
+    lineHeight: 20,
   },
   notifCta: {
     fontSize: 12,
-    color: "#1f5bd8",
+    color: C.accent,
     fontWeight: "700",
     marginTop: 2,
   },
