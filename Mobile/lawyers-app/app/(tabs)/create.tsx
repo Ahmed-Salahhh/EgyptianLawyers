@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -169,7 +170,6 @@ export default function CreatePostScreen() {
         <>
           {/* Step 1 */}
           <View style={styles.card}>
-            <Text style={styles.stepLabel}>Step 1</Text>
             <Text style={styles.sectionTitle}>Select City</Text>
             {cities.length === 0 ? (
               <Text style={styles.helperText}>No cities available.</Text>
@@ -193,7 +193,6 @@ export default function CreatePostScreen() {
 
           {/* Step 2 */}
           <View style={styles.card}>
-            <Text style={styles.stepLabel}>Step 2</Text>
             <Text style={styles.sectionTitle}>Select Court</Text>
             {!selectedCity ? (
               <Text style={styles.helperText}>Pick a city first.</Text>
@@ -219,7 +218,6 @@ export default function CreatePostScreen() {
 
           {/* Step 3 */}
           <View style={styles.card}>
-            <Text style={styles.stepLabel}>Step 3</Text>
             <Text style={styles.sectionTitle}>Details</Text>
 
             <TextInput
@@ -246,7 +244,8 @@ export default function CreatePostScreen() {
               </View>
             ) : (
               <Pressable style={styles.uploadButton} onPress={handlePickImage}>
-                <Text style={styles.uploadButtonText}>🖼️  Attach an image (optional)</Text>
+                <Ionicons name="image-outline" size={20} color={C.accent} />
+                <Text style={styles.uploadButtonText}>Attach an image (optional)</Text>
               </Pressable>
             )}
 
@@ -303,14 +302,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  stepLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: C.accent,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary, marginTop: -2 },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary },
 
   // Choice chips
   choice: {
@@ -340,12 +332,14 @@ const styles = StyleSheet.create({
 
   // Upload
   uploadButton: {
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: C.accent,
-    borderStyle: "dashed",
-    paddingVertical: 13,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: C.accent,
+    paddingVertical: 13,
     backgroundColor: "#F0F9FF",
   },
   uploadButtonText: { color: C.accent, fontWeight: "600", fontSize: 14 },
