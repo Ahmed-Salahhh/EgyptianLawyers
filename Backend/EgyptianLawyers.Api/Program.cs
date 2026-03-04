@@ -121,7 +121,8 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBeh
 builder.Services.AddScoped<INotificationService, FcmNotificationService>();
 
 // Cloudinary configuration
-builder.Services.Configure<CloudinaryOptions>(cfg =>
+
+builder.Services.Configure<CloudinaryOptions>(
     builder.Configuration.GetSection(CloudinaryOptions.SectionName)
 );
 

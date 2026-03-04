@@ -27,6 +27,7 @@ public sealed class CreateHelpPostForm
     public Guid CityId { get; set; }
 
     /// <summary>Optional image or document attachment (max 10 MB).</summary>
+    [FromForm]
     public IFormFile? File { get; set; }
 }
 
@@ -50,6 +51,7 @@ public sealed class CreateHelpPostValidator : AbstractValidator<CreateHelpPostCo
     )
     {
         "image/jpeg",
+        "image/jpg",
         "image/png",
         "image/webp",
         "image/gif",
