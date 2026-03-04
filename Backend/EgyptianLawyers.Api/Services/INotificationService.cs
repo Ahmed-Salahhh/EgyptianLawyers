@@ -6,5 +6,8 @@ public interface INotificationService
         Guid postId,
         string description,
         Guid cityId,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken
+    );
+
+    Task SendAccountApprovedNotificationAsync(string fcmToken, CancellationToken cancellationToken);
 }
