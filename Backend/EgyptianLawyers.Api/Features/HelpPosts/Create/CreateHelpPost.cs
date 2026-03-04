@@ -27,7 +27,6 @@ public sealed class CreateHelpPostForm
     public Guid CityId { get; set; }
 
     /// <summary>Optional image or document attachment (max 10 MB).</summary>
-    [FromForm]
     public IFormFile? File { get; set; }
 }
 
