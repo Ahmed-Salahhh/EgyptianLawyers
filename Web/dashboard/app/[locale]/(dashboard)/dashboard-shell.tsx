@@ -192,7 +192,7 @@ export default function DashboardShell({ locale, children }: Props) {
         <div className={`grid h-full ${gridCols}`}>
           <div className="hidden md:block">{renderSide(false)}</div>
 
-          <section className="flex min-w-0 flex-col">
+          <section className="flex min-h-0 min-w-0 flex-col">
             <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5ebf7] bg-white px-4 py-3 md:px-6">
               <div className="flex items-center gap-2.5">
                 <button
@@ -268,7 +268,7 @@ export default function DashboardShell({ locale, children }: Props) {
               </div>
             </header>
 
-            <div className="flex-1 overflow-auto p-4 md:p-6">{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</div>
           </section>
         </div>
       </div>
