@@ -10,13 +10,12 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
-import type { LookupCourt } from "@/lib/features/lookups/types";
+import type { LookupCity } from "@/lib/features/lookups/types";
 import { registerLawyer } from "@/lib/features/lawyers/api";
 
 type CityOption = {
   id: string;
   name: string;
-  courtName: string;
 };
 
 export default function RegisterScreen() {
@@ -29,7 +28,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [courts, setCourts] = useState<LookupCourt[]>([]);
+  const [citiesLookup, setCitiesLookup] = useState<LookupCity[]>([]);
   const [selectedCityIds, setSelectedCityIds] = useState<string[]>([]);
 
   const [isLoadingLookups, setIsLoadingLookups] = useState(false);
@@ -41,14 +40,11 @@ export default function RegisterScreen() {
 
   const cities = useMemo<CityOption[]>(
     () =>
-      courts.flatMap((court) =>
-        court.cities.map((city) => ({
-          id: city.id,
-          name: city.name,
-          courtName: court.name,
-        })),
-      ),
-    [courts],
+      citiesLookup.map((city) => ({
+        id: city.id,
+        name: city.name,
+      })),
+    [citiesLookup],
   );
 
   const loadLookups = async () => {
@@ -57,7 +53,7 @@ export default function RegisterScreen() {
 
     try {
       const data = await fetchCourtsAndCities();
-      setCourts(data);
+      setCitiesLookup(data);
     } catch {
       setLookupsError("Failed to load cities list.");
     } finally {
@@ -192,7 +188,7 @@ export default function RegisterScreen() {
                     style={[styles.cityChip, selected ? styles.cityChipActive : null]}
                   >
                     <Text style={[styles.cityText, selected ? styles.cityTextActive : null]}>
-                      {city.name} ({city.courtName})
+                      {city.name}
                     </Text>
                   </Pressable>
                 );

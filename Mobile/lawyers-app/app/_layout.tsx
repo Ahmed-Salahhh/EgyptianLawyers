@@ -102,7 +102,15 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: "#0A2540" },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: { fontWeight: "700", color: "#FFFFFF", fontSize: 17 },
+          headerShadowVisible: false,
+          headerBackTitle: "Back",
+        }}
+      >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ presentation: "card" }} />
@@ -111,30 +119,18 @@ function RootLayoutNav() {
           name="posts/[postId]"
           options={{
             title: "Help Request",
-            headerBackTitle: "Back",
-            headerStyle: { backgroundColor: "#FFFFFF" },
-            headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 17 },
-            headerShadowVisible: false,
           }}
         />
         <Stack.Screen
           name="public-profile/[lawyerId]"
           options={{
             title: "Lawyer Profile",
-            headerBackTitle: "Back",
-            headerStyle: { backgroundColor: "#FFFFFF" },
-            headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 17 },
-            headerShadowVisible: false,
           }}
         />
         <Stack.Screen
           name="profile-viewers"
           options={{
             title: "Profile Viewers",
-            headerBackTitle: "Back",
-            headerStyle: { backgroundColor: "#FFFFFF" },
-            headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 17 },
-            headerShadowVisible: false,
           }}
         />
       </Stack>

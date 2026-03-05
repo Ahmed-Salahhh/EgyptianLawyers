@@ -1,26 +1,26 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 
-type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-const ACTIVE_COLOR = "#0A2540";
-const INACTIVE_COLOR = "#9CA3AF";
+const ACTIVE_COLOR = '#0A2540';
+const INACTIVE_COLOR = '#9CA3AF';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 18 },
+        headerTitleStyle: { fontWeight: '700', color: '#0A2540', fontSize: 18 },
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: "#FFFFFF" },
-        headerTitleAlign: "center",
+        headerStyle: { backgroundColor: '#FFFFFF' },
+        headerTitleAlign: 'center',
         tabBarActiveTintColor: ACTIVE_COLOR,
         tabBarInactiveTintColor: INACTIVE_COLOR,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
           // iOS shadow
-          shadowColor: "#000000",
+          shadowColor: '#000000',
           shadowOpacity: 0.08,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: -3 },
@@ -32,21 +32,24 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "600",
+          fontWeight: '600',
         },
         sceneStyle: {
-          backgroundColor: "#F5F7FA",
+          backgroundColor: '#F5F7FA',
         },
       }}
     >
       <Tabs.Screen
-        name="index"
+        name='index'
         options={{
-          tabBarLabel: "Feed",
-          headerTitle: "Community Feed",
+          tabBarLabel: 'Feed',
+          headerTitle: 'Community Feed',
+          headerStyle: { backgroundColor: '#0A2540' },
+          headerTitleStyle: { color: '#FFFFFF' },
+
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={(focused ? "home" : "home-outline") as IoniconsName}
+              name={(focused ? 'home' : 'home-outline') as IoniconsName}
               size={24}
               color={color}
             />
@@ -54,13 +57,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="create"
+        name='create'
         options={{
-          tabBarLabel: "Create",
-          headerTitle: "New Help Request",
+          tabBarLabel: 'Create',
+          headerTitle: 'New Help Request',
+          headerStyle: { backgroundColor: '#0A2540' },
+          headerTitleStyle: { color: '#FFFFFF' },
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={(focused ? "add-circle" : "add-circle-outline") as IoniconsName}
+              name={
+                (focused ? 'add-circle' : 'add-circle-outline') as IoniconsName
+              }
               size={26}
               color={color}
             />
@@ -68,13 +75,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
+        name='notifications'
         options={{
-          tabBarLabel: "Notifications",
-          headerTitle: "Notifications",
+          tabBarLabel: 'Notifications',
+          headerTitle: 'Notifications',
+          headerStyle: { backgroundColor: '#0A2540' },
+          headerTitleStyle: { color: '#FFFFFF' },
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={(focused ? "notifications" : "notifications-outline") as IoniconsName}
+              name={
+                (focused
+                  ? 'notifications'
+                  : 'notifications-outline') as IoniconsName
+              }
               size={24}
               color={color}
             />
@@ -82,13 +95,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name='two'
         options={{
-          tabBarLabel: "Profile",
-          headerTitle: "My Profile",
+          tabBarLabel: 'Profile',
+          headerTitle: 'My Profile',
+          headerStyle: { backgroundColor: '#0A2540' },
+          headerTitleStyle: { color: '#FFFFFF' },
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={(focused ? "person" : "person-outline") as IoniconsName}
+              name={(focused ? 'person' : 'person-outline') as IoniconsName}
               size={24}
               color={color}
             />

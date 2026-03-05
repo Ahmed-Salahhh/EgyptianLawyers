@@ -2,6 +2,7 @@ import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
 import { fetchHelpPostById, replyToPost } from "@/lib/features/posts/api";
 import type { HelpPostDetails, HelpPostReply, PickedFile } from "@/lib/features/posts/types";
+import { formatUtcDateTime } from "@/lib/utils/date";
 import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -16,12 +17,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleString();
-}
 
 function openWhatsApp(number: string) {
   const clean = number.replace(/\D/g, "");
@@ -176,7 +171,7 @@ export default function PostDetailScreen() {
           >
             <Text style={styles.metaAuthorLink}>Posted by {post.lawyerFullName}</Text>
           </Pressable>
-          <Text style={styles.metaText}>{formatDate(post.createdAt)}</Text>
+          <Text style={styles.metaText}>{formatUtcDateTime(post.createdAt)}</Text>
         </View>
 
         <Pressable
@@ -274,7 +269,7 @@ function ReplyCard({ reply, router }: { reply: HelpPostReply; router: ReturnType
         >
           <Text style={styles.replyAuthorLink}>{reply.lawyerFullName}</Text>
         </Pressable>
-        <Text style={styles.replyDate}>{formatDate(reply.createdAt)}</Text>
+        <Text style={styles.replyDate}>{formatUtcDateTime(reply.createdAt)}</Text>
       </View>
 
       {reply.comment ? <Text style={styles.replyComment}>{reply.comment}</Text> : null}

@@ -2,6 +2,7 @@ import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
 import { fetchHelpPostsFeed } from "@/lib/features/posts/api";
 import type { HelpPostFeedItem } from "@/lib/features/posts/types";
+import { formatUtcRelative } from "@/lib/utils/date";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -28,20 +29,6 @@ const C = {
   danger: "#DC2626",
   dangerBg: "#FEF2F2",
 };
-
-function formatRelativeDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const diffMs = Date.now() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60_000);
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -179,14 +166,18 @@ export default function HomeScreen() {
   );
 }
 
-type RouterLike = { push: (href: { pathname: string; params: Record<string, string> }) => void };
-
-function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike }) {
+function PostCard({
+  item,
+  router,
+}: {
+  item: HelpPostFeedItem;
+  router: ReturnType<typeof useRouter>;
+}) {
   return (
     <Pressable
       onPress={() =>
         router.push({
-          pathname: "/posts/[postId]",
+          pathname: "/posts/[postId]" as const,
           params: { postId: item.id },
         })
       }
@@ -202,7 +193,7 @@ function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike
             <Text style={styles.cityPillText}>{item.cityName}</Text>
           </View>
         </View>
-        <Text style={styles.dateText}>{formatRelativeDate(item.createdAt)}</Text>
+        <Text style={styles.dateText}>{formatUtcRelative(item.createdAt)}</Text>
       </View>
 
       {/* Description */}
@@ -218,7 +209,7 @@ function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike
         <Pressable
           onPress={() =>
             router.push({
-              pathname: "/public-profile/[lawyerId]",
+              pathname: "/public-profile/[lawyerId]" as const,
               params: { lawyerId: item.lawyerId },
             })
           }

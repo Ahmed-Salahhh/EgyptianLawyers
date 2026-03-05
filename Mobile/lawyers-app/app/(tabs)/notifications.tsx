@@ -8,6 +8,7 @@ import {
   parseNotificationPayload,
   type UserNotification,
 } from "@/lib/features/notifications/types";
+import { formatUtcRelative } from "@/lib/utils/date";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -36,20 +37,6 @@ const C = {
   danger: "#DC2626",
   dangerBg: "#FEF2F2",
 };
-
-function formatRelativeDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  const diffMs = Date.now() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60_000);
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -302,7 +289,7 @@ function NotificationItem({ item, onPress }: NotificationItemProps) {
           >
             {item.title}
           </Text>
-          <Text style={styles.notifTime}>{formatRelativeDate(item.createdAt)}</Text>
+          <Text style={styles.notifTime}>{formatUtcRelative(item.createdAt)}</Text>
         </View>
 
         <Text style={styles.notifBody} numberOfLines={2}>

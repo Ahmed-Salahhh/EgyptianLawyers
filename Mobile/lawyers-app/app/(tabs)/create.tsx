@@ -42,15 +42,29 @@ export default function CreatePostScreen() {
 
   const [selectedCityId, setSelectedCityId] = useState<string>("");
   const [selectedCourtId, setSelectedCourtId] = useState<string>("");
+  const [isCourtDropdownOpen, setIsCourtDropdownOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const selectedCity = useMemo(
-    () => cities.find((c) => c.id === selectedCityId) ?? null,
-    [cities, selectedCityId],
+  const courtOptions = useMemo(
+    () =>
+      cities.flatMap((city) =>
+        city.courts.map((court) => ({
+          courtId: court.id,
+          courtName: court.name,
+          cityId: city.id,
+          cityName: city.name,
+        })),
+      ),
+    [cities],
+  );
+
+  const selectedCourt = useMemo(
+    () => courtOptions.find((item) => item.courtId === selectedCourtId) ?? null,
+    [courtOptions, selectedCourtId],
   );
 
   const loadLookups = async () => {
@@ -76,9 +90,10 @@ export default function CreatePostScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const handleSelectCity = (cityId: string) => {
+  const handleSelectCourt = (courtId: string, cityId: string) => {
+    setSelectedCourtId(courtId);
     setSelectedCityId(cityId);
-    setSelectedCourtId("");
+    setIsCourtDropdownOpen(false);
   };
 
   const handlePickImage = async () => {
@@ -111,7 +126,7 @@ export default function CreatePostScreen() {
       return;
     }
     if (!selectedCityId || !selectedCourtId || !description.trim()) {
-      setSubmitError("Please select a city, a court, and enter a description.");
+      setSubmitError("Please select a court and enter a description.");
       return;
     }
 
@@ -131,6 +146,7 @@ export default function CreatePostScreen() {
       setDescription("");
       setSelectedCityId("");
       setSelectedCourtId("");
+      setIsCourtDropdownOpen(false);
       setPickedFile(null);
       router.push("/(tabs)");
     } catch (err) {
@@ -148,7 +164,7 @@ export default function CreatePostScreen() {
         <Text style={styles.heroEyebrow}>New Request</Text>
         <Text style={styles.heroTitle}>Publish a Help Post</Text>
         <Text style={styles.heroSub}>
-          Select your city and court, then describe what you need.
+          Select the court, verify linked city, then describe what you need.
         </Text>
       </View>
 
@@ -170,53 +186,68 @@ export default function CreatePostScreen() {
         <>
           {/* Step 1 */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Select City</Text>
-            {cities.length === 0 ? (
-              <Text style={styles.helperText}>No cities available.</Text>
+            <Text style={styles.sectionTitle}>Select Court</Text>
+            {courtOptions.length === 0 ? (
+              <Text style={styles.helperText}>No courts available.</Text>
             ) : (
-              cities.map((city) => {
-                const active = selectedCityId === city.id;
-                return (
-                  <Pressable
-                    key={city.id}
-                    onPress={() => handleSelectCity(city.id)}
-                    style={[styles.choice, active && styles.choiceActive]}
-                  >
-                    <Text style={[styles.choiceText, active && styles.choiceTextActive]}>
-                      {city.name}
+              <>
+                <Pressable
+                  onPress={() => setIsCourtDropdownOpen((prev) => !prev)}
+                  style={styles.dropdownTrigger}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.dropdownValue,
+                        !selectedCourt ? styles.dropdownPlaceholder : null,
+                      ]}
+                    >
+                      {selectedCourt ? selectedCourt.courtName : "Select court"}
                     </Text>
-                  </Pressable>
-                );
-              })
+                    {selectedCourt ? (
+                      <Text style={styles.dropdownSubText}>{selectedCourt.cityName}</Text>
+                    ) : null}
+                  </View>
+                  <Ionicons
+                    name={isCourtDropdownOpen ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={C.textSecondary}
+                  />
+                </Pressable>
+
+                {isCourtDropdownOpen ? (
+                  <View style={styles.dropdownMenu}>
+                    <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
+                      {courtOptions.map((item, index) => {
+                        const active = selectedCourtId === item.courtId;
+                        return (
+                          <Pressable
+                            key={item.courtId}
+                            onPress={() => handleSelectCourt(item.courtId, item.cityId)}
+                            style={[
+                              styles.courtOption,
+                              active && styles.courtOptionActive,
+                              index === courtOptions.length - 1 && styles.courtOptionLast,
+                            ]}
+                          >
+                            <View style={{ flex: 1 }}>
+                              <Text style={[styles.courtOptionTitle, active && styles.courtOptionTitleActive]}>
+                                {item.courtName}
+                              </Text>
+                              <Text style={styles.courtOptionSubtitle}>{item.cityName}</Text>
+                            </View>
+                            {active ? <Ionicons name='checkmark-circle' size={18} color={C.accent} /> : null}
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                ) : null}
+              </>
             )}
           </View>
 
           {/* Step 2 */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Select Court</Text>
-            {!selectedCity ? (
-              <Text style={styles.helperText}>Pick a city first.</Text>
-            ) : selectedCity.courts.length === 0 ? (
-              <Text style={styles.helperText}>No courts registered in this city.</Text>
-            ) : (
-              selectedCity.courts.map((court) => {
-                const active = selectedCourtId === court.id;
-                return (
-                  <Pressable
-                    key={court.id}
-                    onPress={() => setSelectedCourtId(court.id)}
-                    style={[styles.choice, active && styles.choiceActive]}
-                  >
-                    <Text style={[styles.choiceText, active && styles.choiceTextActive]}>
-                      {court.name}
-                    </Text>
-                  </Pressable>
-                );
-              })
-            )}
-          </View>
-
-          {/* Step 3 */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Details</Text>
 
@@ -303,6 +334,53 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary },
+  dropdownTrigger: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
+    backgroundColor: C.bg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dropdownValue: { color: C.textPrimary, fontSize: 14, fontWeight: "600" },
+  dropdownPlaceholder: { color: C.textSecondary, fontWeight: "500" },
+  dropdownSubText: { color: "#8a97ad", fontSize: 12, marginTop: 2 },
+  dropdownMenu: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.card,
+    overflow: "hidden",
+    shadowColor: "#102a56",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  dropdownScroll: { maxHeight: 240 },
+  courtOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eef2f8",
+    backgroundColor: "#fff",
+  },
+  courtOptionActive: {
+    backgroundColor: "#eef5ff",
+  },
+  courtOptionLast: {
+    borderBottomWidth: 0,
+  },
+  courtOptionTitle: { color: "#2e4266", fontSize: 14, fontWeight: "600" },
+  courtOptionTitleActive: { color: C.primary },
+  courtOptionSubtitle: { color: "#8a97ad", fontSize: 12, marginTop: 2 },
 
   // Choice chips
   choice: {
@@ -316,6 +394,7 @@ const styles = StyleSheet.create({
   choiceActive: { borderColor: C.primary, backgroundColor: "#EFF6FF" },
   choiceText: { color: C.textSecondary, fontSize: 14 },
   choiceTextActive: { color: C.primary, fontWeight: "700" },
+  choiceSubText: { color: "#8a97ad", fontSize: 12, marginTop: 2 },
 
   // Input
   input: {
