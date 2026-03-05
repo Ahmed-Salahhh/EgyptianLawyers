@@ -31,8 +31,12 @@ RTK Query is configured with feature-based slices:
 Set backend URLs in `.env.local`:
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_API_BASE_URL=/
 ```
+
+Notes:
+- `NEXT_PUBLIC_API_BASE_URL=/` uses relative `/api/*` calls (recommended with `vercel.json` rewrites).
+- For direct local backend calls (without rewrites), set e.g. `http://localhost:8080`.
 
 Current integrated endpoints:
 

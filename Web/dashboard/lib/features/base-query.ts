@@ -3,7 +3,8 @@
 import { fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { getAuthToken } from './auth/token';
 
-const apiBaseUrl = 'http://egyptianlawyers-001-site1.stempurl.com';
+const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? '/';
+const apiBaseUrl = rawApiBaseUrl === '/' ? '/' : rawApiBaseUrl.replace(/\/+$/, '');
 
 export const appBaseQuery = fetchBaseQuery({
   baseUrl: apiBaseUrl,
