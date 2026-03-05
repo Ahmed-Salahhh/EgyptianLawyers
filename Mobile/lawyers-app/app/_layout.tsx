@@ -107,6 +107,36 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ presentation: "card" }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="posts/[postId]"
+          options={{
+            title: "Help Request",
+            headerBackTitle: "Back",
+            headerStyle: { backgroundColor: "#FFFFFF" },
+            headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 17 },
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="public-profile/[lawyerId]"
+          options={{
+            title: "Lawyer Profile",
+            headerBackTitle: "Back",
+            headerStyle: { backgroundColor: "#FFFFFF" },
+            headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 17 },
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="profile-viewers"
+          options={{
+            title: "Profile Viewers",
+            headerBackTitle: "Back",
+            headerStyle: { backgroundColor: "#FFFFFF" },
+            headerTitleStyle: { fontWeight: "700", color: "#0A2540", fontSize: 17 },
+            headerShadowVisible: false,
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

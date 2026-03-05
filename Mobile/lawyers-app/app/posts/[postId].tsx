@@ -3,7 +3,7 @@ import { useSession } from "@/lib/auth/session";
 import { fetchHelpPostById, replyToPost } from "@/lib/features/posts/api";
 import type { HelpPostDetails, HelpPostReply, PickedFile } from "@/lib/features/posts/types";
 import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -144,6 +144,8 @@ export default function PostDetailScreen() {
 
   // ── Main render ────────────────────────────────────────────────────────────
   return (
+    <>
+      <Stack.Screen options={{ title: post.courtName }} />
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* ── Post header ── */}
       <View style={styles.heroCard}>
@@ -161,7 +163,19 @@ export default function PostDetailScreen() {
         <AttachmentPreview url={post.attachmentUrl} variant="full" dark />
 
         <View style={styles.metaRow}>
-          <Text style={styles.metaText}>Posted by {post.lawyerFullName}</Text>
+          <Pressable
+            onPress={() =>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (router.push as any)({
+                pathname: "/public-profile/[lawyerId]",
+                params: { lawyerId: post.lawyerId },
+              })
+            }
+            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+            hitSlop={6}
+          >
+            <Text style={styles.metaAuthorLink}>Posted by {post.lawyerFullName}</Text>
+          </Pressable>
           <Text style={styles.metaText}>{formatDate(post.createdAt)}</Text>
         </View>
 
@@ -236,17 +250,30 @@ export default function PostDetailScreen() {
           <Text style={styles.emptyText}>Be the first to reply and offer your help.</Text>
         </View>
       ) : (
-        post.replies.map((reply) => <ReplyCard key={reply.id} reply={reply} />)
+        post.replies.map((reply) => <ReplyCard key={reply.id} reply={reply} router={router} />)
       )}
     </ScrollView>
+    </>
   );
 }
 
-function ReplyCard({ reply }: { reply: HelpPostReply }) {
+function ReplyCard({ reply, router }: { reply: HelpPostReply; router: ReturnType<typeof useRouter> }) {
   return (
     <View style={styles.replyCard}>
       <View style={styles.replyHeader}>
-        <Text style={styles.replyAuthor}>{reply.lawyerFullName}</Text>
+        <Pressable
+          onPress={() =>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (router.push as any)({
+              pathname: "/public-profile/[lawyerId]",
+              params: { lawyerId: reply.lawyerId },
+            })
+          }
+          style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+          hitSlop={6}
+        >
+          <Text style={styles.replyAuthorLink}>{reply.lawyerFullName}</Text>
+        </Pressable>
         <Text style={styles.replyDate}>{formatDate(reply.createdAt)}</Text>
       </View>
 
@@ -304,6 +331,7 @@ const styles = StyleSheet.create({
   description: { color: "#fff", fontSize: 16, lineHeight: 24, fontWeight: "600" },
   metaRow: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 4 },
   metaText: { color: "#b9cef8", fontSize: 12 },
+  metaAuthorLink: { color: "#93c5fd", fontSize: 12, fontWeight: "700" },
   whatsAppButton: {
     marginTop: 4,
     borderRadius: 10,
@@ -393,6 +421,7 @@ const styles = StyleSheet.create({
   },
   replyHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   replyAuthor: { fontWeight: "700", color: "#1a2f52", fontSize: 14 },
+  replyAuthorLink: { fontWeight: "700", color: "#0070F3", fontSize: 14 },
   replyDate: { color: "#8fa3c4", fontSize: 11 },
   replyComment: { color: "#2c3f61", lineHeight: 20 },
   whatsAppButtonSmall: {

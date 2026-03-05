@@ -179,7 +179,7 @@ export default function HomeScreen() {
   );
 }
 
-type RouterLike = { push: (route: { pathname: string; params: Record<string, string> }) => void };
+type RouterLike = { push: (href: { pathname: string; params: Record<string, string> }) => void };
 
 function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike }) {
   return (
@@ -215,7 +215,18 @@ function PostCard({ item, router }: { item: HelpPostFeedItem; router: RouterLike
 
       {/* Footer */}
       <View style={styles.postFooter}>
-        <Text style={styles.authorText}>{item.lawyerFullName}</Text>
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/public-profile/[lawyerId]",
+              params: { lawyerId: item.lawyerId },
+            })
+          }
+          style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+          hitSlop={8}
+        >
+          <Text style={styles.authorText}>{item.lawyerFullName}</Text>
+        </Pressable>
         <View style={styles.replyChip}>
           <Text style={styles.replyChipText}>
             {item.replyCount === 0
@@ -360,7 +371,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     marginTop: 2,
   },
-  authorText: { color: C.textSecondary, fontSize: 13 },
+  authorText: { color: C.accent, fontSize: 13, fontWeight: "600" },
   replyChip: {
     paddingHorizontal: 10,
     paddingVertical: 4,

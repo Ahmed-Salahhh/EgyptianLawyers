@@ -177,7 +177,18 @@ export default function ProfileViewersScreen() {
             </View>
           ) : null
         }
-        renderItem={({ item }) => <ViewerCard viewer={item} onPress={() => router.back()} />}
+        renderItem={({ item }) => (
+          <ViewerCard
+            viewer={item}
+            onPress={() =>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (router.push as any)({
+                pathname: "/public-profile/[lawyerId]",
+                params: { lawyerId: item.id },
+              })
+            }
+          />
+        )}
       />
     </View>
   );
@@ -185,9 +196,12 @@ export default function ProfileViewersScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function ViewerCard({ viewer }: { viewer: ProfileViewer; onPress: () => void }) {
+function ViewerCard({ viewer, onPress }: { viewer: ProfileViewer; onPress: () => void }) {
   return (
-    <View style={styles.viewerCard}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.viewerCard, pressed && { opacity: 0.82 }]}
+    >
       {/* Avatar */}
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{getInitial(viewer.fullName)}</Text>
@@ -209,7 +223,10 @@ function ViewerCard({ viewer }: { viewer: ProfileViewer; onPress: () => void }) 
           <Text style={styles.countBadgeText}>{viewer.viewCount}×</Text>
         </View>
       )}
-    </View>
+
+      {/* Chevron */}
+      <Ionicons name="chevron-forward" size={16} color={C.textSecondary} />
+    </Pressable>
   );
 }
 

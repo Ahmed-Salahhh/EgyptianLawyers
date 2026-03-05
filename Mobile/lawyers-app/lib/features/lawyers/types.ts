@@ -34,6 +34,18 @@ export type UpdateMyLawyerProfileRequest = {
   cityIds: string[];
 };
 
+export type PublicLawyerProfile = {
+  id: string;
+  fullName: string;
+  title: string | null;
+  profilePictureUrl: string | null;
+  syndicateCardNumber: string;
+  whatsAppNumber: string;
+  isVerified: boolean;
+  createdAt: string;
+  activeCities: { id: string; name: string }[];
+};
+
 export type ProfileViewer = {
   id: string;
   fullName: string;
