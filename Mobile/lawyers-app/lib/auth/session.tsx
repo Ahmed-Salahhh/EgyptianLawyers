@@ -135,7 +135,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       let serverMessage = `HTTP ${response.status}`;
       try {
         const errorBody = await response.json();
-        // ASP.NET Core ProblemDetails shape: { title, detail, errors: {...} }
+        // ASP.NET Core ProblemDetails shape: { title, detail, errors: {....} }
         serverMessage =
           errorBody?.detail ??
           errorBody?.title ??
