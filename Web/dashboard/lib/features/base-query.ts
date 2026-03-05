@@ -1,20 +1,19 @@
-"use client";
+'use client';
 
-import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthToken } from "./auth/token";
+import { fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { getAuthToken } from './auth/token';
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const apiBaseUrl = 'http://egyptianlawyers-001-site1.stempurl.com';
 
 export const appBaseQuery = fetchBaseQuery({
   baseUrl: apiBaseUrl,
   prepareHeaders: (headers) => {
     const token = getAuthToken();
     if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
+      headers.set('Authorization', `Bearer ${token}`);
     }
 
-    headers.set("Accept", "application/json");
+    headers.set('Accept', 'application/json');
     return headers;
   },
 });
-
