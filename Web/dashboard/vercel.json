@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://eegyptianlawyers-001-site1.stempurl.com/api/:path*"
+      "destination": "http://egyptianlawyers-001-site1.stempurl.com/api/:path*"
     }
   ]
 }
