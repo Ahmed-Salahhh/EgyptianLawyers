@@ -6,8 +6,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
 import type { LookupCity } from "@/lib/features/lookups/types";
@@ -18,6 +20,14 @@ type CityOption = {
   name: string;
 };
 
+const countries = [
+  { code: "+20", flag: "🇪🇬", name: "Egypt" },
+  { code: "+966", flag: "🇸🇦", name: "Saudi Arabia" },
+  { code: "+971", flag: "🇦🇪", name: "UAE" },
+  { code: "+965", flag: "🇰🇼", name: "Kuwait" },
+  { code: "+974", flag: "🇶🇦", name: "Qatar" },
+];
+
 export default function RegisterScreen() {
   const router = useRouter();
 
@@ -25,6 +35,8 @@ export default function RegisterScreen() {
   const [title, setTitle] = useState("");
   const [syndicateCardNumber, setSyndicateCardNumber] = useState("");
   const [whatsAppNumber, setWhatsAppNumber] = useState("");
+  const [countryCode, setCountryCode] = useState({ code: "+20", flag: "🇪🇬" });
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -88,12 +100,18 @@ export default function RegisterScreen() {
     setSubmitSuccess(null);
     setIsSubmitting(true);
 
+    let rawPhone = whatsAppNumber.trim();
+    if (rawPhone.startsWith("0")) {
+      rawPhone = rawPhone.substring(1);
+    }
+    const formattedWhatsApp = countryCode.code + " " + rawPhone;
+
     try {
       await registerLawyer({
         fullName: fullName.trim(),
         title: title.trim() || "Lawyer",
         syndicateCardNumber: syndicateCardNumber.trim(),
-        whatsAppNumber: whatsAppNumber.trim(),
+        whatsAppNumber: formattedWhatsApp,
         cityIds: selectedCityIds,
         email: email.trim(),
         password,
@@ -137,12 +155,55 @@ export default function RegisterScreen() {
           />
 
           <Text style={styles.label}>WhatsApp Number *</Text>
-          <TextInput
-            value={whatsAppNumber}
-            onChangeText={setWhatsAppNumber}
-            keyboardType="phone-pad"
-            style={styles.input}
-          />
+          <View style={styles.whatsAppRow}>
+            <TouchableOpacity
+              onPress={() => setIsDropdownVisible(true)}
+              style={{ flexDirection: "row", alignItems: "center" }}
+            >
+              <Text style={styles.whatsAppPrefix}>
+                {countryCode.flag} {countryCode.code}
+              </Text>
+              <Ionicons
+                name="chevron-down-outline"
+                size={16}
+                color="#0A2540"
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
+            <View style={styles.whatsAppDivider} />
+            <TextInput
+              value={whatsAppNumber}
+              onChangeText={setWhatsAppNumber}
+              keyboardType="phone-pad"
+              placeholder="1015985768"
+              placeholderTextColor="#999999"
+              style={styles.whatsAppInput}
+            />
+            {isDropdownVisible && (
+              <View style={styles.dropdown}>
+                <ScrollView
+                  nestedScrollEnabled
+                  style={{ maxHeight: 200 }}
+                  showsVerticalScrollIndicator
+                >
+                  {countries.map((item) => (
+                    <TouchableOpacity
+                      key={item.code}
+                      onPress={() => {
+                        setCountryCode(item);
+                        setIsDropdownVisible(false);
+                      }}
+                      style={styles.dropdownRow}
+                    >
+                      <Text style={styles.dropdownText}>
+                        {item.flag} {item.code}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
 
           <Text style={styles.label}>Email *</Text>
           <TextInput
@@ -258,6 +319,63 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: "#fbfdff",
     color: "#1f2e49",
+  },
+  whatsAppRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F2EF",
+    borderRadius: 12,
+    height: 56,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    position: "relative",
+    zIndex: 50,
+    elevation: 50,
+  },
+  dropdown: {
+    position: "absolute",
+    top: 60,
+    left: 0,
+    width: 150,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#EBEBEB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 100,
+    zIndex: 100,
+  },
+  dropdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F2EF",
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  whatsAppPrefix: {
+    fontSize: 16,
+    color: "#0A2540",
+    fontWeight: "bold",
+    marginRight: 8,
+  },
+  whatsAppDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: "#CCC",
+    marginRight: 8,
+  },
+  whatsAppInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#1f2e49",
+    padding: 0,
   },
   row: {
     flexDirection: "row",
