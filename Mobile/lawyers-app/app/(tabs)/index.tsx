@@ -1,8 +1,9 @@
-import { AttachmentPreview } from "@/components/AttachmentPreview";
+import { AttachmentPreview, isImageAttachment } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
 import { fetchHelpPostsFeed } from "@/lib/features/posts/api";
 import type { HelpPostFeedItem } from "@/lib/features/posts/types";
 import { formatUtcRelative } from "@/lib/utils/date";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -17,17 +18,23 @@ import {
 
 const PAGE_SIZE = 20;
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
+// ── Design tokens (LinkedIn-style) ───────────────────────────────────────────
 const C = {
   primary: "#0A2540",
-  accent: "#0070F3",
-  bg: "#F5F7FA",
+  bg: "#F3F2EF",
   card: "#FFFFFF",
-  textPrimary: "#111827",
-  textSecondary: "#6B7280",
-  border: "#E5E7EB",
+  textPrimary: "#191919",
+  textSecondary: "#666666",
+  divider: "#EBEBEB",
   danger: "#DC2626",
   dangerBg: "#FEF2F2",
+  shadow: {
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
 };
 
 export default function HomeScreen() {
@@ -120,7 +127,6 @@ export default function HomeScreen() {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
           <>
-            {/* ── Hero ── */}
             <View style={styles.heroCard}>
               <Text style={styles.heroEyebrow}>Egyptian Lawyers Network</Text>
               <Text style={styles.heroTitle}>Live Help Feed</Text>
@@ -134,7 +140,6 @@ export default function HomeScreen() {
               ) : null}
             </View>
 
-            {/* ── Error ── */}
             {error ? (
               <View style={styles.errorCard}>
                 <Text style={styles.errorText}>{error}</Text>
@@ -173,64 +178,75 @@ function PostCard({
   item: HelpPostFeedItem;
   router: ReturnType<typeof useRouter>;
 }) {
+  const subtitle = `${item.courtName} • ${item.cityName} • ${formatUtcRelative(item.createdAt)}`;
+
+  const goToPost = () => {
+    router.push({
+      pathname: "/posts/[postId]" as const,
+      params: { postId: item.id },
+    });
+  };
+
+  const goToProfile = () => {
+    router.push({
+      pathname: "/public-profile/[lawyerId]" as const,
+      params: { lawyerId: item.lawyerId },
+    });
+  };
+
   return (
-    <Pressable
-      onPress={() =>
-        router.push({
-          pathname: "/posts/[postId]" as const,
-          params: { postId: item.id },
-        })
-      }
-      style={({ pressed }) => [styles.postCard, pressed && { opacity: 0.88 }]}
-    >
-      {/* Court + City + Date row */}
-      <View style={styles.postTop}>
-        <View style={styles.badgeRow}>
-          <View style={styles.courtBadge}>
-            <Text style={styles.courtBadgeText}>{item.courtName}</Text>
+    <View style={styles.postCard}>
+      {/* ── Header: Avatar | Name + Subtitle ────────────────────────────────── */}
+      <View style={styles.postHeader}>
+        <Pressable onPress={goToProfile} style={({ pressed }) => [pressed && { opacity: 0.7 }]} hitSlop={8}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.lawyerFullName.trim().charAt(0).toUpperCase()}
+            </Text>
           </View>
-          <View style={styles.cityPill}>
-            <Text style={styles.cityPillText}>{item.cityName}</Text>
-          </View>
-        </View>
-        <Text style={styles.dateText}>{formatUtcRelative(item.createdAt)}</Text>
-      </View>
-
-      {/* Description */}
-      <Text style={styles.postDescription} numberOfLines={3}>
-        {item.description}
-      </Text>
-
-      {/* Attachment */}
-      <AttachmentPreview url={item.attachmentUrl} variant="compact" />
-
-      {/* Footer */}
-      <View style={styles.postFooter}>
-        <Pressable
-          onPress={() =>
-            router.push({
-              pathname: "/public-profile/[lawyerId]" as const,
-              params: { lawyerId: item.lawyerId },
-            })
-          }
-          style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          hitSlop={8}
-        >
-          <Text style={styles.authorText}>{item.lawyerFullName}</Text>
         </Pressable>
-        <View style={styles.replyChip}>
-          <Text style={styles.replyChipText}>
-            {item.replyCount === 0
-              ? "No replies"
-              : item.replyCount === 1
-                ? "1 reply"
-                : `${item.replyCount} replies`}
-          </Text>
+        <View style={styles.headerCenter}>
+          <Pressable onPress={goToProfile} style={({ pressed }) => [pressed && { opacity: 0.7 }]} hitSlop={8}>
+            <Text style={styles.authorName}>{item.lawyerFullName}</Text>
+          </Pressable>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
       </View>
-    </Pressable>
+
+      {/* ── Body + Media (tappable → post) ─────────────────────────────────── */}
+      <Pressable onPress={goToPost} style={({ pressed }) => [pressed && { opacity: 0.95 }]}>
+        <Text style={styles.postDescription}>{item.description}</Text>
+        {item.attachmentUrl ? (
+          isImageAttachment(item.attachmentUrl) ? (
+            <View style={styles.mediaImageWrapper}>
+              <AttachmentPreview url={item.attachmentUrl} variant="feed" />
+            </View>
+          ) : (
+            <View style={styles.mediaDocWrapper}>
+              <AttachmentPreview url={item.attachmentUrl} variant="feed" />
+            </View>
+          )
+        ) : null}
+      </Pressable>
+
+      {/* ── Divider ────────────────────────────────────────────────────────── */}
+      <View style={styles.divider} />
+
+      {/* ── Comment action (single row, left-aligned) ───────────────────────── */}
+      <Pressable
+        onPress={goToPost}
+        style={({ pressed }) => [styles.commentAction, pressed && { opacity: 0.7 }]}
+      >
+        <Ionicons name="chatbubble-outline" size={18} color={C.textSecondary} />
+        <Text style={styles.commentActionText}>
+          {item.replyCount === 1 ? "1 Comment" : `${item.replyCount} Comments`}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
+
+// ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
@@ -244,13 +260,13 @@ const styles = StyleSheet.create({
   },
   loadingText: { marginTop: 10, color: C.textSecondary, fontSize: 14 },
 
-  // Hero
   heroCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 4,
     backgroundColor: C.primary,
     gap: 6,
+    ...C.shadow,
   },
   heroEyebrow: {
     color: "rgba(255,255,255,0.6)",
@@ -271,7 +287,6 @@ const styles = StyleSheet.create({
   },
   heroPillText: { color: "#FFFFFF", fontWeight: "600", fontSize: 13 },
 
-  // Error
   errorCard: {
     borderRadius: 12,
     borderWidth: 1,
@@ -290,88 +305,82 @@ const styles = StyleSheet.create({
   },
   retryText: { color: "#fff", fontWeight: "700" },
 
-  // Empty
   emptyCard: {
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
     backgroundColor: C.card,
     padding: 28,
     alignItems: "center",
     gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...C.shadow,
   },
   emptyTitle: { fontSize: 16, fontWeight: "700", color: C.textPrimary },
   emptySubtitle: { color: C.textSecondary, textAlign: "center", lineHeight: 22, fontSize: 14 },
 
-  // Post card
   postCard: {
     borderRadius: 12,
     backgroundColor: C.card,
     padding: 16,
-    gap: 10,
-    // Shadow
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...C.shadow,
   },
-  postTop: {
+  postHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 8,
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
   },
-  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, flex: 1 },
-  courtBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: "#EFF6FF",
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  courtBadgeText: { color: "#1D4ED8", fontWeight: "700", fontSize: 12 },
-  cityPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: C.bg,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  cityPillText: { color: C.textSecondary, fontSize: 12, fontWeight: "600" },
-  dateText: { color: C.textSecondary, fontSize: 11, marginTop: 2, flexShrink: 0 },
+  avatarText: { color: "#FFFFFF", fontSize: 20, fontWeight: "700" },
+  headerCenter: { flex: 1, justifyContent: "center", minWidth: 0 },
+  authorName: { fontSize: 16, fontWeight: "700", color: C.textPrimary },
+  subtitle: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
+
   postDescription: {
     fontSize: 15,
-    fontWeight: "600",
     color: C.textPrimary,
-    lineHeight: 22,
+    lineHeight: 20,
+    marginBottom: 12,
   },
-  postFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    paddingTop: 10,
-    marginTop: 2,
+  mediaImageWrapper: {
+    marginHorizontal: -16,
+    marginTop: 10,
+    marginBottom: 4,
+    borderRadius: 8,
+    overflow: "hidden",
   },
-  authorText: { color: C.accent, fontSize: 13, fontWeight: "600" },
-  replyChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: C.bg,
+  mediaDocWrapper: {
+    marginTop: 10,
+    backgroundColor: "#F8F9FA",
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: "#EBEBEB",
+    borderRadius: 8,
+    padding: 12,
   },
-  replyChipText: { color: C.textSecondary, fontSize: 12, fontWeight: "600" },
+  divider: {
+    height: 1,
+    backgroundColor: C.divider,
+    marginVertical: 10,
+    marginHorizontal: -16,
+  },
+  commentAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 2,
+    alignSelf: "flex-start",
+  },
+  commentActionText: {
+    fontSize: 14,
+    color: C.textSecondary,
+    fontWeight: "700",
+  },
 
   footerLoader: { paddingVertical: 20, alignItems: "center" },
 });

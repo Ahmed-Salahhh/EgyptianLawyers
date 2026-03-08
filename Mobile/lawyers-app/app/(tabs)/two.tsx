@@ -16,27 +16,35 @@ import type { LookupCity } from "@/lib/features/lookups/types";
 import { fetchMyLawyerProfile, updateMyLawyerProfile } from "@/lib/features/lawyers/api";
 import type { MyLawyerProfile } from "@/lib/features/lawyers/types";
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
+// ── Design tokens (LinkedIn-style) ───────────────────────────────────────────
 const C = {
   primary: "#0A2540",
-  accent: "#0070F3",
-  bg: "#F5F7FA",
+  bg: "#F3F2EF",
   card: "#FFFFFF",
-  textPrimary: "#111827",
-  textSecondary: "#6B7280",
-  border: "#E5E7EB",
+  textPrimary: "#191919",
+  textSecondary: "#666666",
+  border: "#EBEBEB",
   inputBorder: "#D1D5DB",
   danger: "#DC2626",
   dangerBg: "#FEF2F2",
   success: "#059669",
   successBg: "#ECFDF5",
+  warning: "#D97706",
+  warningBg: "#FFFBEB",
+  shadow: {
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
 };
 
 type CityOption = { id: string; name: string };
 
 export default function ProfileTab() {
   const router = useRouter();
-  const { token, signOut } = useSession();
+  const { token, signOut, profile: authProfile } = useSession();
 
   const [profile, setProfile] = useState<MyLawyerProfile | null>(null);
   const [cities, setCities] = useState<LookupCity[]>([]);
@@ -154,78 +162,108 @@ export default function ProfileTab() {
     );
   }
 
+  const cityNames = profile.activeCities.map((c) => c.name).join(", ") || "—";
+  const isVerified = authProfile?.isVerified ?? true;
+  const isSuspended = authProfile?.isSuspended ?? false;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* ── Hero ── */}
-      <View style={styles.heroCard}>
-        <View style={styles.avatarCircle}>
+      {/* ── Warning banners ────────────────────────────────────────────────── */}
+      {!isVerified && (
+        <View style={styles.bannerWarning}>
+          <Ionicons name="time-outline" size={20} color={C.warning} />
+          <Text style={styles.bannerText}>
+            Your account is pending admin verification. You cannot access the network yet.
+          </Text>
+        </View>
+      )}
+      {isSuspended && (
+        <View style={styles.bannerDanger}>
+          <Ionicons name="ban-outline" size={20} color={C.danger} />
+          <Text style={styles.bannerText}>
+            Your account is suspended. You are in read-only mode.
+          </Text>
+        </View>
+      )}
+
+      {/* ── Cover banner (Navy Blue) ─────────────────────────────────────────── */}
+      <View style={styles.cover} />
+
+      {/* ── Profile picture (overlaps cover, white border) ───────────────────── */}
+      <View style={styles.avatarWrap}>
+        <View style={styles.avatar}>
           <Text style={styles.avatarInitial}>
             {profile.fullName.trim().charAt(0).toUpperCase()}
           </Text>
         </View>
-        <Text style={styles.heroName}>{profile.fullName}</Text>
-        <Text style={styles.heroTitle}>{profile.title || "Lawyer"}</Text>
-        <View style={styles.heroPill}>
-          <Text style={styles.heroPillText}>Syndicate: {profile.syndicateCardNumber}</Text>
-        </View>
       </View>
 
-      {/* ── Who viewed your profile ── */}
+      {/* ── Intro card (white) ──────────────────────────────────────────────── */}
+      <View style={styles.introCard}>
+        <Text style={styles.profileName}>{profile.fullName}</Text>
+        <Text style={styles.profileTitle}>
+          {profile.title || "Lawyer"} • Syndicate #{profile.syndicateCardNumber}
+        </Text>
+        <Text style={styles.profileLocation}>{cityNames}</Text>
+      </View>
+
+      {/* ── Stats row ──────────────────────────────────────────────────────── */}
       {!isEditing && (
         <Pressable
-          style={({ pressed }) => [styles.viewersCard, pressed && { opacity: 0.82 }]}
+          style={({ pressed }) => [styles.statsRow, pressed && { opacity: 0.8 }]}
           onPress={() => router.push("/profile-viewers")}
         >
-          <View style={styles.viewersIconWrap}>
-            <Ionicons name="eye-outline" size={22} color={C.primary} />
-          </View>
-          <View style={styles.viewersTextWrap}>
-            <Text style={styles.viewersTitle}>Who viewed your profile</Text>
-            <Text style={styles.viewersSub}>See lawyers who visited your page</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={C.textSecondary} />
+          <Ionicons name="eye-outline" size={18} color={C.primary} />
+          <Text style={styles.statsText}>Who viewed your profile</Text>
+          <Ionicons name="chevron-forward" size={16} color={C.primary} />
         </Pressable>
       )}
 
-      {/* ── Info card ── */}
+      {/* ── Action buttons ─────────────────────────────────────────────────── */}
+      {!isEditing ? (
+        <View style={styles.actionRow}>
+          <Pressable
+            onPress={() => {
+              resetFormFromProfile();
+              setSaveMessage(null);
+              setIsEditing(true);
+            }}
+            style={({ pressed }) => [styles.primaryButton, pressed && { opacity: 0.9 }]}
+          >
+            <Text style={styles.primaryButtonText}>Edit Profile</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.outlineButton, pressed && { opacity: 0.9 }]}
+            onPress={() => router.push({ pathname: "/public-profile/[lawyerId]", params: { lawyerId: profile.id } })}
+          >
+            <Text style={styles.outlineButtonText}>View as others see</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {/* ── About / Info card ───────────────────────────────────────────────── */}
       {!isEditing && (
         <View style={styles.card}>
+          <Text style={styles.cardTitle}>About</Text>
           <InfoRow label="Title" value={profile.title || "—"} />
-          <Divider />
+          <RowDivider />
           <InfoRow label="WhatsApp" value={profile.whatsAppNumber || "—"} />
-          <Divider />
-          <InfoRow
-            label="Active Cities"
-            value={
-              profile.activeCities.length
-                ? profile.activeCities.map((c) => c.name).join(", ")
-                : "—"
-            }
-          />
+          <RowDivider />
+          <InfoRow label="Active Cities" value={cityNames} />
         </View>
       )}
 
-      {/* ── Edit button or edit form ── */}
-      {!isEditing ? (
-        <Pressable
-          onPress={() => {
-            resetFormFromProfile();
-            setSaveMessage(null);
-            setIsEditing(true);
-          }}
-          style={styles.primaryButton}
-        >
-          <Text style={styles.primaryButtonText}>Edit Profile</Text>
-        </Pressable>
-      ) : (
+      {/* ── Edit form ──────────────────────────────────────────────────────── */}
+      {isEditing && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Edit Profile</Text>
+          <Text style={styles.cardTitle}>Edit Profile</Text>
 
           <Text style={styles.fieldLabel}>Title</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
             style={styles.input}
+            placeholder="e.g. Lawyer, Legal Consultant"
             placeholderTextColor={C.textSecondary}
           />
 
@@ -257,14 +295,18 @@ export default function ProfileTab() {
           </View>
 
           {saveMessage ? (
-            <View style={[
-              styles.messageBox,
-              saveMessage.success ? styles.messageBoxSuccess : styles.messageBoxError,
-            ]}>
-              <Text style={[
-                styles.messageText,
-                saveMessage.success ? styles.messageTextSuccess : styles.messageTextError,
-              ]}>
+            <View
+              style={[
+                styles.messageBox,
+                saveMessage.success ? styles.messageBoxSuccess : styles.messageBoxError,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.messageText,
+                  saveMessage.success ? styles.messageTextSuccess : styles.messageTextError,
+                ]}
+              >
                 {saveMessage.text}
               </Text>
             </View>
@@ -277,35 +319,34 @@ export default function ProfileTab() {
                 setSaveMessage(null);
                 setIsEditing(false);
               }}
-              style={styles.outlineButton}
+              style={({ pressed }) => [styles.outlineButton, pressed && { opacity: 0.9 }]}
             >
               <Text style={styles.outlineButtonText}>Cancel</Text>
             </Pressable>
-
             <Pressable
               onPress={handleSave}
               disabled={isSaving}
               style={[styles.primaryButton, styles.flexButton, isSaving && { opacity: 0.7 }]}
             >
               {isSaving ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.primaryButtonText}>Save Changes</Text>
+                <Text style={styles.primaryButtonText}>Save</Text>
               )}
             </Pressable>
           </View>
         </View>
       )}
 
-      {/* ── Logout ── */}
-      <Pressable onPress={handleLogout} style={styles.logoutButton}>
+      {/* ── Logout ──────────────────────────────────────────────────────────── */}
+      <Pressable onPress={handleLogout} style={({ pressed }) => [styles.logoutButton, pressed && { opacity: 0.9 }]}>
         <Text style={styles.logoutText}>Log Out</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
-// ── Small sub-components ──────────────────────────────────────────────────────
+// ── Sub-components ──────────────────────────────────────────────────────────
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -316,15 +357,15 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Divider() {
-  return <View style={styles.divider} />;
+function RowDivider() {
+  return <View style={styles.rowDivider} />;
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+// ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  content: { padding: 16, paddingBottom: 110, gap: 12 },
+  content: { paddingBottom: 110 },
   centered: {
     flex: 1,
     alignItems: "center",
@@ -333,78 +374,140 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 14,
   },
+  helperText: { color: C.textSecondary, fontSize: 14 },
+  errorText: { color: C.danger, textAlign: "center", fontSize: 15 },
 
-  // Hero
-  heroCard: {
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: C.primary,
+  bannerWarning: {
+    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 10,
+    backgroundColor: C.warningBg,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FCD34D",
   },
-  avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.15)",
+  bannerDanger: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: C.dangerBg,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+  bannerText: { flex: 1, color: C.textPrimary, fontSize: 14, fontWeight: "500" },
+
+  cover: {
+    height: 120,
+    backgroundColor: C.primary,
+  },
+  avatarWrap: {
+    marginTop: -50,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: C.primary,
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
+    ...C.shadow,
   },
-  avatarInitial: { color: "#FFFFFF", fontSize: 28, fontWeight: "800" },
-  heroName: { color: "#FFFFFF", fontSize: 22, fontWeight: "800", textAlign: "center" },
-  heroTitle: { color: "rgba(255,255,255,0.7)", fontSize: 14, textAlign: "center" },
-  heroPill: {
-    marginTop: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-  },
-  heroPillText: { color: "rgba(255,255,255,0.85)", fontWeight: "600", fontSize: 12 },
+  avatarInitial: { color: "#FFFFFF", fontSize: 40, fontWeight: "700" },
 
-  // Card
-  card: {
-    borderRadius: 12,
+  introCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 20,
     backgroundColor: C.card,
-    padding: 16,
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: 12,
+    ...C.shadow,
   },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary },
+  profileName: { fontSize: 24, fontWeight: "700", color: C.textPrimary },
+  profileTitle: { fontSize: 16, color: C.textPrimary, marginTop: 4 },
+  profileLocation: { fontSize: 14, color: C.textSecondary, marginTop: 4 },
 
-  // Info rows
-  infoRow: { gap: 2 },
-  infoLabel: { fontSize: 11, fontWeight: "700", color: C.textSecondary, textTransform: "uppercase", letterSpacing: 0.5 },
-  infoValue: { fontSize: 15, fontWeight: "600", color: C.textPrimary },
-  divider: { height: 1, backgroundColor: C.border },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  statsText: { fontSize: 14, fontWeight: "600", color: C.primary },
 
-  // Form
-  fieldLabel: {
-    fontSize: 13,
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  primaryButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 100,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  outlineButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: "#666666",
+    backgroundColor: C.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  outlineButtonText: { color: C.textPrimary, fontSize: 15, fontWeight: "600" },
+
+  card: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 16,
+    backgroundColor: C.card,
+    borderRadius: 12,
+    ...C.shadow,
+  },
+  cardTitle: { fontSize: 18, fontWeight: "700", color: C.textPrimary, marginBottom: 12 },
+
+  infoRow: { gap: 4 },
+  infoLabel: {
+    fontSize: 12,
     fontWeight: "600",
     color: C.textSecondary,
-    marginBottom: -4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
+  infoValue: { fontSize: 15, color: C.textPrimary, fontWeight: "500" },
+  rowDivider: { height: 1, backgroundColor: C.border, marginVertical: 12 },
+
+  fieldLabel: { fontSize: 13, fontWeight: "600", color: C.textSecondary, marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: C.inputBorder,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: C.bg,
     color: C.textPrimary,
     fontSize: 14,
+    marginBottom: 12,
   },
-  citiesWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
+  citiesWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
   cityChip: {
     borderWidth: 1,
     borderColor: C.border,
@@ -417,79 +520,26 @@ const styles = StyleSheet.create({
   cityChipText: { color: C.textSecondary, fontSize: 13 },
   cityChipTextActive: { color: C.primary, fontWeight: "700" },
 
-  // Messages
-  messageBox: {
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-  },
+  messageBox: { borderRadius: 8, padding: 12, borderWidth: 1, marginBottom: 12 },
   messageBoxSuccess: { borderColor: "#A7F3D0", backgroundColor: C.successBg },
   messageBoxError: { borderColor: "#FECACA", backgroundColor: C.dangerBg },
   messageText: { fontSize: 13, fontWeight: "600" },
   messageTextSuccess: { color: C.success },
   messageTextError: { color: C.danger },
 
-  // Buttons
-  actionsRow: { flexDirection: "row", gap: 10, marginTop: 4 },
+  actionsRow: { flexDirection: "row", gap: 12, marginTop: 4 },
   flexButton: { flex: 1 },
-  primaryButton: {
-    borderRadius: 10,
-    backgroundColor: C.primary,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  primaryButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  outlineButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    backgroundColor: C.card,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  outlineButtonText: { color: C.textPrimary, fontWeight: "700", fontSize: 15 },
+
   logoutButton: {
-    borderRadius: 10,
+    marginHorizontal: 16,
+    marginTop: 8,
+    height: 48,
+    borderRadius: 100,
     borderWidth: 1.5,
     borderColor: "#FECACA",
     backgroundColor: C.dangerBg,
-    height: 48,
     alignItems: "center",
     justifyContent: "center",
   },
   logoutText: { color: C.danger, fontSize: 15, fontWeight: "700" },
-
-  // Misc
-  helperText: { color: C.textSecondary, fontSize: 14 },
-  errorText: { color: C.danger, textAlign: "center", fontSize: 15 },
-
-  // Profile viewers teaser card
-  viewersCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 12,
-    backgroundColor: C.card,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  viewersIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#EFF6FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  viewersTextWrap: { flex: 1, gap: 2 },
-  viewersTitle: { fontSize: 15, fontWeight: "700", color: C.primary },
-  viewersSub: { fontSize: 12, color: C.textSecondary },
 });
