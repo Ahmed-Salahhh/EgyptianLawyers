@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -50,29 +51,38 @@ export default function LoginScreen() {
       style={styles.screen}
     >
       <View style={styles.card}>
-        <Text style={styles.brand}>Lawyers Network</Text>
-        <Text style={styles.title}>Admin Login</Text>
-        <Text style={styles.subtitle}>Sign in with your backend credentials.</Text>
+        <View style={styles.header}>
+          <Ionicons name="scale-outline" size={64} color="#0A2540" />
+          <Text style={styles.brand}>The Egyptian Lawyers Network</Text>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to access your legal community.</Text>
+        </View>
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          placeholder="admin@gmail.com"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-        />
+        <View style={styles.inputRow}>
+          <Ionicons name="mail-outline" size={20} color="#666666" />
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            placeholder="Email"
+            placeholderTextColor="#999999"
+            value={email}
+            onChangeText={setEmail}
+            style={styles.input}
+          />
+        </View>
 
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          secureTextEntry
-          placeholder="********"
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-        />
+        <View style={styles.inputRow}>
+          <Ionicons name="lock-closed-outline" size={20} color="#666666" />
+          <TextInput
+            secureTextEntry
+            placeholder="Password"
+            placeholderTextColor="#999999"
+            value={password}
+            onChangeText={setPassword}
+            style={styles.input}
+          />
+        </View>
 
         <Pressable
           onPress={handleLogin}
@@ -92,8 +102,9 @@ export default function LoginScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Pressable onPress={() => router.push("/register")} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Create Lawyer Account</Text>
+        <Pressable onPress={() => router.push("/register")} style={styles.signUpLink}>
+          <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
+          <Text style={styles.signUpBold}>Sign Up</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -105,78 +116,91 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "#f3f6fb",
+    backgroundColor: "#F3F2EF",
   },
   card: {
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#d9e1f2",
-    backgroundColor: "#ffffff",
-    padding: 18,
+    backgroundColor: "#FFFFFF",
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   brand: {
-    fontSize: 14,
-    color: "#4f6487",
+    marginTop: 12,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0A2540",
+    textAlign: "center",
   },
   title: {
-    marginTop: 6,
+    marginTop: 8,
     fontSize: 28,
     fontWeight: "700",
-    color: "#13294b",
+    color: "#0A2540",
+    textAlign: "center",
   },
   subtitle: {
-    marginTop: 6,
-    marginBottom: 16,
-    fontSize: 14,
-    color: "#60769a",
-  },
-  label: {
-    marginBottom: 6,
     marginTop: 8,
-    fontSize: 13,
-    color: "#30415f",
-    fontWeight: "600",
+    marginBottom: 24,
+    fontSize: 15,
+    color: "#666666",
+    textAlign: "center",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F2EF",
+    borderRadius: 12,
+    height: 54,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#d2deef",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    flex: 1,
+    marginLeft: 10,
     fontSize: 16,
-    color: "#1f2e49",
-    backgroundColor: "#fbfdff",
+    color: "#191919",
+    padding: 0,
   },
   button: {
-    marginTop: 16,
+    marginTop: 10,
     borderRadius: 12,
-    backgroundColor: "#1f5bd8",
-    alignItems: "center",
+    backgroundColor: "#0A2540",
+    height: 54,
     justifyContent: "center",
-    height: 48,
+    alignItems: "center",
   },
   buttonText: {
-    color: "#ffffff",
+    color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 16,
   },
-  secondaryButton: {
-    marginTop: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#c9d6ef",
-    alignItems: "center",
+  signUpLink: {
+    flexDirection: "row",
     justifyContent: "center",
-    height: 44,
-    backgroundColor: "#f7faff",
+    marginTop: 16,
+    paddingVertical: 8,
   },
-  secondaryButtonText: {
-    color: "#1d4cae",
+  signUpText: {
+    fontSize: 15,
+    color: "#666666",
+  },
+  signUpBold: {
+    fontSize: 15,
     fontWeight: "700",
+    color: "#0A2540",
   },
   error: {
     marginTop: 10,
-    color: "#c43c56",
+    color: "#DC2626",
     fontSize: 13,
+    textAlign: "center",
   },
 });
