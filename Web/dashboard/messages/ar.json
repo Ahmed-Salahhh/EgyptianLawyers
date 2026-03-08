@@ -173,7 +173,8 @@
     "deleteCityTitle": "حذف المدينة",
     "deleteCourtTitle": "حذف المحكمة",
     "confirmDeleteCityWithName": "هل أنت متأكد من حذف <strong>{name}</strong>؟",
-    "confirmDeleteCourtWithName": "هل أنت متأكد من حذف <strong>{name}</strong>؟"
+    "confirmDeleteCourtWithName": "هل أنت متأكد من حذف <strong>{name}</strong>؟",
+    "activeCities": "????? ??????"
   },
   "Profile": {
     "title": "الملف الشخصي",

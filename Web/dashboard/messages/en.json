@@ -136,6 +136,7 @@
     "verificationStatus": "Verification Status",
     "primaryCity": "Primary City",
     "activeCourts": "Active Courts",
+    "activeCities": "Active Cities",
     "loading": "Loading...",
     "noData": "No data found.",
     "failedToLoad": "Failed to load data.",

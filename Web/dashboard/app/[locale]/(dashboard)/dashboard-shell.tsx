@@ -21,6 +21,65 @@ type Props = {
   children: React.ReactNode;
 };
 
+function NavIcon({ itemKey }: { itemKey: (typeof navItems)[number]["key"] }) {
+  const base = {
+    className: "h-4 w-4",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  if (itemKey === "dashboard") {
+    return (
+      <svg {...base}>
+        <path d="M3 13h8V3H3zM13 21h8v-6h-8zM13 11h8V3h-8zM3 21h8v-6H3z" />
+      </svg>
+    );
+  }
+
+  if (itemKey === "lawyers") {
+    return (
+      <svg {...base}>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <path d="M20 8v6M23 11h-6" />
+      </svg>
+    );
+  }
+
+  if (itemKey === "cities") {
+    return (
+      <svg {...base}>
+        <path d="M3 21h18" />
+        <path d="M5 21V8l7-4 7 4v13" />
+        <path d="M9 13h6M9 17h6" />
+      </svg>
+    );
+  }
+
+  if (itemKey === "courts") {
+    return (
+      <svg {...base}>
+        <path d="M12 3v18" />
+        <path d="M6 7h12" />
+        <path d="M4 21h16" />
+        <path d="M7 7l-3 5h6zM20 12l-3-5-3 5z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...base}>
+      <path d="M4 5h16v12H4z" />
+      <path d="M8 3v4M16 3v4" />
+      <path d="M4 11h16" />
+    </svg>
+  );
+}
+
 export default function DashboardShell({ locale, children }: Props) {
   const nav = useTranslations("Nav");
   const common = useTranslations("Common");
@@ -172,8 +231,8 @@ export default function DashboardShell({ locale, children }: Props) {
               if (mobile) setMobileOpen(false);
             }}
           >
-            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-[#cfdaf0] bg-white px-1 text-[10px] font-semibold text-[#5a6f95]">
-              {item.badge}
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-[#cfdaf0] bg-white text-[#5a6f95]">
+              <NavIcon itemKey={item.key} />
             </span>
             <span
               className={desktopCollapsed && !mobile ? "hidden" : "text-sm font-medium"}
