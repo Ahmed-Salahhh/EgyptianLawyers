@@ -2,7 +2,8 @@ import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
 import { fetchHelpPostById, replyToPost } from "@/lib/features/posts/api";
 import type { HelpPostDetails, HelpPostReply, PickedFile } from "@/lib/features/posts/types";
-import { formatUtcDateTime } from "@/lib/utils/date";
+import { formatUtcRelative } from "@/lib/utils/date";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -18,6 +19,26 @@ import {
   View,
 } from "react-native";
 
+// ── Design tokens (match Feed LinkedIn-style) ─────────────────────────────────
+const C = {
+  primary: "#0A2540",
+  bg: "#F3F2EF",
+  card: "#FFFFFF",
+  textPrimary: "#191919",
+  textSecondary: "#666666",
+  divider: "#EBEBEB",
+  inputBorder: "#E5E7EB",
+  whatsAppGreen: "#25D366",
+  danger: "#DC2626",
+  shadow: {
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+};
+
 function openWhatsApp(number: string) {
   const clean = number.replace(/\D/g, "");
   Linking.openURL(`https://wa.me/${clean}`).catch(() => {
@@ -30,19 +51,16 @@ export default function PostDetailScreen() {
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const { token } = useSession();
 
-  // ── Post state ─────────────────────────────────────────────────────────────
   const [post, setPost] = useState<HelpPostDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Reply form state ───────────────────────────────────────────────────────
   const [replyComment, setReplyComment] = useState("");
   const [replyFile, setReplyFile] = useState<PickedFile | null>(null);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
   const [replySuccess, setReplySuccess] = useState(false);
 
-  // ── Load post ──────────────────────────────────────────────────────────────
   const loadPost = () => {
     if (!postId || !token) {
       setError("Missing post ID or auth token.");
@@ -63,7 +81,6 @@ export default function PostDetailScreen() {
 
   useEffect(loadPost, [postId, token]);
 
-  // ── Pick image for reply ───────────────────────────────────────────────────
   const handlePickReplyImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -88,7 +105,6 @@ export default function PostDetailScreen() {
     }
   };
 
-  // ── Submit reply ───────────────────────────────────────────────────────────
   const handleSubmitReply = async () => {
     if (!token || !postId) return;
 
@@ -116,11 +132,10 @@ export default function PostDetailScreen() {
     }
   };
 
-  // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1f5bd8" />
+        <ActivityIndicator size="large" color={C.primary} />
         <Text style={styles.loadingText}>Loading post...</Text>
       </View>
     );
@@ -137,294 +152,378 @@ export default function PostDetailScreen() {
     );
   }
 
-  // ── Main render ────────────────────────────────────────────────────────────
+  const subtitle = `${post.courtName} • ${post.cityName} • ${formatUtcRelative(post.createdAt)}`;
+
   return (
     <>
       <Stack.Screen options={{ title: post.courtName }} />
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* ── Post header ── */}
-      <View style={styles.heroCard}>
-        <View style={styles.badgeRow}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{post.courtName}</Text>
-          </View>
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>{post.cityName}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.description}>{post.description}</Text>
-
-        <AttachmentPreview url={post.attachmentUrl} variant="full" dark />
-
-        <View style={styles.metaRow}>
-          <Pressable
-            onPress={() =>
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (router.push as any)({
-                pathname: "/public-profile/[lawyerId]",
-                params: { lawyerId: post.lawyerId },
-              })
-            }
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-            hitSlop={6}
-          >
-            <Text style={styles.metaAuthorLink}>Posted by {post.lawyerFullName}</Text>
-          </Pressable>
-          <Text style={styles.metaText}>{formatUtcDateTime(post.createdAt)}</Text>
-        </View>
-
-        <Pressable
-          style={styles.whatsAppButton}
-          onPress={() => openWhatsApp(post.lawyerWhatsAppNumber)}
-        >
-          <Text style={styles.whatsAppButtonText}>Contact via WhatsApp</Text>
-        </Pressable>
-      </View>
-
-      {/* ── Reply form ── */}
-      <View style={styles.replyFormCard}>
-        <Text style={styles.sectionTitle}>Add a Reply</Text>
-
-        <TextInput
-          multiline
-          numberOfLines={4}
-          value={replyComment}
-          onChangeText={(t) => {
-            setReplyComment(t);
-            setReplySuccess(false);
-          }}
-          placeholder="Write your comment here..."
-          style={[styles.input, styles.textArea]}
-          editable={!isSubmittingReply}
-        />
-
-        {/* Image picker */}
-        {replyFile ? (
-          <View style={styles.previewContainer}>
-            <Image source={{ uri: replyFile.uri }} style={styles.previewImage} resizeMode="cover" />
-            <Pressable style={styles.removeImageButton} onPress={() => setReplyFile(null)}>
-              <Text style={styles.removeImageText}>✕  Remove image</Text>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* ── Main post card (white, Feed-style) ─────────────────────────────── */}
+        <View style={styles.postCard}>
+          <View style={styles.postHeader}>
+            <Pressable
+              onPress={() =>
+                (router.push as (opts: { pathname: string; params: { lawyerId: string } }) => void)({
+                  pathname: "/public-profile/[lawyerId]",
+                  params: { lawyerId: post.lawyerId },
+                })
+              }
+              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+              hitSlop={8}
+            >
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {post.lawyerFullName.trim().charAt(0).toUpperCase()}
+                </Text>
+              </View>
             </Pressable>
+            <View style={styles.headerCenter}>
+              <Pressable
+                onPress={() =>
+                  (router.push as (opts: { pathname: string; params: { lawyerId: string } }) => void)({
+                    pathname: "/public-profile/[lawyerId]",
+                    params: { lawyerId: post.lawyerId },
+                  })
+                }
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+                hitSlop={8}
+              >
+                <Text style={styles.authorName}>{post.lawyerFullName}</Text>
+              </Pressable>
+              <Text style={styles.subtitle}>{subtitle}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.postDescription}>{post.description}</Text>
+
+          {post.attachmentUrl ? (
+            <View style={styles.mediaWrapper}>
+              <AttachmentPreview url={post.attachmentUrl} variant="full" />
+            </View>
+          ) : null}
+
+          <Pressable
+            style={({ pressed }) => [styles.whatsAppButton, pressed && { opacity: 0.9 }]}
+            onPress={() => openWhatsApp(post.lawyerWhatsAppNumber)}
+          >
+            <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
+            <Text style={styles.whatsAppButtonText}>Contact via WhatsApp</Text>
+          </Pressable>
+        </View>
+
+        {/* ── Compact reply form ────────────────────────────────────────────── */}
+        <View style={styles.replyFormContainer}>
+          {replyFile ? (
+            <View style={styles.replyPreviewRow}>
+              <Image source={{ uri: replyFile.uri }} style={styles.replyPreviewImage} resizeMode="cover" />
+              <Pressable style={styles.removePreviewBtn} onPress={() => setReplyFile(null)}>
+                <Ionicons name="close-circle" size={24} color={C.textSecondary} />
+              </Pressable>
+            </View>
+          ) : null}
+
+          <View style={styles.replyInputRow}>
+            <TextInput
+              multiline
+              value={replyComment}
+              onChangeText={(t) => {
+                setReplyComment(t);
+                setReplySuccess(false);
+              }}
+              placeholder="Add a comment..."
+              placeholderTextColor={C.textSecondary}
+              style={styles.replyInput}
+              editable={!isSubmittingReply}
+            />
+            <View style={styles.replyActions}>
+              <Pressable
+                onPress={handlePickReplyImage}
+                style={({ pressed }) => [styles.replyIconBtn, pressed && { opacity: 0.6 }]}
+                hitSlop={8}
+              >
+                <Ionicons name="image-outline" size={22} color={C.textSecondary} />
+              </Pressable>
+              <Pressable
+                onPress={handleSubmitReply}
+                disabled={isSubmittingReply || (!replyComment.trim() && !replyFile)}
+                style={({ pressed }) => [
+                  styles.sendBtn,
+                  (isSubmittingReply || (!replyComment.trim() && !replyFile)) && { opacity: 0.5 },
+                  pressed && !isSubmittingReply && { opacity: 0.8 },
+                ]}
+                hitSlop={8}
+              >
+                {isSubmittingReply ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Ionicons name="send" size={18} color="#FFFFFF" />
+                )}
+              </Pressable>
+            </View>
+          </View>
+
+          {replyError ? <Text style={styles.replyErrorText}>{replyError}</Text> : null}
+          {replySuccess ? <Text style={styles.replySuccessText}>Reply submitted successfully.</Text> : null}
+        </View>
+
+        {/* ── Replies list ───────────────────────────────────────────────────── */}
+        <Text style={styles.repliesTitle}>
+          {post.replies.length === 0
+            ? "No Replies Yet"
+            : post.replies.length === 1
+              ? "1 Reply"
+              : `${post.replies.length} Replies`}
+        </Text>
+
+        {post.replies.length === 0 ? (
+          <View style={styles.emptyReplies}>
+            <Text style={styles.emptyText}>Be the first to reply and offer your help.</Text>
           </View>
         ) : (
-          <Pressable style={styles.uploadButton} onPress={handlePickReplyImage}>
-            <Text style={styles.uploadButtonText}>🖼️  Attach an image (optional)</Text>
-          </Pressable>
+          post.replies.map((reply) => (
+            <ReplyCard key={reply.id} reply={reply} router={router} />
+          ))
         )}
-
-        <Pressable
-          onPress={handleSubmitReply}
-          disabled={isSubmittingReply}
-          style={[styles.primaryButton, isSubmittingReply && { opacity: 0.7 }]}
-        >
-          {isSubmittingReply ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Submit Reply</Text>
-          )}
-        </Pressable>
-
-        {replyError ? <Text style={styles.replyErrorText}>{replyError}</Text> : null}
-        {replySuccess ? (
-          <Text style={styles.replySuccessText}>Reply submitted successfully.</Text>
-        ) : null}
-      </View>
-
-      {/* ── Replies list ── */}
-      <Text style={styles.sectionTitle}>
-        {post.replies.length === 0
-          ? "No Replies Yet"
-          : post.replies.length === 1
-            ? "1 Reply"
-            : `${post.replies.length} Replies`}
-      </Text>
-
-      {post.replies.length === 0 ? (
-        <View style={styles.emptyReplies}>
-          <Text style={styles.emptyText}>Be the first to reply and offer your help.</Text>
-        </View>
-      ) : (
-        post.replies.map((reply) => <ReplyCard key={reply.id} reply={reply} router={router} />)
-      )}
-    </ScrollView>
+      </ScrollView>
     </>
   );
 }
 
-function ReplyCard({ reply, router }: { reply: HelpPostReply; router: ReturnType<typeof useRouter> }) {
+function ReplyCard({
+  reply,
+  router,
+}: {
+  reply: HelpPostReply;
+  router: ReturnType<typeof useRouter>;
+}) {
   return (
-    <View style={styles.replyCard}>
-      <View style={styles.replyHeader}>
-        <Pressable
-          onPress={() =>
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (router.push as any)({
-              pathname: "/public-profile/[lawyerId]",
-              params: { lawyerId: reply.lawyerId },
-            })
-          }
-          style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          hitSlop={6}
-        >
-          <Text style={styles.replyAuthorLink}>{reply.lawyerFullName}</Text>
-        </Pressable>
-        <Text style={styles.replyDate}>{formatUtcDateTime(reply.createdAt)}</Text>
-      </View>
-
-      {reply.comment ? <Text style={styles.replyComment}>{reply.comment}</Text> : null}
-
-      <AttachmentPreview url={reply.attachmentUrl} variant="full" />
-
+    <View style={styles.replyRow}>
       <Pressable
-        style={styles.whatsAppButtonSmall}
-        onPress={() => openWhatsApp(reply.lawyerWhatsAppNumber)}
+        onPress={() =>
+          (router.push as (opts: { pathname: string; params: { lawyerId: string } }) => void)({
+            pathname: "/public-profile/[lawyerId]",
+            params: { lawyerId: reply.lawyerId },
+          })
+        }
+        style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+        hitSlop={8}
       >
-        <Text style={styles.whatsAppButtonSmallText}>WhatsApp</Text>
+        <View style={styles.replyAvatar}>
+          <Text style={styles.replyAvatarText}>
+            {reply.lawyerFullName.trim().charAt(0).toUpperCase()}
+          </Text>
+        </View>
       </Pressable>
+
+      <View style={styles.replyBubbleWrap}>
+        <View style={styles.replyBubble}>
+          <View style={styles.replyBubbleHeader}>
+            <Pressable
+              onPress={() =>
+                (router.push as (opts: { pathname: string; params: { lawyerId: string } }) => void)({
+                  pathname: "/public-profile/[lawyerId]",
+                  params: { lawyerId: reply.lawyerId },
+                })
+              }
+              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+              hitSlop={6}
+            >
+              <Text style={styles.replyAuthorName}>{reply.lawyerFullName}</Text>
+            </Pressable>
+            <Text style={styles.replyTimestamp}>{formatUtcRelative(reply.createdAt)}</Text>
+          </View>
+          {reply.comment ? <Text style={styles.replyCommentText}>{reply.comment}</Text> : null}
+          <AttachmentPreview url={reply.attachmentUrl} variant="compact" />
+        </View>
+
+        <Pressable
+          onPress={() => openWhatsApp(reply.lawyerWhatsAppNumber)}
+          style={({ pressed }) => [styles.replyWhatsAppLink, pressed && { opacity: 0.7 }]}
+        >
+          <Ionicons name="logo-whatsapp" size={14} color={C.whatsAppGreen} />
+          <Text style={styles.replyWhatsAppText}>WhatsApp</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
+// ── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f4f7fc" },
+  container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 16, paddingBottom: 110, gap: 14 },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f4f7fc",
+    backgroundColor: C.bg,
     padding: 24,
   },
-  loadingText: { marginTop: 10, color: "#5d7296" },
-  errorText: { color: "#b13550", fontSize: 15, textAlign: "center", marginBottom: 16 },
+  loadingText: { marginTop: 10, color: C.textSecondary, fontSize: 14 },
+  errorText: { color: C.danger, fontSize: 15, textAlign: "center", marginBottom: 16 },
   backButton: {
-    borderRadius: 10,
-    backgroundColor: "#1f5bd8",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  backButtonText: { color: "#fff", fontWeight: "700" },
-
-  // Hero card
-  heroCard: { borderRadius: 20, padding: 18, backgroundColor: "#113e87", gap: 12 },
-  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  badgeText: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  pillText: { color: "#d9e6ff", fontSize: 12, fontWeight: "600" },
-  description: { color: "#fff", fontSize: 16, lineHeight: 24, fontWeight: "600" },
-  metaRow: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 4 },
-  metaText: { color: "#b9cef8", fontSize: 12 },
-  metaAuthorLink: { color: "#93c5fd", fontSize: 12, fontWeight: "700" },
-  whatsAppButton: {
-    marginTop: 4,
-    borderRadius: 10,
-    backgroundColor: "#25D366",
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  whatsAppButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-
-  // Reply form
-  replyFormCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#dbe5f6",
-    backgroundColor: "#fff",
-    padding: 16,
-    gap: 10,
-  },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#1a2f52", marginBottom: -4 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#d2deef",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: "#1f2e49",
-    backgroundColor: "#fbfdff",
-  },
-  textArea: { minHeight: 90, textAlignVertical: "top" },
-  uploadButton: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#1f5bd8",
-    borderStyle: "dashed",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-    backgroundColor: "#f0f5ff",
-  },
-  uploadButtonText: { color: "#1f5bd8", fontWeight: "600", fontSize: 13 },
-  previewContainer: { gap: 8 },
-  previewImage: {
-    width: "100%",
-    height: 160,
-    borderRadius: 10,
-    backgroundColor: "#e5ebf6",
-  },
-  removeImageButton: {
-    alignSelf: "flex-start",
     borderRadius: 8,
-    backgroundColor: "#fce8ec",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: C.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
-  removeImageText: { color: "#b13550", fontWeight: "600", fontSize: 13 },
-  primaryButton: {
-    borderRadius: 10,
-    backgroundColor: "#1f5bd8",
-    height: 46,
+  backButtonText: { color: "#FFFFFF", fontWeight: "700" },
+
+  // Main post card
+  postCard: {
+    borderRadius: 12,
+    backgroundColor: C.card,
+    padding: 16,
+    ...C.shadow,
+  },
+  postHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: C.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  primaryButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  replyErrorText: { color: "#b13550", fontSize: 13 },
-  replySuccessText: { color: "#1e7a3e", fontWeight: "600", fontSize: 13 },
-
-  // Replies list
-  emptyReplies: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#d7e1f3",
-    backgroundColor: "#fff",
-    padding: 20,
-    alignItems: "center",
+  avatarText: { color: "#FFFFFF", fontSize: 20, fontWeight: "700" },
+  headerCenter: { flex: 1, justifyContent: "center", minWidth: 0 },
+  authorName: { fontSize: 16, fontWeight: "700", color: C.primary },
+  subtitle: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
+  postDescription: {
+    fontSize: 15,
+    color: C.textPrimary,
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 12,
   },
-  emptyText: { color: "#60769a", textAlign: "center" },
+  mediaWrapper: { marginTop: 4, marginBottom: 12 },
+  whatsAppButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: C.whatsAppGreen,
+  },
+  whatsAppButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
 
-  // Reply card
-  replyCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#dbe5f6",
-    backgroundColor: "#fff",
-    padding: 14,
+  // Compact reply form
+  replyFormContainer: {
+    backgroundColor: C.bg,
+    borderRadius: 12,
+    padding: 12,
     gap: 8,
   },
-  replyHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  replyAuthor: { fontWeight: "700", color: "#1a2f52", fontSize: 14 },
-  replyAuthorLink: { fontWeight: "700", color: "#0070F3", fontSize: 14 },
-  replyDate: { color: "#8fa3c4", fontSize: 11 },
-  replyComment: { color: "#2c3f61", lineHeight: 20 },
-  whatsAppButtonSmall: {
-    alignSelf: "flex-start",
-    borderRadius: 8,
-    backgroundColor: "#25D366",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  replyPreviewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  whatsAppButtonSmallText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  replyPreviewImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: C.inputBorder,
+  },
+  removePreviewBtn: { padding: 4 },
+  replyInputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  replyInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 120,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
+    backgroundColor: C.card,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingTop: 10,
+    fontSize: 15,
+    color: C.textPrimary,
+  },
+  replyActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  replyIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  replyErrorText: { color: C.danger, fontSize: 12 },
+  replySuccessText: { color: "#059669", fontWeight: "600", fontSize: 12 },
+
+  // Replies list
+  repliesTitle: { fontSize: 16, fontWeight: "700", color: C.textPrimary, marginBottom: 4 },
+  emptyReplies: {
+    borderRadius: 12,
+    backgroundColor: C.card,
+    padding: 20,
+    alignItems: "center",
+    ...C.shadow,
+  },
+  emptyText: { color: C.textSecondary, textAlign: "center", fontSize: 14 },
+
+  // Reply card (LinkedIn-style bubble)
+  replyRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 8,
+  },
+  replyAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  replyAvatarText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  replyBubbleWrap: { flex: 1, minWidth: 0 },
+  replyBubble: {
+    backgroundColor: "#F3F2EF",
+    borderRadius: 8,
+    padding: 10,
+    gap: 6,
+  },
+  replyBubbleHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  replyAuthorName: { fontSize: 13, fontWeight: "700", color: C.textPrimary },
+  replyTimestamp: { fontSize: 11, color: C.textSecondary },
+  replyCommentText: { fontSize: 14, color: C.textPrimary, lineHeight: 20 },
+  replyWhatsAppLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
+    alignSelf: "flex-start",
+  },
+  replyWhatsAppText: { fontSize: 12, fontWeight: "600", color: C.whatsAppGreen },
 });
