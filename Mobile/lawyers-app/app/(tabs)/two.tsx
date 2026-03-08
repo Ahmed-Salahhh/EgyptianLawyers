@@ -168,12 +168,12 @@ export default function ProfileTab() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* ── Warning banners ────────────────────────────────────────────────── */}
+      {/* ── Pending approval banner ─────────────────────────────────────────── */}
       {!isVerified && (
-        <View style={styles.bannerWarning}>
-          <Ionicons name="time-outline" size={20} color={C.warning} />
-          <Text style={styles.bannerText}>
-            Your account is pending admin verification. You cannot access the network yet.
+        <View style={styles.bannerPending}>
+          <Ionicons name="time-outline" size={20} color="#B76E00" />
+          <Text style={styles.bannerPendingText}>
+            Pending Approval. We are verifying your syndicate credentials.
           </Text>
         </View>
       )}
@@ -377,17 +377,23 @@ const styles = StyleSheet.create({
   helperText: { color: C.textSecondary, fontSize: 14 },
   errorText: { color: C.danger, textAlign: "center", fontSize: 15 },
 
-  bannerWarning: {
+  bannerPending: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: C.warningBg,
-    padding: 14,
+    backgroundColor: "#FFF4E5",
+    borderRadius: 8,
+    padding: 16,
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#FCD34D",
+    borderColor: "#FFB020",
+  },
+  bannerPendingText: {
+    flex: 1,
+    color: "#B76E00",
+    fontWeight: "700",
+    fontSize: 14,
   },
   bannerDanger: {
     flexDirection: "row",

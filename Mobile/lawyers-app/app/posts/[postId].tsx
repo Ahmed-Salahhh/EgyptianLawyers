@@ -49,7 +49,8 @@ function openWhatsApp(number: string) {
 export default function PostDetailScreen() {
   const router = useRouter();
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const { token } = useSession();
+  const { token, profile } = useSession();
+  const isSuspended = profile?.isSuspended ?? false;
 
   const [post, setPost] = useState<HelpPostDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -212,6 +213,7 @@ export default function PostDetailScreen() {
         </View>
 
         {/* ── Compact reply form ────────────────────────────────────────────── */}
+        {!isSuspended && (
         <View style={styles.replyFormContainer}>
           {replyFile ? (
             <View style={styles.replyPreviewRow}>
@@ -265,6 +267,7 @@ export default function PostDetailScreen() {
           {replyError ? <Text style={styles.replyErrorText}>{replyError}</Text> : null}
           {replySuccess ? <Text style={styles.replySuccessText}>Reply submitted successfully.</Text> : null}
         </View>
+        )}
 
         {/* ── Replies list ───────────────────────────────────────────────────── */}
         <Text style={styles.repliesTitle}>

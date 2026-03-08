@@ -35,8 +35,12 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      await signIn({ email: email.trim(), password: password.trim() });
-      router.replace("/(tabs)");
+      const profile = await signIn({ email: email.trim(), password: password.trim() });
+      if (!profile?.isVerified) {
+        router.replace("/(tabs)/two");
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error.";
       setError(message);

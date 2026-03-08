@@ -41,6 +41,8 @@ const C = {
 export default function HomeScreen() {
   const router = useRouter();
   const { token, profile } = useSession();
+  const isVerified = profile?.isVerified ?? false;
+  const isSuspended = profile?.isSuspended ?? false;
 
   const [posts, setPosts] = useState<HelpPostFeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +56,11 @@ export default function HomeScreen() {
     async (page: number, append: boolean) => {
       if (!token) {
         setError("Not authenticated.");
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return;
+      }
+      if (!isVerified) {
         setIsLoading(false);
         setIsRefreshing(false);
         return;
@@ -81,7 +88,7 @@ export default function HomeScreen() {
         setIsLoadingMore(false);
       }
     },
-    [token],
+    [token, isVerified],
   );
 
   useEffect(() => {
@@ -106,6 +113,19 @@ export default function HomeScreen() {
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={C.primary} />
         <Text style={styles.loadingText}>Loading feed...</Text>
+      </View>
+    );
+  }
+
+  if (!isVerified) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="lock-closed-outline" size={64} color="#666" />
+        <Text style={styles.pendingTitle}>Account Pending Approval</Text>
+        <Text style={styles.pendingSubtitle}>
+          Your syndicate card is currently under review by our admins. Please check
+          your profile for updates.
+        </Text>
       </View>
     );
   }
@@ -170,7 +190,13 @@ export default function HomeScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <PostCard item={item} router={router} token={token} onReplySubmitted={() => loadPage(1, false)} />
+          <PostCard
+            item={item}
+            router={router}
+            token={token}
+            isSuspended={isSuspended}
+            onReplySubmitted={() => loadPage(1, false)}
+          />
         )}
       />
     </View>
@@ -181,11 +207,13 @@ function PostCard({
   item,
   router,
   token,
+  isSuspended,
   onReplySubmitted,
 }: {
   item: HelpPostFeedItem;
   router: ReturnType<typeof useRouter>;
   token: string | null;
+  isSuspended: boolean;
   onReplySubmitted: () => void;
 }) {
   const [replyText, setReplyText] = useState("");
@@ -262,6 +290,7 @@ function PostCard({
       <View style={styles.divider} />
 
       {/* ── Compact inline reply pill ───────────────────────────────────────── */}
+      {!isSuspended && (
       <View style={styles.replyPill}>
         <TextInput
           value={replyText}
@@ -289,6 +318,7 @@ function PostCard({
           )}
         </Pressable>
       </View>
+      )}
     </View>
   );
 }
@@ -361,6 +391,19 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 16, fontWeight: "700", color: C.textPrimary },
   emptySubtitle: { color: C.textSecondary, textAlign: "center", lineHeight: 22, fontSize: 14 },
+  pendingTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0A2540",
+    marginTop: 16,
+  },
+  pendingSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    paddingHorizontal: 32,
+    marginTop: 8,
+  },
 
   postCard: {
     borderRadius: 12,

@@ -49,7 +49,7 @@ type SessionContextValue = {
   token: string | null;
   profile: AuthProfile | null;
   isAuthenticated: boolean;
-  signIn: (credentials: LoginRequest) => Promise<void>;
+  signIn: (credentials: LoginRequest) => Promise<AuthProfile>;
   signOut: () => Promise<void>;
 };
 
@@ -166,6 +166,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
     setToken(accessToken);
     setProfile(nextProfile);
+    return nextProfile;
   };
 
   const signOut = async () => {

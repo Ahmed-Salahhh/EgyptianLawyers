@@ -37,6 +37,7 @@ const C = {
 export default function CreatePostScreen() {
   const router = useRouter();
   const { token, profile } = useSession();
+  const isSuspended = profile?.isSuspended ?? false;
 
   const [cities, setCities] = useState<LookupCity[]>([]);
   const [isLoadingLookups, setIsLoadingLookups] = useState(false);
@@ -158,6 +159,19 @@ export default function CreatePostScreen() {
       setIsSubmitting(false);
     }
   };
+
+  if (isSuspended) {
+    return (
+      <View style={styles.suspendedContainer}>
+        <Ionicons name="ban-outline" size={64} color="#D32F2F" />
+        <Text style={styles.suspendedTitle}>Account Suspended</Text>
+        <Text style={styles.suspendedSubtitle}>
+          Your account has been temporarily suspended from posting. You still have
+          read-only access to the community feed.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -440,4 +454,25 @@ const styles = StyleSheet.create({
   },
   dangerButtonText: { color: "#fff", fontWeight: "700" },
   inlineError: { color: C.danger, fontSize: 13, marginTop: 8 },
+
+  suspendedContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.bg,
+    padding: 24,
+  },
+  suspendedTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0A2540",
+    marginTop: 16,
+  },
+  suspendedSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    paddingHorizontal: 32,
+    marginTop: 8,
+  },
 });
