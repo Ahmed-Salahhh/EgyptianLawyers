@@ -14,9 +14,11 @@ public sealed record HelpPostReplyDto(
     Guid LawyerId,
     string LawyerFullName,
     string LawyerWhatsAppNumber,
+    Guid? ParentReplyId,
     string? Comment,
     string? AttachmentUrl,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    List<HelpPostReplyDto> ChildReplies);
 
 public sealed record HelpPostDetailResult(
     Guid Id,
@@ -44,23 +46,20 @@ public sealed class GetHelpPostDetailHandler : IRequestHandler<GetHelpPostDetail
             .Include(p => p.Court)
             .Include(p => p.City)
             .Include(p => p.Lawyer)
-            .Include(p => p.Replies)
+            .Include(p => p.Replies.Where(r => r.ParentReplyId == null))
                 .ThenInclude(r => r.Lawyer)
+            .Include(p => p.Replies.Where(r => r.ParentReplyId == null))
+                .ThenInclude(r => r.ChildReplies)
+                .ThenInclude(c => c.Lawyer)
             .FirstOrDefaultAsync(p => p.Id == request.PostId, cancellationToken);
 
         if (post is null)
             throw new NotFoundException(new NotFoundError("HelpPost", request.PostId));
 
         var replies = post.Replies
+            .Where(r => r.ParentReplyId == null)
             .OrderBy(r => r.CreatedAt)
-            .Select(r => new HelpPostReplyDto(
-                r.Id,
-                r.LawyerId,
-                r.Lawyer.FullName,
-                r.Lawyer.WhatsAppNumber,
-                r.Comment,
-                r.AttachmentUrl,
-                r.CreatedAt))
+            .Select(r => MapToReplyDto(r))
             .ToList();
 
         return new HelpPostDetailResult(
@@ -76,6 +75,25 @@ public sealed class GetHelpPostDetailHandler : IRequestHandler<GetHelpPostDetail
             post.Lawyer.WhatsAppNumber,
             post.CreatedAt,
             replies);
+    }
+
+    private static HelpPostReplyDto MapToReplyDto(Domain.Entities.HelpPostReply r)
+    {
+        var children = r.ChildReplies
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => MapToReplyDto(c))
+            .ToList();
+
+        return new HelpPostReplyDto(
+            r.Id,
+            r.LawyerId,
+            r.Lawyer.FullName,
+            r.Lawyer.WhatsAppNumber,
+            r.ParentReplyId,
+            r.Comment,
+            r.AttachmentUrl,
+            r.CreatedAt,
+            children);
     }
 }
 

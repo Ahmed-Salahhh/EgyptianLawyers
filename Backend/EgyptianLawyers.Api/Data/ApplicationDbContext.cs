@@ -101,6 +101,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(l => l.HelpPostReplies)
                 .HasForeignKey(e => e.LawyerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(e => e.ParentReply)
+                .WithMany(p => p.ChildReplies)
+                .HasForeignKey(e => e.ParentReplyId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder

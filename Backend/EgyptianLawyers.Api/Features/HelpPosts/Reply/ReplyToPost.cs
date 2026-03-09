@@ -19,6 +19,10 @@ public sealed class ReplyToPostForm
     [FromForm]
     public string? Comment { get; set; }
 
+    /// <summary>Optional parent reply ID for nested/threaded comments.</summary>
+    [FromForm]
+    public Guid? ParentReplyId { get; set; }
+
     /// <summary>Optional image or document attachment (max 10 MB).</summary>
     public IFormFile? File { get; set; }
 }
@@ -28,6 +32,7 @@ public sealed record ReplyToPostCommand(
     Guid HelpPostId,
     string IdentityUserId,
     string? Comment,
+    Guid? ParentReplyId,
     IFormFile? File
 ) : IRequest<ReplyToPostResult>;
 
@@ -115,6 +120,18 @@ public sealed class ReplyToPostHandler : IRequestHandler<ReplyToPostCommand, Rep
         if (commenter is null)
             throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
 
+        // If replying to another reply, validate the parent exists and belongs to the same post
+        if (request.ParentReplyId.HasValue)
+        {
+            var parentReply = await _dbContext.HelpPostReplies
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    r => r.Id == request.ParentReplyId.Value && r.HelpPostId == request.HelpPostId,
+                    cancellationToken);
+            if (parentReply is null)
+                throw new NotFoundException(new NotFoundError("Parent reply", request.ParentReplyId.Value));
+        }
+
         // Upload attachment to Cloudinary if one was provided.
         string? attachmentUrl = null;
         if (request.File is not null)
@@ -129,6 +146,7 @@ public sealed class ReplyToPostHandler : IRequestHandler<ReplyToPostCommand, Rep
             Id = Guid.NewGuid(),
             HelpPostId = request.HelpPostId,
             LawyerId = commenter.Id,
+            ParentReplyId = request.ParentReplyId,
             Comment = request.Comment,
             AttachmentUrl = attachmentUrl,
             CreatedAt = DateTime.UtcNow,
@@ -195,6 +213,7 @@ public sealed class ReplyToPostEndpoint : IEndpoint
                         helpPostId,
                         identityUserId,
                         form.Comment,
+                        form.ParentReplyId,
                         form.File
                     );
 
