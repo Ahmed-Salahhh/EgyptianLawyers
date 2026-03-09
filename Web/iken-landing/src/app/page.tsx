@@ -2,7 +2,6 @@
 
 import { ContactSection } from "./sections/ContactSection";
 import { ClientsSection } from "./sections/ClientsSection";
-import { FeaturedPlatformSection } from "./sections/FeaturedPlatformSection";
 import { Header } from "./sections/Header";
 import { HeroSection } from "./sections/HeroSection";
 import { ProjectsSection } from "./sections/ProjectsSection";
@@ -20,7 +19,6 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <ServicesSection />
           <ProjectsSection />
-          <FeaturedPlatformSection />
           <TestimonialsSection />
           <ClientsSection />
         </div>

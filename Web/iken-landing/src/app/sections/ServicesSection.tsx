@@ -193,12 +193,13 @@ function ServicesExperience() {
         <div className="relative grid h-full gap-0 lg:grid-cols-[0.88fr_1.12fr]">
           <aside className="border-b border-white/10 px-6 py-8 sm:px-10 lg:flex lg:h-full lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:border-white/10 lg:px-12 lg:py-12">
             <div className="w-full lg:mx-auto lg:max-w-[34rem]">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#69b6ff]">Our Services</p>
-              <h3 className="mt-2 text-3xl font-semibold tracking-tight text-white">Scroll To Explore</h3>
-              <p className="mt-3 max-w-md text-sm leading-relaxed text-[#c4d3ea]">
-                As you scroll, each service flows into the next with synchronized timeline and visual transition.
-              </p>
-
+              <div className="inline-flex items-center gap-2 text-[#4ea7ff]">
+                <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[#2f8fff]" />
+                <span className="text-xs font-semibold uppercase tracking-[0.18em]">Our Featured Services</span>
+              </div>
+              <h3 className="mt-4 max-w-[18ch] text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+                We Provide Great IT &amp; Business Solutions
+              </h3>
               <ol className="mt-8 border-l border-white/15 pl-5">
                 {services.map((service, idx) => (
                   <ServiceTimelineItem
