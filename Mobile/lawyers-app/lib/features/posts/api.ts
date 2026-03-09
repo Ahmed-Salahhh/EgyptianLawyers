@@ -135,6 +135,33 @@ export async function replyToPost(
   }
 }
 
+// ── Upload attachment (returns URL for use in update) ─────────────────────────
+
+export async function uploadHelpPostAttachment(
+  token: string,
+  file: PickedFile,
+): Promise<string> {
+  const form = new FormData();
+  appendFile(form, file);
+
+  const response = await fetch(`${API_BASE_URL}/api/help-posts/upload-attachment`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to upload attachment (HTTP ${response.status}): ${body}`);
+  }
+
+  const data = (await response.json()) as { url: string };
+  return data.url;
+}
+
 // ── Update & delete post ─────────────────────────────────────────────────────
 
 export async function updateHelpPost(

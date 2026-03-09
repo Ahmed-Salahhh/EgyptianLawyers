@@ -5,7 +5,9 @@ import {
   deleteHelpPostReply,
   fetchHelpPostById,
   replyToPost,
+  updateHelpPost,
   updateHelpPostReply,
+  uploadHelpPostAttachment,
 } from "@/lib/features/posts/api";
 import {
   countTotalReplies,
@@ -34,6 +36,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // ── Design tokens (match Feed LinkedIn-style) ─────────────────────────────────
 const C = {
@@ -77,6 +80,12 @@ export default function PostDetailScreen() {
     type: "post" | "comment";
     text: string;
     name?: string;
+    attachmentUrl?: string | null;
+  } | null>(null);
+  const [editingPost, setEditingPost] = useState<{
+    id: string;
+    text: string;
+    attachmentUrl?: string | null;
   } | null>(null);
   const [editingComment, setEditingComment] = useState<{
     id: string;
@@ -89,6 +98,9 @@ export default function PostDetailScreen() {
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
   const [replySuccess, setReplySuccess] = useState(false);
+  const [isSavingPost, setIsSavingPost] = useState(false);
+  const [editPostError, setEditPostError] = useState<string | null>(null);
+  const [editingPostFile, setEditingPostFile] = useState<PickedFile | null>(null);
 
   const loadPost = () => {
     if (!postId || !token) {
@@ -188,11 +200,65 @@ export default function PostDetailScreen() {
         name: activeMenu.name ?? "",
       });
       setReplyingTo(null);
-      // Focus will happen when input is visible
     } else if (activeMenu.type === "post") {
-      (router.push as (href: string) => void)(`/posts/${activeMenu.id}/edit`);
+      setEditingPost({
+        id: activeMenu.id,
+        text: activeMenu.text,
+        attachmentUrl: activeMenu.attachmentUrl ?? undefined,
+      });
+      setEditingPostFile(null);
+      setEditPostError(null);
     }
     setActiveMenu(null);
+  };
+
+  const handlePickEditImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      setEditPostError("Permission to access photos is required.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const ext = asset.uri.split(".").pop() ?? "jpg";
+      setEditingPostFile({
+        uri: asset.uri,
+        name: asset.fileName ?? `photo.${ext}`,
+        mimeType: asset.mimeType ?? `image/${ext}`,
+      });
+      setEditPostError(null);
+    }
+  };
+
+  const handleSaveEditPost = async () => {
+    if (!token || !editingPost) return;
+    const trimmed = editingPost.text.trim();
+    if (!trimmed) {
+      setEditPostError("Description is required.");
+      return;
+    }
+    setEditPostError(null);
+    setIsSavingPost(true);
+    try {
+      let attachmentUrl: string | null = editingPost.attachmentUrl ?? null;
+      if (editingPostFile) {
+        attachmentUrl = await uploadHelpPostAttachment(token, editingPostFile);
+      }
+      await updateHelpPost(token, editingPost.id, trimmed, attachmentUrl);
+      setEditingPost(null);
+      setEditingPostFile(null);
+      loadPost();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update post.";
+      setEditPostError(msg);
+    } finally {
+      setIsSavingPost(false);
+    }
   };
 
   const handleMenuDelete = () => {
@@ -312,6 +378,7 @@ export default function PostDetailScreen() {
                     id: post.id,
                     type: "post",
                     text: post.description,
+                    attachmentUrl: post.attachmentUrl,
                   })
                 }
                 style={styles.menuButton}
@@ -477,7 +544,7 @@ export default function PostDetailScreen() {
         <Modal
           visible={!!activeMenu}
           transparent
-          animationType="slide"
+          animationType="fade"
           onRequestClose={() => setActiveMenu(null)}
         >
           <TouchableOpacity
@@ -525,6 +592,98 @@ export default function PostDetailScreen() {
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
+        </Modal>
+
+        {/* ── Edit Post Modal ───────────────────────────────────────────────── */}
+        <Modal
+          visible={!!editingPost}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => {
+            setEditingPost(null);
+            setEditingPostFile(null);
+            setEditPostError(null);
+          }}
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={["bottom"]}>
+            <View style={styles.editPostHeader}>
+              <TouchableOpacity
+                onPress={() => {
+                  setEditingPost(null);
+                  setEditingPostFile(null);
+                  setEditPostError(null);
+                }}
+                hitSlop={8}
+              >
+                <Text style={styles.editPostCancel}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.editPostTitle}>Edit Post</Text>
+              <TouchableOpacity
+                onPress={handleSaveEditPost}
+                disabled={isSavingPost}
+                hitSlop={8}
+              >
+                {isSavingPost ? (
+                  <ActivityIndicator size="small" color={C.primary} />
+                ) : (
+                  <Text style={[styles.editPostSave, isSavingPost && { opacity: 0.5 }]}>
+                    Save
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <TextInput
+                multiline
+                value={editingPost?.text ?? ""}
+                onChangeText={(text) =>
+                  setEditingPost((prev) => (prev ? { ...prev, text } : null))
+                }
+                placeholder="Describe your legal need..."
+                placeholderTextColor={C.textSecondary}
+                style={styles.editPostInput}
+                editable={!isSavingPost}
+              />
+              {(editingPostFile || editingPost?.attachmentUrl) ? (
+                <View style={styles.editPostAttachmentRow}>
+                  <Image
+                    source={{
+                      uri: editingPostFile?.uri ?? editingPost?.attachmentUrl ?? "",
+                    }}
+                    style={styles.editPostImage}
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    style={styles.removeImageBtn}
+                    onPress={() => {
+                      setEditingPostFile(null);
+                      setEditingPost((prev) =>
+                        prev ? { ...prev, attachmentUrl: null } : null,
+                      );
+                    }}
+                  >
+                    <Text style={styles.removeImageText}>Remove Image</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addAttachmentBtn}
+                  onPress={handlePickEditImage}
+                  disabled={isSavingPost}
+                >
+                  <Ionicons name="image-outline" size={24} color={C.primary} />
+                  <Text style={styles.addAttachmentText}>Add Attachment</Text>
+                </TouchableOpacity>
+              )}
+              {editPostError ? (
+                <Text style={styles.editPostError}>{editPostError}</Text>
+              ) : null}
+            </ScrollView>
+          </SafeAreaView>
         </Modal>
       </KeyboardAvoidingView>
     </>
@@ -860,4 +1019,60 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   replyWhatsAppText: { fontSize: 12, fontWeight: "600", color: C.whatsAppGreen },
+
+  // Edit Post modal
+  editPostHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: C.card,
+    borderBottomWidth: 1,
+    borderColor: C.divider,
+  },
+  editPostCancel: { fontSize: 16, color: C.textSecondary },
+  editPostTitle: { fontSize: 17, fontWeight: "700", color: C.textPrimary },
+  editPostSave: { fontSize: 16, fontWeight: "600", color: C.primary },
+  editPostInput: {
+    minHeight: 100,
+    marginTop: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
+    backgroundColor: C.card,
+    padding: 16,
+    fontSize: 15,
+    color: C.textPrimary,
+    textAlignVertical: "top",
+  },
+  editPostAttachmentRow: { marginTop: 16, gap: 12 },
+  editPostImage: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: 12,
+    backgroundColor: C.inputBorder,
+  },
+  removeImageBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: C.danger,
+  },
+  removeImageText: { color: "#FFFFFF", fontWeight: "600", fontSize: 14 },
+  addAttachmentBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
+    borderStyle: "dashed",
+  },
+  addAttachmentText: { fontSize: 15, fontWeight: "600", color: C.primary },
+  editPostError: { color: C.danger, fontSize: 14, marginTop: 12 },
 });
