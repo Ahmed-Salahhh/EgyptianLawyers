@@ -31,8 +31,8 @@
 }
 
 :root {
-  --background: #f7f2e8;
-  --foreground: #12213a;
+  --background: #060b13; /* Deep Navy */
+  --foreground: #f4f6f8; /* Off-White */
 }
 
 html,
