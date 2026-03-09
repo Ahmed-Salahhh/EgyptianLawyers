@@ -18,7 +18,8 @@ public sealed record HelpPostReplyDto(
     string? Comment,
     string? AttachmentUrl,
     DateTime CreatedAt,
-    List<HelpPostReplyDto> ChildReplies);
+    List<HelpPostReplyDto> ChildReplies
+);
 
 public sealed record HelpPostDetailResult(
     Guid Id,
@@ -32,19 +33,24 @@ public sealed record HelpPostDetailResult(
     string LawyerFullName,
     string LawyerWhatsAppNumber,
     DateTime CreatedAt,
-    List<HelpPostReplyDto> Replies);
+    List<HelpPostReplyDto> Replies
+);
 
-public sealed class GetHelpPostDetailHandler : IRequestHandler<GetHelpPostDetailQuery, HelpPostDetailResult>
+public sealed class GetHelpPostDetailHandler
+    : IRequestHandler<GetHelpPostDetailQuery, HelpPostDetailResult>
 {
     private readonly ApplicationDbContext _dbContext;
 
     public GetHelpPostDetailHandler(ApplicationDbContext dbContext) => _dbContext = dbContext;
 
-    public async Task<HelpPostDetailResult> Handle(GetHelpPostDetailQuery request, CancellationToken cancellationToken)
+    public async Task<HelpPostDetailResult> Handle(
+        GetHelpPostDetailQuery request,
+        CancellationToken cancellationToken
+    )
     {
         // 1. Fetch the main Help Post and its direct relations (No replies yet)
-        var post = await _dbContext.HelpPosts
-            .Include(p => p.Court)
+        var post = await _dbContext
+            .HelpPosts.Include(p => p.Court)
             .Include(p => p.City)
             .Include(p => p.Lawyer)
             .FirstOrDefaultAsync(p => p.Id == request.PostId, cancellationToken);
@@ -54,8 +60,8 @@ public sealed class GetHelpPostDetailHandler : IRequestHandler<GetHelpPostDetail
 
         // 2. Fetch ALL replies for this post into memory at once.
         // EF Core's Change Tracker will automatically link every ParentReply to its ChildReplies infinitely deep!
-        var allReplies = await _dbContext.HelpPostReplies
-            .Include(r => r.Lawyer)
+        var allReplies = await _dbContext
+            .HelpPostReplies.Include(r => r.Lawyer)
             .Where(r => r.HelpPostId == request.PostId)
             .ToListAsync(cancellationToken);
 
@@ -79,7 +85,28 @@ public sealed class GetHelpPostDetailHandler : IRequestHandler<GetHelpPostDetail
             post.Lawyer.FullName,
             post.Lawyer.WhatsAppNumber,
             post.CreatedAt,
-            replies);
+            replies
+        );
+    }
+
+    private static HelpPostReplyDto MapToReplyDto(Domain.Entities.HelpPostReply r)
+    {
+        var children = r
+            .ChildReplies.OrderBy(c => c.CreatedAt)
+            .Select(c => MapToReplyDto(c))
+            .ToList();
+
+        return new HelpPostReplyDto(
+            r.Id,
+            r.LawyerId,
+            r.Lawyer.FullName,
+            r.Lawyer.WhatsAppNumber,
+            r.ParentReplyId,
+            r.Comment,
+            r.AttachmentUrl,
+            r.CreatedAt,
+            children
+        );
     }
 }
 
@@ -87,11 +114,14 @@ public sealed class GetHelpPostDetailEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/help-posts/{id:guid}", async (Guid id, IMediator mediator) =>
-            {
-                var result = await mediator.Send(new GetHelpPostDetailQuery(id));
-                return Results.Ok(result);
-            })
+        app.MapGet(
+                "/api/help-posts/{id:guid}",
+                async (Guid id, IMediator mediator) =>
+                {
+                    var result = await mediator.Send(new GetHelpPostDetailQuery(id));
+                    return Results.Ok(result);
+                }
+            )
             .RequireAuthorization(PolicyNames.RequireVerified)
             .WithName("GetHelpPostDetail")
             .WithTags("HelpPosts");
