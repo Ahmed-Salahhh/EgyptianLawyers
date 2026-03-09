@@ -36,9 +36,11 @@ export type HelpPostReply = {
   lawyerId: string;
   lawyerFullName: string;
   lawyerWhatsAppNumber: string;
+  parentReplyId?: string | null;
   comment: string | null;
   attachmentUrl: string | null;
   createdAt: string;
+  childReplies?: HelpPostReply[];
 };
 
 export type HelpPostDetails = {
@@ -84,5 +86,17 @@ export function normalizeFeedPage(raw: unknown): FeedPage {
 }
 
 export function normalizeHelpPostDetails(raw: HelpPostDetails): HelpPostDetails {
-  return { ...raw, replies: raw.replies ?? [] };
+  const replies = (raw.replies ?? []).map((r) => ({
+    ...r,
+    childReplies: r.childReplies ?? [],
+  }));
+  return { ...raw, replies };
+}
+
+/** Count total replies including nested children. */
+export function countTotalReplies(replies: HelpPostReply[]): number {
+  return replies.reduce(
+    (sum, r) => sum + 1 + countTotalReplies(r.childReplies ?? []),
+    0,
+  );
 }

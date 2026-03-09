@@ -1,7 +1,12 @@
 import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
 import { fetchHelpPostById, replyToPost } from "@/lib/features/posts/api";
-import type { HelpPostDetails, HelpPostReply, PickedFile } from "@/lib/features/posts/types";
+import {
+  countTotalReplies,
+  type HelpPostDetails,
+  type HelpPostReply,
+  type PickedFile,
+} from "@/lib/features/posts/types";
 import { formatUtcRelative } from "@/lib/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -16,6 +21,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -56,6 +62,7 @@ export default function PostDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [replyComment, setReplyComment] = useState("");
   const [replyFile, setReplyFile] = useState<PickedFile | null>(null);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -120,9 +127,16 @@ export default function PostDetailScreen() {
     setIsSubmittingReply(true);
 
     try {
-      await replyToPost(token, postId, trimmed || null, replyFile);
+      await replyToPost(
+        token,
+        postId,
+        trimmed || null,
+        replyFile,
+        replyingTo?.id ?? null,
+      );
       setReplyComment("");
       setReplyFile(null);
+      setReplyingTo(null);
       setReplySuccess(true);
       loadPost();
     } catch (err) {
@@ -215,6 +229,14 @@ export default function PostDetailScreen() {
         {/* ── Compact reply form ────────────────────────────────────────────── */}
         {!isSuspended && (
         <View style={styles.replyFormContainer}>
+          {replyingTo && (
+            <View style={styles.replyingToBanner}>
+              <Text style={styles.replyingToText}>Replying to {replyingTo.name}</Text>
+              <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={8}>
+                <Text style={styles.replyingToClear}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           {replyFile ? (
             <View style={styles.replyPreviewRow}>
               <Image source={{ uri: replyFile.uri }} style={styles.replyPreviewImage} resizeMode="cover" />
@@ -270,42 +292,72 @@ export default function PostDetailScreen() {
         )}
 
         {/* ── Replies list ───────────────────────────────────────────────────── */}
-        <Text style={styles.repliesTitle}>
-          {post.replies.length === 0
-            ? "No Replies Yet"
-            : post.replies.length === 1
-              ? "1 Reply"
-              : `${post.replies.length} Replies`}
-        </Text>
+        {(() => {
+          const totalCount = countTotalReplies(post.replies);
+          return (
+            <>
+              <Text style={styles.repliesTitle}>
+                {totalCount === 0
+                  ? "No Replies Yet"
+                  : totalCount === 1
+                    ? "1 Reply"
+                    : `${totalCount} Replies`}
+              </Text>
 
-        {post.replies.length === 0 ? (
-          <View style={styles.emptyReplies}>
-            <Text style={styles.emptyText}>Be the first to reply and offer your help.</Text>
-          </View>
-        ) : (
-          post.replies.map((reply) => (
-            <ReplyCard key={reply.id} reply={reply} router={router} />
-          ))
-        )}
+              {post.replies.length === 0 ? (
+                <View style={styles.emptyReplies}>
+                  <Text style={styles.emptyText}>Be the first to reply and offer your help.</Text>
+                </View>
+              ) : (
+                post.replies.map((reply) => (
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    depth={0}
+                    isSuspended={isSuspended}
+                    onReplyPress={(target) => setReplyingTo(target)}
+                    router={router}
+                  />
+                ))
+              )}
+            </>
+          );
+        })()}
       </ScrollView>
     </>
   );
 }
 
-function ReplyCard({
-  reply,
+function CommentItem({
+  comment,
+  depth = 0,
+  isSuspended,
+  onReplyPress,
   router,
 }: {
-  reply: HelpPostReply;
+  comment: HelpPostReply;
+  depth?: number;
+  isSuspended: boolean;
+  onReplyPress: (target: { id: string; name: string }) => void;
   router: ReturnType<typeof useRouter>;
 }) {
+  const wrapperStyle = [
+    depth > 0 && {
+      marginLeft: 32,
+      borderLeftWidth: 2,
+      borderColor: "#EBEBEB",
+      paddingLeft: 12,
+    },
+  ];
+
   return (
-    <View style={styles.replyRow}>
+    <View style={wrapperStyle}>
+      <View style={styles.replyRow}>
       <Pressable
         onPress={() =>
           (router.push as (opts: { pathname: string; params: { lawyerId: string } }) => void)({
             pathname: "/public-profile/[lawyerId]",
-            params: { lawyerId: reply.lawyerId },
+            params: { lawyerId: comment.lawyerId },
           })
         }
         style={({ pressed }) => [pressed && { opacity: 0.7 }]}
@@ -313,7 +365,7 @@ function ReplyCard({
       >
         <View style={styles.replyAvatar}>
           <Text style={styles.replyAvatarText}>
-            {reply.lawyerFullName.trim().charAt(0).toUpperCase()}
+            {comment.lawyerFullName.trim().charAt(0).toUpperCase()}
           </Text>
         </View>
       </Pressable>
@@ -325,28 +377,51 @@ function ReplyCard({
               onPress={() =>
                 (router.push as (opts: { pathname: string; params: { lawyerId: string } }) => void)({
                   pathname: "/public-profile/[lawyerId]",
-                  params: { lawyerId: reply.lawyerId },
+                  params: { lawyerId: comment.lawyerId },
                 })
               }
               style={({ pressed }) => [pressed && { opacity: 0.7 }]}
               hitSlop={6}
             >
-              <Text style={styles.replyAuthorName}>{reply.lawyerFullName}</Text>
+              <Text style={styles.replyAuthorName}>{comment.lawyerFullName}</Text>
             </Pressable>
-            <Text style={styles.replyTimestamp}>{formatUtcRelative(reply.createdAt)}</Text>
+            <Text style={styles.replyTimestamp}>{formatUtcRelative(comment.createdAt)}</Text>
           </View>
-          {reply.comment ? <Text style={styles.replyCommentText}>{reply.comment}</Text> : null}
-          <AttachmentPreview url={reply.attachmentUrl} variant="compact" />
+          {comment.comment ? <Text style={styles.replyCommentText}>{comment.comment}</Text> : null}
+          <AttachmentPreview url={comment.attachmentUrl} variant="compact" />
+          {!isSuspended && (
+            <TouchableOpacity
+              onPress={() => onReplyPress({ id: comment.id, name: comment.lawyerFullName })}
+              style={{ marginTop: 4 }}
+              hitSlop={8}
+            >
+              <Text style={styles.replyButtonText}>Reply</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Pressable
-          onPress={() => openWhatsApp(reply.lawyerWhatsAppNumber)}
+          onPress={() => openWhatsApp(comment.lawyerWhatsAppNumber)}
           style={({ pressed }) => [styles.replyWhatsAppLink, pressed && { opacity: 0.7 }]}
         >
           <Ionicons name="logo-whatsapp" size={14} color={C.whatsAppGreen} />
           <Text style={styles.replyWhatsAppText}>WhatsApp</Text>
         </Pressable>
       </View>
+      </View>
+
+      {comment.childReplies && comment.childReplies.length > 0
+        ? comment.childReplies.map((child) => (
+            <CommentItem
+              key={child.id}
+              comment={child}
+              depth={depth + 1}
+              isSuspended={isSuspended}
+              onReplyPress={onReplyPress}
+              router={router}
+            />
+          ))
+        : null}
     </View>
   );
 }
@@ -416,6 +491,26 @@ const styles = StyleSheet.create({
     backgroundColor: C.whatsAppGreen,
   },
   whatsAppButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+
+  // Replying to banner
+  replyingToBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#F3F2EF",
+    padding: 8,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  replyingToText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  replyingToClear: {
+    fontSize: 16,
+    color: "#666",
+    paddingHorizontal: 4,
+  },
 
   // Compact reply form
   replyFormContainer: {
@@ -521,6 +616,11 @@ const styles = StyleSheet.create({
   replyAuthorName: { fontSize: 13, fontWeight: "700", color: C.textPrimary },
   replyTimestamp: { fontSize: 11, color: C.textSecondary },
   replyCommentText: { fontSize: 14, color: C.textPrimary, lineHeight: 20 },
+  replyButtonText: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "600",
+  },
   replyWhatsAppLink: {
     flexDirection: "row",
     alignItems: "center",

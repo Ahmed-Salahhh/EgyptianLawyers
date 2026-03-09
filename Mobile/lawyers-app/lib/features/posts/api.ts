@@ -113,9 +113,11 @@ export async function replyToPost(
   helpPostId: string,
   comment: string | null,
   file?: PickedFile | null,
+  parentReplyId?: string | null,
 ): Promise<void> {
   const form = new FormData();
   if (comment?.trim()) form.append("comment", comment.trim());
+  if (parentReplyId) form.append("parentReplyId", parentReplyId);
   if (file) appendFile(form, file);
 
   const response = await fetch(`${API_BASE_URL}/api/help-posts/${helpPostId}/replies`, {
