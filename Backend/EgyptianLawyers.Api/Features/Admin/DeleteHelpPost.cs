@@ -23,7 +23,7 @@ public sealed class DeleteHelpPostHandler : IRequestHandler<DeleteHelpPostComman
         if (post is null)
             throw new NotFoundException(new NotFoundError("HelpPost", request.Id));
 
-        _dbContext.HelpPosts.Remove(post);
+        post.IsDeleted = true;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

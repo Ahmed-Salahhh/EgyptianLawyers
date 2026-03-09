@@ -82,7 +82,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(l => l.HelpPosts)
                 .HasForeignKey(e => e.LawyerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
         });
+        modelBuilder.Entity<HelpPost>().HasQueryFilter(e => !e.IsDeleted);
 
         modelBuilder.Entity<HelpPostReply>(entity =>
         {
@@ -107,7 +110,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(p => p.ChildReplies)
                 .HasForeignKey(e => e.ParentReplyId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
         });
+        modelBuilder.Entity<HelpPostReply>().HasQueryFilter(e => !e.IsDeleted);
 
         modelBuilder
             .Entity<Lawyer>()

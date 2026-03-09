@@ -9,6 +9,7 @@ public class HelpPostReply
     public string? Comment { get; set; }
     public string? AttachmentUrl { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsDeleted { get; set; } = false;
     public HelpPost HelpPost { get; set; } = null!;
     public Lawyer Lawyer { get; set; } = null!;
     public HelpPostReply? ParentReply { get; set; }

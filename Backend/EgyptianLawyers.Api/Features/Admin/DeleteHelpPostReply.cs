@@ -23,7 +23,7 @@ public sealed class DeleteHelpPostReplyHandler : IRequestHandler<DeleteHelpPostR
         if (reply is null)
             throw new NotFoundException(new NotFoundError("HelpPostReply", request.Id));
 
-        _dbContext.HelpPostReplies.Remove(reply);
+        reply.IsDeleted = true;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
