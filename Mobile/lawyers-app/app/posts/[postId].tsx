@@ -15,7 +15,9 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -172,9 +174,23 @@ export default function PostDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: post.courtName }} />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* ── Main post card (white, Feed-style) ─────────────────────────────── */}
-        <View style={styles.postCard}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        {/* ── Child 1: Scrollable content (post + replies) ───────────────────── */}
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[
+            styles.content,
+            !isSuspended && { paddingBottom: 120 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
+        >
+          {/* ── Main post card (white, Feed-style) ─────────────────────────────── */}
+          <View style={styles.postCard}>
           <View style={styles.postHeader}>
             <Pressable
               onPress={() =>
@@ -226,71 +242,6 @@ export default function PostDetailScreen() {
           </Pressable>
         </View>
 
-        {/* ── Compact reply form ────────────────────────────────────────────── */}
-        {!isSuspended && (
-        <View style={styles.replyFormContainer}>
-          {replyingTo && (
-            <View style={styles.replyingToBanner}>
-              <Text style={styles.replyingToText}>Replying to {replyingTo.name}</Text>
-              <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={8}>
-                <Text style={styles.replyingToClear}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          {replyFile ? (
-            <View style={styles.replyPreviewRow}>
-              <Image source={{ uri: replyFile.uri }} style={styles.replyPreviewImage} resizeMode="cover" />
-              <Pressable style={styles.removePreviewBtn} onPress={() => setReplyFile(null)}>
-                <Ionicons name="close-circle" size={24} color={C.textSecondary} />
-              </Pressable>
-            </View>
-          ) : null}
-
-          <View style={styles.replyInputRow}>
-            <TextInput
-              multiline
-              value={replyComment}
-              onChangeText={(t) => {
-                setReplyComment(t);
-                setReplySuccess(false);
-              }}
-              placeholder="Add a comment..."
-              placeholderTextColor={C.textSecondary}
-              style={styles.replyInput}
-              editable={!isSubmittingReply}
-            />
-            <View style={styles.replyActions}>
-              <Pressable
-                onPress={handlePickReplyImage}
-                style={({ pressed }) => [styles.replyIconBtn, pressed && { opacity: 0.6 }]}
-                hitSlop={8}
-              >
-                <Ionicons name="image-outline" size={22} color={C.textSecondary} />
-              </Pressable>
-              <Pressable
-                onPress={handleSubmitReply}
-                disabled={isSubmittingReply || (!replyComment.trim() && !replyFile)}
-                style={({ pressed }) => [
-                  styles.sendBtn,
-                  (isSubmittingReply || (!replyComment.trim() && !replyFile)) && { opacity: 0.5 },
-                  pressed && !isSubmittingReply && { opacity: 0.8 },
-                ]}
-                hitSlop={8}
-              >
-                {isSubmittingReply ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Ionicons name="send" size={18} color="#FFFFFF" />
-                )}
-              </Pressable>
-            </View>
-          </View>
-
-          {replyError ? <Text style={styles.replyErrorText}>{replyError}</Text> : null}
-          {replySuccess ? <Text style={styles.replySuccessText}>Reply submitted successfully.</Text> : null}
-        </View>
-        )}
-
         {/* ── Replies list ───────────────────────────────────────────────────── */}
         {(() => {
           const totalCount = countTotalReplies(post.replies);
@@ -323,7 +274,89 @@ export default function PostDetailScreen() {
             </>
           );
         })()}
-      </ScrollView>
+        </ScrollView>
+
+        {/* ── Child 2: Pinned comment input (Instagram/Twitter style) ─────────── */}
+        {!isSuspended && (
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopWidth: 1,
+              borderColor: "#EBEBEB",
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              paddingBottom: Platform.OS === "ios" ? 24 : 12,
+              gap: 8,
+            }}
+          >
+            {replyingTo && (
+              <View style={styles.replyingToBanner}>
+                <Text style={styles.replyingToText}>Replying to {replyingTo.name}</Text>
+                <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={8}>
+                  <Text style={styles.replyingToClear}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {replyFile ? (
+              <View style={styles.replyPreviewRow}>
+                <Image
+                  source={{ uri: replyFile.uri }}
+                  style={styles.replyPreviewImage}
+                  resizeMode="cover"
+                />
+                <Pressable style={styles.removePreviewBtn} onPress={() => setReplyFile(null)}>
+                  <Ionicons name="close-circle" size={24} color={C.textSecondary} />
+                </Pressable>
+              </View>
+            ) : null}
+
+            <View style={styles.replyInputRow}>
+              <TextInput
+                multiline
+                value={replyComment}
+                onChangeText={(t) => {
+                  setReplyComment(t);
+                  setReplySuccess(false);
+                }}
+                placeholder="Add a comment..."
+                placeholderTextColor={C.textSecondary}
+                style={styles.replyInput}
+                editable={!isSubmittingReply}
+              />
+              <View style={styles.replyActions}>
+                <Pressable
+                  onPress={handlePickReplyImage}
+                  style={({ pressed }) => [styles.replyIconBtn, pressed && { opacity: 0.6 }]}
+                  hitSlop={8}
+                >
+                  <Ionicons name="image-outline" size={22} color={C.textSecondary} />
+                </Pressable>
+                <Pressable
+                  onPress={handleSubmitReply}
+                  disabled={isSubmittingReply || (!replyComment.trim() && !replyFile)}
+                  style={({ pressed }) => [
+                    styles.sendBtn,
+                    (isSubmittingReply || (!replyComment.trim() && !replyFile)) && { opacity: 0.5 },
+                    pressed && !isSubmittingReply && { opacity: 0.8 },
+                  ]}
+                  hitSlop={8}
+                >
+                  {isSubmittingReply ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Ionicons name="send" size={18} color="#FFFFFF" />
+                  )}
+                </Pressable>
+              </View>
+            </View>
+
+            {replyError ? <Text style={styles.replyErrorText}>{replyError}</Text> : null}
+            {replySuccess ? (
+              <Text style={styles.replySuccessText}>Reply submitted successfully.</Text>
+            ) : null}
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </>
   );
 }
@@ -430,7 +463,7 @@ function CommentItem({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  content: { padding: 16, paddingBottom: 110, gap: 14 },
+  content: { padding: 16, paddingBottom: 30, gap: 14 },
   centered: {
     flex: 1,
     alignItems: "center",
