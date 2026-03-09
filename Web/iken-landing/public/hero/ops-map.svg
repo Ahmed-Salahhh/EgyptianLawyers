@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="680" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E6F0FF"/>
+      <stop offset="1" stop-color="#F2FFFA"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="120" y1="80" x2="520" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2358C8"/>
+      <stop offset="1" stop-color="#4B8FF0"/>
+    </linearGradient>
+  </defs>
+  <rect width="680" height="420" rx="28" fill="url(#g1)"/>
+  <path d="M84 324H596" stroke="#CBDCF8" stroke-width="2"/>
+  <path d="M84 280H596" stroke="#D5E3FB" stroke-width="2"/>
+  <path d="M84 236H596" stroke="#DFEAFC" stroke-width="2"/>
+  <circle cx="148" cy="236" r="12" fill="#2D6ADD"/>
+  <circle cx="276" cy="280" r="12" fill="#2D6ADD"/>
+  <circle cx="404" cy="236" r="12" fill="#2D6ADD"/>
+  <circle cx="532" cy="172" r="12" fill="#2D6ADD"/>
+  <path d="M148 236L276 280L404 236L532 172" stroke="url(#g2)" stroke-width="5" stroke-linecap="round"/>
+  <rect x="84" y="72" width="228" height="116" rx="16" fill="white" stroke="#D9E6FC"/>
+  <rect x="328" y="72" width="268" height="116" rx="16" fill="white" stroke="#D9E6FC"/>
+  <rect x="104" y="98" width="92" height="14" rx="7" fill="#E6EEFD"/>
+  <rect x="104" y="124" width="178" height="12" rx="6" fill="#EEF4FF"/>
+  <rect x="104" y="146" width="148" height="12" rx="6" fill="#EEF4FF"/>
+  <rect x="348" y="98" width="72" height="14" rx="7" fill="#E6EEFD"/>
+  <rect x="348" y="124" width="218" height="12" rx="6" fill="#EEF4FF"/>
+  <rect x="348" y="146" width="190" height="12" rx="6" fill="#EEF4FF"/>
+  <text x="104" y="186" fill="#27508F" font-size="18" font-family="Arial" font-weight="700">IKEN Delivery Visibility</text>
+</svg>

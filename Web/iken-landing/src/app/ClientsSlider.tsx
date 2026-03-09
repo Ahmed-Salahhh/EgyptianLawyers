@@ -45,14 +45,14 @@ export function ClientsSlider() {
   };
 
   return (
-    <div className="relative rounded-3xl border border-slate-800/80 bg-slate-950 px-5 py-6 shadow-[0_18px_40px_rgba(15,23,42,0.85)]">
+    <div className="relative rounded-3xl border border-[#d9e6fb] bg-white px-5 py-6 shadow-[0_14px_35px_rgba(17,63,130,0.14)]">
       {/* top accent line */}
-      <div className="pointer-events-none absolute left-8 right-8 top-0 h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+      <div className="pointer-events-none absolute left-8 right-8 top-0 h-px bg-gradient-to-r from-transparent via-[#3d7be0] to-transparent" />
 
       <Slider {...settings}>
         {BRANDS.map((client) => (
           <div key={client.name} className="px-2">
-            <div className="flex h-24 items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-900/80 px-4 py-3 transition hover:border-blue-500/70 hover:bg-slate-900">
+            <div className="flex h-24 items-center justify-center rounded-2xl border border-[#dce8fa] bg-[#f7fbff] px-4 py-3 transition hover:border-[#9abcf6] hover:bg-white">
               <Image
                 src={client.logo}
                 alt={client.name}
@@ -67,4 +67,3 @@ export function ClientsSlider() {
     </div>
   );
 }
-

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <rect width="160" height="160" rx="80" fill="#FFF0E7"/>
+  <circle cx="80" cy="62" r="28" fill="#C68053"/>
+  <path d="M34 138c9-23 27-34 46-34s37 11 46 34" fill="#9A5D37"/>
+  <text x="80" y="148" text-anchor="middle" font-family="Arial" font-size="12" fill="#7A431F">CONTACT</text>
+</svg>
