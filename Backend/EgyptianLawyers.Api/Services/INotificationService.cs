@@ -18,18 +18,20 @@ public interface INotificationService
     );
 
     /// <summary>
-    /// Notifies the author of a help post that someone left a new comment.
-    /// No-ops silently when the commenter IS the post author.
+    /// Notifies the target user that someone commented or replied.
+    /// No-ops silently when the commenter IS the target (caller must check).
     /// </summary>
-    /// <param name="postAuthorId">LawyerId of the post author (notification recipient).</param>
+    /// <param name="targetUserId">LawyerId of the notification recipient.</param>
     /// <param name="postId">Used to build the DataPayload for deep-linking.</param>
-    /// <param name="commenterName">Displayed in the notification body.</param>
-    /// <param name="authorFcmToken">Optional — FCM push is skipped when null or empty.</param>
+    /// <param name="commenterName">Name of the user who commented/replied.</param>
+    /// <param name="targetFcmToken">Optional — FCM push is skipped when null or empty.</param>
+    /// <param name="notificationBody">The text/body of the push notification (e.g. "X commented on your post").</param>
     Task SendCommentNotificationAsync(
-        Guid postAuthorId,
+        Guid targetUserId,
         Guid postId,
         string commenterName,
-        string? authorFcmToken,
+        string? targetFcmToken,
+        string notificationBody,
         CancellationToken cancellationToken
     );
 }

@@ -4,6 +4,7 @@ using EgyptianLawyers.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EgyptianLawyers.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260309113904_AddSoftDeleteToCityCourtLawyer")]
+    partial class AddSoftDeleteToCityCourtLawyer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -173,11 +176,6 @@ namespace EgyptianLawyers.Api.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<Guid>("LawyerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -212,15 +210,7 @@ namespace EgyptianLawyers.Api.Migrations
                     b.Property<Guid>("HelpPostId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<Guid>("LawyerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("ParentReplyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -228,8 +218,6 @@ namespace EgyptianLawyers.Api.Migrations
                     b.HasIndex("HelpPostId");
 
                     b.HasIndex("LawyerId");
-
-                    b.HasIndex("ParentReplyId");
 
                     b.ToTable("HelpPostReplies");
                 });
@@ -556,16 +544,9 @@ namespace EgyptianLawyers.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EgyptianLawyers.Api.Domain.Entities.HelpPostReply", "ParentReply")
-                        .WithMany("ChildReplies")
-                        .HasForeignKey("ParentReplyId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("HelpPost");
 
                     b.Navigation("Lawyer");
-
-                    b.Navigation("ParentReply");
                 });
 
             modelBuilder.Entity("EgyptianLawyers.Api.Domain.Entities.ProfileView", b =>
@@ -664,11 +645,6 @@ namespace EgyptianLawyers.Api.Migrations
             modelBuilder.Entity("EgyptianLawyers.Api.Domain.Entities.HelpPost", b =>
                 {
                     b.Navigation("Replies");
-                });
-
-            modelBuilder.Entity("EgyptianLawyers.Api.Domain.Entities.HelpPostReply", b =>
-                {
-                    b.Navigation("ChildReplies");
                 });
 
             modelBuilder.Entity("EgyptianLawyers.Api.Domain.Entities.Lawyer", b =>

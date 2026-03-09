@@ -23,23 +23,7 @@ public sealed class DeleteCityHandler : IRequestHandler<DeleteCityCommand, Unit>
         if (city is null)
             throw new NotFoundException(new NotFoundError("City", request.Id));
 
-        var hasCourts = await _dbContext.Courts.AnyAsync(c => c.CityId == request.Id, cancellationToken);
-        if (hasCourts)
-            throw new FluentValidation.ValidationException(
-                "Cannot delete this city because it contains registered courts.");
-
-        var hasHelpPosts = await _dbContext.HelpPosts.AnyAsync(p => p.CityId == request.Id, cancellationToken);
-        if (hasHelpPosts)
-            throw new FluentValidation.ValidationException(
-                "Cannot delete a city that has existing help posts.");
-
-        var hasActiveLawyers = await _dbContext.Lawyers
-            .AnyAsync(l => l.ActiveCities.Any(c => c.Id == request.Id), cancellationToken);
-        if (hasActiveLawyers)
-            throw new FluentValidation.ValidationException(
-                "Cannot delete a city that has active lawyers. Reassign them first.");
-
-        _dbContext.Cities.Remove(city);
+        city.IsDeleted = true;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
@@ -53,7 +37,7 @@ public sealed class DeleteCityEndpoint : IEndpoint
         app.MapDelete("/api/admin/cities/{id:guid}", async (Guid id, IMediator mediator) =>
             {
                 await mediator.Send(new DeleteCityCommand(id));
-                return Results.NoContent();
+                return Results.Ok(new { message = "City deleted successfully." });
             })
             .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .WithName("DeleteCity")

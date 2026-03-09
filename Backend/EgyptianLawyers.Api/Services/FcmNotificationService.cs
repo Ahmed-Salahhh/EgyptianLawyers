@@ -142,23 +142,23 @@ public sealed class FcmNotificationService : INotificationService
     // ── New comment on post ───────────────────────────────────────────────────
 
     public async Task SendCommentNotificationAsync(
-        Guid postAuthorId,
+        Guid targetUserId,
         Guid postId,
         string commenterName,
-        string? authorFcmToken,
+        string? targetFcmToken,
+        string notificationBody,
         CancellationToken cancellationToken)
     {
         const string title = "New Comment";
-        var body = $"{commenterName} commented on your help request.";
         var dataPayload = JsonSerializer.Serialize(new { postId = postId.ToString() });
 
         // ── Persist in-app notification ───────────────────────────────────────
         _dbContext.UserNotifications.Add(new UserNotification
         {
             Id = Guid.NewGuid(),
-            LawyerId = postAuthorId,
+            LawyerId = targetUserId,
             Title = title,
-            Body = body,
+            Body = notificationBody,
             DataPayload = dataPayload,
             CreatedAt = DateTime.UtcNow,
         });
@@ -166,27 +166,27 @@ public sealed class FcmNotificationService : INotificationService
 
         _logger.LogInformation(
             "Saved comment in-app notification for lawyer {LawyerId} on post {PostId}.",
-            postAuthorId, postId);
+            targetUserId, postId);
 
         // ── FCM push (optional) ───────────────────────────────────────────────
-        if (string.IsNullOrEmpty(authorFcmToken))
+        if (string.IsNullOrEmpty(targetFcmToken))
         {
             _logger.LogInformation(
-                "Post author {LawyerId} has no FCM token. Push skipped.", postAuthorId);
+                "Target user {LawyerId} has no FCM token. Push skipped.", targetUserId);
             return;
         }
 
         var message = new Message
         {
-            Token = authorFcmToken,
-            Notification = new Notification { Title = title, Body = body },
+            Token = targetFcmToken,
+            Notification = new Notification { Title = title, Body = notificationBody },
             Data = new Dictionary<string, string> { ["postId"] = postId.ToString() },
         };
 
         await FirebaseMessaging.DefaultInstance.SendAsync(message, cancellationToken);
 
         _logger.LogInformation(
-            "FCM comment push sent to post author {LawyerId} for post {PostId}.",
-            postAuthorId, postId);
+            "FCM comment push sent to lawyer {LawyerId} for post {PostId}.",
+            targetUserId, postId);
     }
 }

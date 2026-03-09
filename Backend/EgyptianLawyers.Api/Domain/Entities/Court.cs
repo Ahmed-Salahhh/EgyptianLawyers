@@ -5,6 +5,7 @@ public class Court
     public Guid Id { get; set; }
     public required string Name { get; set; }
     public Guid CityId { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public City City { get; set; } = null!;
     public List<HelpPost> HelpPosts { get; set; } = [];

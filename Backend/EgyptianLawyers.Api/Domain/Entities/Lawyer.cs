@@ -9,6 +9,7 @@ public class Lawyer
     public required string WhatsAppNumber { get; set; }
     public bool IsVerified { get; set; } = false;
     public bool IsSuspended { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
     public DateTime CreatedAt { get; set; }
     public required string IdentityUserId { get; set; }
     public string? FcmToken { get; set; }

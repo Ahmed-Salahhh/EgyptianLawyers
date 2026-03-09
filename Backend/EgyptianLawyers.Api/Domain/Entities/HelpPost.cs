@@ -9,6 +9,7 @@ public class HelpPost
     public Guid CityId { get; set; }
     public Guid LawyerId { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public Court Court { get; set; } = null!;
     public City City { get; set; } = null!;

@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,7 +36,8 @@ const C = {
 
 export default function CreatePostScreen() {
   const router = useRouter();
-  const { token } = useSession();
+  const { token, profile } = useSession();
+  const isSuspended = profile?.isSuspended ?? false;
 
   const [cities, setCities] = useState<LookupCity[]>([]);
   const [isLoadingLookups, setIsLoadingLookups] = useState(false);
@@ -157,299 +160,283 @@ export default function CreatePostScreen() {
     }
   };
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* ── Hero ── */}
-      <View style={styles.heroCard}>
-        <Text style={styles.heroEyebrow}>New Request</Text>
-        <Text style={styles.heroTitle}>Publish a Help Post</Text>
-        <Text style={styles.heroSub}>
-          Select the court, verify linked city, then describe what you need.
+  if (isSuspended) {
+    return (
+      <View style={styles.suspendedContainer}>
+        <Ionicons name="ban-outline" size={64} color="#D32F2F" />
+        <Text style={styles.suspendedTitle}>Account Suspended</Text>
+        <Text style={styles.suspendedSubtitle}>
+          Your account has been temporarily suspended from posting. You still have
+          read-only access to the community feed.
         </Text>
       </View>
+    );
+  }
 
-      {isLoadingLookups ? (
-        <View style={styles.card}>
-          <View style={styles.row}>
+  return (
+    <KeyboardAvoidingView
+      style={styles.keyboardWrap}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
+      <View style={styles.container}>
+        {isLoadingLookups ? (
+          <View style={styles.loadingBlock}>
             <ActivityIndicator size="small" color={C.primary} />
             <Text style={styles.helperText}>Loading cities and courts...</Text>
           </View>
-        </View>
-      ) : lookupsError ? (
-        <View style={styles.errorCard}>
-          <Text style={styles.errorText}>{lookupsError}</Text>
-          <Pressable style={styles.dangerButton} onPress={loadLookups}>
-            <Text style={styles.dangerButtonText}>Retry</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          {/* Step 1 */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Select Court</Text>
-            {courtOptions.length === 0 ? (
-              <Text style={styles.helperText}>No courts available.</Text>
-            ) : (
-              <>
-                <Pressable
-                  onPress={() => setIsCourtDropdownOpen((prev) => !prev)}
-                  style={styles.dropdownTrigger}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.dropdownValue,
-                        !selectedCourt ? styles.dropdownPlaceholder : null,
-                      ]}
-                    >
-                      {selectedCourt ? selectedCourt.courtName : "Select court"}
-                    </Text>
-                    {selectedCourt ? (
-                      <Text style={styles.dropdownSubText}>{selectedCourt.cityName}</Text>
-                    ) : null}
-                  </View>
-                  <Ionicons
-                    name={isCourtDropdownOpen ? "chevron-up" : "chevron-down"}
-                    size={18}
-                    color={C.textSecondary}
-                  />
-                </Pressable>
-
-                {isCourtDropdownOpen ? (
-                  <View style={styles.dropdownMenu}>
-                    <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
-                      {courtOptions.map((item, index) => {
-                        const active = selectedCourtId === item.courtId;
-                        return (
-                          <Pressable
-                            key={item.courtId}
-                            onPress={() => handleSelectCourt(item.courtId, item.cityId)}
-                            style={[
-                              styles.courtOption,
-                              active && styles.courtOptionActive,
-                              index === courtOptions.length - 1 && styles.courtOptionLast,
-                            ]}
-                          >
-                            <View style={{ flex: 1 }}>
-                              <Text style={[styles.courtOptionTitle, active && styles.courtOptionTitleActive]}>
-                                {item.courtName}
-                              </Text>
-                              <Text style={styles.courtOptionSubtitle}>{item.cityName}</Text>
-                            </View>
-                            {active ? <Ionicons name='checkmark-circle' size={18} color={C.accent} /> : null}
-                          </Pressable>
-                        );
-                      })}
-                    </ScrollView>
-                  </View>
-                ) : null}
-              </>
-            )}
-          </View>
-
-          {/* Step 2 */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Details</Text>
-
-            <TextInput
-              multiline
-              numberOfLines={5}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Describe the legal help request..."
-              placeholderTextColor={C.textSecondary}
-              style={[styles.input, styles.textArea]}
-            />
-
-            {/* Image picker */}
-            {pickedFile ? (
-              <View style={styles.previewContainer}>
-                <Image
-                  source={{ uri: pickedFile.uri }}
-                  style={styles.previewImage}
-                  resizeMode="cover"
-                />
-                <Pressable style={styles.removeImageButton} onPress={() => setPickedFile(null)}>
-                  <Text style={styles.removeImageText}>✕  Remove image</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable style={styles.uploadButton} onPress={handlePickImage}>
-                <Ionicons name="image-outline" size={20} color={C.accent} />
-                <Text style={styles.uploadButtonText}>Attach an image (optional)</Text>
-              </Pressable>
-            )}
-
-            <Pressable
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-              style={[styles.primaryButton, isSubmitting && { opacity: 0.7 }]}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Publish Post</Text>
-              )}
+        ) : lookupsError ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorText}>{lookupsError}</Text>
+            <Pressable style={styles.dangerButton} onPress={loadLookups}>
+              <Text style={styles.dangerButtonText}>Retry</Text>
             </Pressable>
+          </View>
+        ) : (
+          <>
+            {/* Top row: Avatar | Name + Court selector */}
+            <View style={styles.topRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {profile?.fullName?.trim().charAt(0).toUpperCase() ?? "?"}
+                </Text>
+              </View>
+              <View style={styles.topRight}>
+                <Text style={styles.userName}>{profile?.fullName?.trim() ?? "You"}</Text>
+                {courtOptions.length > 0 ? (
+                  <Pressable
+                    onPress={() => setIsCourtDropdownOpen((prev) => !prev)}
+                    style={styles.courtBadge}
+                  >
+                    <Text style={styles.courtBadgeText}>
+                      {selectedCourt
+                        ? `${selectedCourt.courtName} • ${selectedCourt.cityName}`
+                        : "Select court"}
+                    </Text>
+                    <Ionicons
+                      name={isCourtDropdownOpen ? "chevron-up" : "chevron-down"}
+                      size={14}
+                      color="#666666"
+                      style={{ marginLeft: 4 }}
+                    />
+                  </Pressable>
+                ) : (
+                  <Text style={styles.helperText}>No courts available.</Text>
+                )}
+              </View>
+            </View>
+
+            {isCourtDropdownOpen && courtOptions.length > 0 ? (
+              <View style={styles.dropdownMenu}>
+                <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
+                  {courtOptions.map((item, index) => {
+                    const active = selectedCourtId === item.courtId;
+                    return (
+                      <Pressable
+                        key={item.courtId}
+                        onPress={() => handleSelectCourt(item.courtId, item.cityId)}
+                        style={[
+                          styles.courtOption,
+                          active && styles.courtOptionActive,
+                          index === courtOptions.length - 1 && styles.courtOptionLast,
+                        ]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.courtOptionTitle, active && styles.courtOptionTitleActive]}>
+                            {item.courtName}
+                          </Text>
+                          <Text style={styles.courtOptionSubtitle}>{item.cityName}</Text>
+                        </View>
+                        {active ? <Ionicons name="checkmark-circle" size={18} color={C.accent} /> : null}
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            {/* Middle: TextInput (flex: 1) */}
+            <View style={styles.inputArea}>
+              <TextInput
+                multiline
+                value={description}
+                onChangeText={setDescription}
+                placeholder="What legal help do you need in this court?..."
+                placeholderTextColor="#999999"
+                style={styles.textInput}
+              />
+              {pickedFile ? (
+                <View style={styles.previewWrap}>
+                  <Image
+                    source={{ uri: pickedFile.uri }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
+                  <Pressable style={styles.removeImageButton} onPress={() => setPickedFile(null)}>
+                    <Text style={styles.removeImageText}>✕ Remove</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
 
             {submitError ? <Text style={styles.inlineError}>{submitError}</Text> : null}
-          </View>
-        </>
-      )}
-    </ScrollView>
+
+            {/* Bottom toolbar */}
+            <View style={styles.toolbar}>
+              <Pressable onPress={handlePickImage} style={({ pressed }) => [styles.photoBtn, pressed && { opacity: 0.6 }]}>
+                <Ionicons name="image-outline" size={26} color="#0A2540" />
+              </Pressable>
+              <Pressable
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+                style={[styles.publishBtn, isSubmitting && { opacity: 0.7 }]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.publishBtnText}>Publish</Text>
+                )}
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
-  content: { padding: 16, paddingBottom: 110, gap: 12 },
-
-  // Hero
-  heroCard: {
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: C.primary,
-    gap: 6,
-  },
-  heroEyebrow: {
-    color: "rgba(255,255,255,0.6)",
-    fontWeight: "600",
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  heroTitle: { color: "#FFFFFF", fontSize: 26, fontWeight: "800", lineHeight: 32 },
-  heroSub: { color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 20 },
-
-  // Card
-  card: {
-    borderRadius: 12,
-    backgroundColor: C.card,
+  keyboardWrap: { flex: 1, backgroundColor: "#FFFFFF" },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
     padding: 16,
-    gap: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingBottom: 100,
   },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary },
-  dropdownTrigger: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: C.inputBorder,
-    backgroundColor: C.bg,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+
+  loadingBlock: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    paddingVertical: 20,
   },
-  dropdownValue: { color: C.textPrimary, fontSize: 14, fontWeight: "600" },
-  dropdownPlaceholder: { color: C.textSecondary, fontWeight: "500" },
-  dropdownSubText: { color: "#8a97ad", fontSize: 12, marginTop: 2 },
+  helperText: { color: C.textSecondary, fontSize: 14 },
+
+  // Top row: avatar + name/court
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  avatarText: { color: "#FFFFFF", fontSize: 20, fontWeight: "700" },
+  topRight: { flex: 1 },
+  userName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0A2540",
+  },
+  courtBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#F3F2EF",
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginTop: 4,
+  },
+  courtBadgeText: {
+    fontSize: 13,
+    color: C.textPrimary,
+    fontWeight: "500",
+  },
+
+  // Court dropdown
   dropdownMenu: {
-    marginTop: 8,
+    marginBottom: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.card,
+    borderColor: "#EBEBEB",
+    backgroundColor: "#FFFFFF",
     overflow: "hidden",
-    shadowColor: "#102a56",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    maxHeight: 200,
   },
-  dropdownScroll: { maxHeight: 240 },
+  dropdownScroll: { maxHeight: 200 },
   courtOption: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#eef2f8",
-    backgroundColor: "#fff",
+    borderBottomColor: "#F3F2EF",
   },
-  courtOptionActive: {
-    backgroundColor: "#eef5ff",
-  },
-  courtOptionLast: {
-    borderBottomWidth: 0,
-  },
-  courtOptionTitle: { color: "#2e4266", fontSize: 14, fontWeight: "600" },
+  courtOptionActive: { backgroundColor: "#F0F4F8" },
+  courtOptionLast: { borderBottomWidth: 0 },
+  courtOptionTitle: { fontSize: 14, fontWeight: "600", color: C.textPrimary },
   courtOptionTitleActive: { color: C.primary },
-  courtOptionSubtitle: { color: "#8a97ad", fontSize: 12, marginTop: 2 },
+  courtOptionSubtitle: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
 
-  // Choice chips
-  choice: {
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    backgroundColor: C.bg,
+  // Middle: text input (flex: 1)
+  inputArea: {
+    flex: 1,
+    marginTop: 10,
   },
-  choiceActive: { borderColor: C.primary, backgroundColor: "#EFF6FF" },
-  choiceText: { color: C.textSecondary, fontSize: 14 },
-  choiceTextActive: { color: C.primary, fontWeight: "700" },
-  choiceSubText: { color: "#8a97ad", fontSize: 12, marginTop: 2 },
-
-  // Input
-  input: {
-    borderWidth: 1,
-    borderColor: C.inputBorder,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: C.textPrimary,
-    backgroundColor: C.bg,
-    fontSize: 14,
+  textInput: {
+    flex: 1,
+    fontSize: 18,
+    color: "#333333",
+    textAlignVertical: "top",
+    padding: 0,
+    margin: 0,
   },
-  textArea: { minHeight: 110, textAlignVertical: "top" },
-
-  // Upload
-  uploadButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: C.accent,
-    paddingVertical: 13,
-    backgroundColor: "#F0F9FF",
-  },
-  uploadButtonText: { color: C.accent, fontWeight: "600", fontSize: 14 },
-  previewContainer: { gap: 8 },
+  previewWrap: { marginTop: 12, gap: 8 },
   previewImage: {
     width: "100%",
     height: 180,
-    borderRadius: 8,
-    backgroundColor: C.border,
+    borderRadius: 12,
+    backgroundColor: "#F3F2EF",
   },
   removeImageButton: {
     alignSelf: "flex-start",
-    borderRadius: 8,
-    backgroundColor: "#FEE2E2",
-    paddingHorizontal: 12,
     paddingVertical: 6,
+    paddingHorizontal: 4,
   },
-  removeImageText: { color: C.danger, fontWeight: "600", fontSize: 13 },
+  removeImageText: { color: C.danger, fontWeight: "600", fontSize: 14 },
 
-  // Primary button
-  primaryButton: {
-    marginTop: 4,
-    borderRadius: 10,
-    backgroundColor: C.primary,
-    height: 48,
+  // Bottom toolbar
+  toolbar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
+    borderTopWidth: 1,
+    borderTopColor: "#EBEBEB",
+    paddingTop: 12,
+    marginTop: 12,
   },
-  primaryButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  photoBtn: {
+    padding: 8,
+  },
+  publishBtn: {
+    backgroundColor: "#0A2540",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  publishBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
 
-  // Error
+  // Error states
   errorCard: {
     borderRadius: 12,
     borderWidth: 1,
@@ -466,9 +453,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   dangerButtonText: { color: "#fff", fontWeight: "700" },
-  inlineError: { color: C.danger, fontSize: 13, marginTop: 4 },
+  inlineError: { color: C.danger, fontSize: 13, marginTop: 8 },
 
-  // Misc
-  helperText: { color: C.textSecondary, fontSize: 13 },
-  row: { flexDirection: "row", alignItems: "center", gap: 8 },
+  suspendedContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.bg,
+    padding: 24,
+  },
+  suspendedTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0A2540",
+    marginTop: 16,
+  },
+  suspendedSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    paddingHorizontal: 32,
+    marginTop: 8,
+  },
 });

@@ -36,6 +36,18 @@ public class GlobalExceptionHandler : IExceptionHandler
             return true;
         }
 
+        if (exception is UnauthorizedAccessException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
+            {
+                Title = "Forbidden",
+                Status = StatusCodes.Status403Forbidden,
+                Detail = exception.Message
+            }, cancellationToken);
+            return true;
+        }
+
         return false;
     }
 }

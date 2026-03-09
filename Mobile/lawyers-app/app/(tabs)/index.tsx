@@ -1,6 +1,6 @@
 import { AttachmentPreview, isImageAttachment } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
-import { fetchHelpPostsFeed } from "@/lib/features/posts/api";
+import { fetchHelpPostsFeed, replyToPost } from "@/lib/features/posts/api";
 import type { HelpPostFeedItem } from "@/lib/features/posts/types";
 import { formatUtcRelative } from "@/lib/utils/date";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +13,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -40,6 +41,8 @@ const C = {
 export default function HomeScreen() {
   const router = useRouter();
   const { token, profile } = useSession();
+  const isVerified = profile?.isVerified ?? false;
+  const isSuspended = profile?.isSuspended ?? false;
 
   const [posts, setPosts] = useState<HelpPostFeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +56,11 @@ export default function HomeScreen() {
     async (page: number, append: boolean) => {
       if (!token) {
         setError("Not authenticated.");
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return;
+      }
+      if (!isVerified) {
         setIsLoading(false);
         setIsRefreshing(false);
         return;
@@ -80,7 +88,7 @@ export default function HomeScreen() {
         setIsLoadingMore(false);
       }
     },
-    [token],
+    [token, isVerified],
   );
 
   useEffect(() => {
@@ -105,6 +113,19 @@ export default function HomeScreen() {
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={C.primary} />
         <Text style={styles.loadingText}>Loading feed...</Text>
+      </View>
+    );
+  }
+
+  if (!isVerified) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="lock-closed-outline" size={64} color="#666" />
+        <Text style={styles.pendingTitle}>Account Pending Approval</Text>
+        <Text style={styles.pendingSubtitle}>
+          Your syndicate card is currently under review by our admins. Please check
+          your profile for updates.
+        </Text>
       </View>
     );
   }
@@ -134,8 +155,11 @@ export default function HomeScreen() {
                 Browse requests and offer help by city and court.
               </Text>
               {profile?.fullName ? (
-                <View style={styles.heroPill}>
-                  <Text style={styles.heroPillText}>Welcome, {profile.fullName}</Text>
+                <View style={styles.heroWelcomeRow}>
+                  <Ionicons name="person-circle-outline" size={18} color="#EBEBEB" />
+                  <Text style={styles.heroWelcomeText}>
+                    Welcome back, {profile.fullName.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ")}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -165,7 +189,15 @@ export default function HomeScreen() {
             </View>
           ) : null
         }
-        renderItem={({ item }) => <PostCard item={item} router={router} />}
+        renderItem={({ item }) => (
+          <PostCard
+            item={item}
+            router={router}
+            token={token}
+            isSuspended={isSuspended}
+            onReplySubmitted={() => loadPage(1, false)}
+          />
+        )}
       />
     </View>
   );
@@ -174,10 +206,19 @@ export default function HomeScreen() {
 function PostCard({
   item,
   router,
+  token,
+  isSuspended,
+  onReplySubmitted,
 }: {
   item: HelpPostFeedItem;
   router: ReturnType<typeof useRouter>;
+  token: string | null;
+  isSuspended: boolean;
+  onReplySubmitted: () => void;
 }) {
+  const [replyText, setReplyText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const subtitle = `${item.courtName} • ${item.cityName} • ${formatUtcRelative(item.createdAt)}`;
 
   const goToPost = () => {
@@ -192,6 +233,22 @@ function PostCard({
       pathname: "/public-profile/[lawyerId]" as const,
       params: { lawyerId: item.lawyerId },
     });
+  };
+
+  const handleSubmitReply = async () => {
+    const trimmed = replyText.trim();
+    if (!trimmed || !token) return;
+
+    setIsSubmitting(true);
+    try {
+      await replyToPost(token, item.id, trimmed, null);
+      setReplyText("");
+      onReplySubmitted();
+    } catch (err) {
+      console.warn("[Feed] Reply failed:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -232,16 +289,36 @@ function PostCard({
       {/* ── Divider ────────────────────────────────────────────────────────── */}
       <View style={styles.divider} />
 
-      {/* ── Comment action (single row, left-aligned) ───────────────────────── */}
-      <Pressable
-        onPress={goToPost}
-        style={({ pressed }) => [styles.commentAction, pressed && { opacity: 0.7 }]}
-      >
-        <Ionicons name="chatbubble-outline" size={18} color={C.textSecondary} />
-        <Text style={styles.commentActionText}>
-          {item.replyCount === 1 ? "1 Comment" : `${item.replyCount} Comments`}
-        </Text>
-      </Pressable>
+      {/* ── Compact inline reply pill ───────────────────────────────────────── */}
+      {!isSuspended && (
+      <View style={styles.replyPill}>
+        <TextInput
+          value={replyText}
+          onChangeText={setReplyText}
+          placeholder="Add a comment..."
+          placeholderTextColor={C.textSecondary}
+          style={styles.replyPillInput}
+          editable={!isSubmitting}
+          onSubmitEditing={handleSubmitReply}
+          returnKeyType="send"
+        />
+        <Pressable
+          onPress={handleSubmitReply}
+          disabled={!replyText.trim() || isSubmitting}
+          style={({ pressed }) => [
+            styles.replyPillSendBtn,
+            (!replyText.trim() || isSubmitting) && { opacity: 0.4 },
+            pressed && replyText.trim() && !isSubmitting && { opacity: 0.8 },
+          ]}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color={C.primary} />
+          ) : (
+            <Ionicons name="send" size={18} color={C.primary} />
+          )}
+        </Pressable>
+      </View>
+      )}
     </View>
   );
 }
@@ -262,7 +339,8 @@ const styles = StyleSheet.create({
 
   heroCard: {
     borderRadius: 12,
-    padding: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     marginBottom: 4,
     backgroundColor: C.primary,
     gap: 6,
@@ -277,15 +355,13 @@ const styles = StyleSheet.create({
   },
   heroTitle: { color: "#FFFFFF", fontSize: 26, fontWeight: "800", lineHeight: 32 },
   heroSub: { color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 20 },
-  heroPill: {
-    marginTop: 8,
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+  heroWelcomeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 6,
   },
-  heroPillText: { color: "#FFFFFF", fontWeight: "600", fontSize: 13 },
+  heroWelcomeText: { color: "#EBEBEB", fontSize: 14, fontWeight: "500" },
 
   errorCard: {
     borderRadius: 12,
@@ -315,6 +391,19 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 16, fontWeight: "700", color: C.textPrimary },
   emptySubtitle: { color: C.textSecondary, textAlign: "center", lineHeight: 22, fontSize: 14 },
+  pendingTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0A2540",
+    marginTop: 16,
+  },
+  pendingSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    paddingHorizontal: 32,
+    marginTop: 8,
+  },
 
   postCard: {
     borderRadius: 12,
@@ -368,18 +457,28 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     marginHorizontal: -16,
   },
-  commentAction: {
+  replyPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 2,
-    alignSelf: "flex-start",
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F3F2EF",
+    paddingHorizontal: 14,
+    gap: 8,
   },
-  commentActionText: {
-    fontSize: 14,
-    color: C.textSecondary,
-    fontWeight: "700",
+  replyPillInput: {
+    flex: 1,
+    fontSize: 15,
+    color: C.textPrimary,
+    paddingVertical: 0,
+    margin: 0,
+  },
+  replyPillSendBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   footerLoader: { paddingVertical: 20, alignItems: "center" },

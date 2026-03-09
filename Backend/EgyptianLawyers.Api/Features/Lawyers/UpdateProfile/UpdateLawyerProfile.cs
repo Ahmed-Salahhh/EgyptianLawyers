@@ -24,10 +24,6 @@ public sealed class UpdateLawyerProfileValidator : AbstractValidator<UpdateLawye
 {
     public UpdateLawyerProfileValidator()
     {
-        RuleFor(x => x.WhatsAppNumber)
-            .NotEmpty().WithMessage("WhatsApp number is required.")
-            .Matches(@"^(\+20|01)[0-9]{9,10}$")
-            .WithMessage("WhatsApp number must be a valid Egyptian number.");
 
         RuleFor(x => x.CityIds)
             .NotEmpty().WithMessage("At least one active city is required.");

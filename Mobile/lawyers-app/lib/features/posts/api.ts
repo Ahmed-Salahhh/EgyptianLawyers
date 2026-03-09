@@ -113,9 +113,11 @@ export async function replyToPost(
   helpPostId: string,
   comment: string | null,
   file?: PickedFile | null,
+  parentReplyId?: string | null,
 ): Promise<void> {
   const form = new FormData();
   if (comment?.trim()) form.append("comment", comment.trim());
+  if (parentReplyId) form.append("parentReplyId", parentReplyId);
   if (file) appendFile(form, file);
 
   const response = await fetch(`${API_BASE_URL}/api/help-posts/${helpPostId}/replies`, {
@@ -130,5 +132,110 @@ export async function replyToPost(
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(`Failed to submit reply (HTTP ${response.status}): ${body}`);
+  }
+}
+
+// ── Upload attachment (returns URL for use in update) ─────────────────────────
+
+export async function uploadHelpPostAttachment(
+  token: string,
+  file: PickedFile,
+): Promise<string> {
+  const form = new FormData();
+  appendFile(form, file);
+
+  const response = await fetch(`${API_BASE_URL}/api/help-posts/upload-attachment`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to upload attachment (HTTP ${response.status}): ${body}`);
+  }
+
+  const data = (await response.json()) as { url: string };
+  return data.url;
+}
+
+// ── Update & delete post ─────────────────────────────────────────────────────
+
+export async function updateHelpPost(
+  token: string,
+  postId: string,
+  description: string,
+  attachmentUrl?: string | null,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/help-posts/${postId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ description, attachmentUrl: attachmentUrl ?? null }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to update post (HTTP ${response.status}): ${body}`);
+  }
+}
+
+export async function deleteHelpPost(token: string, postId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/help-posts/${postId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to delete post (HTTP ${response.status}): ${body}`);
+  }
+}
+
+// ── Update & delete reply ────────────────────────────────────────────────────
+
+export async function updateHelpPostReply(
+  token: string,
+  replyId: string,
+  comment: string,
+  attachmentUrl?: string | null,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/help-post-replies/${replyId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ comment, attachmentUrl: attachmentUrl ?? null }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to update reply (HTTP ${response.status}): ${body}`);
+  }
+}
+
+export async function deleteHelpPostReply(token: string, replyId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/help-post-replies/${replyId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to delete reply (HTTP ${response.status}): ${body}`);
   }
 }
