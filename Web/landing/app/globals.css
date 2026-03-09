@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #22d3ee;
-  --color-accent: #0ea5e9;
-  --color-background-main: #060b13;
-  --color-background-secondary: #0a1220;
-  --color-text-main: #f4f6f8;
-  --color-text-muted: #94a3b8;
-  --color-primary-06: color-mix(in srgb, var(--color-primary) 6%, transparent);
-  --color-primary-08: color-mix(in srgb, var(--color-primary) 8%, transparent);
-  --color-icon-blue: #3b82f6;
-  --color-icon-blue-hover: #60a5fa;
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-background-main: var(--background-main);
+  --color-background-secondary: var(--background-secondary);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-icon-blue: var(--icon-blue);
+  --color-icon-blue-hover: var(--icon-blue-hover);
+  --color-primary-06: color-mix(in srgb, var(--primary) 6%, transparent);
+  --color-primary-08: color-mix(in srgb, var(--primary) 8%, transparent);
 
   --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-float: float 6s ease-in-out infinite;
@@ -58,8 +58,39 @@
 }
 
 :root {
-  --background: var(--color-background-main);
-  --foreground: var(--color-text-main);
+  --primary: #1e40af;
+  /* Blue 800 */
+  --accent: #d97706;
+  /* Amber 600 */
+  --background-main: #ffffff;
+  /* Pure White */
+  --background-secondary: #f8fafc;
+  /* Slate 50 */
+  --text-main: #0f172a;
+  /* Slate 900 */
+  --text-muted: #475569;
+  /* Slate 600 */
+  --icon-blue: #2563eb;
+  /* Blue 600 */
+  --icon-blue-hover: #1d4ed8;
+  /* Blue 700 */
+
+  --background: var(--background-main);
+  --foreground: var(--text-main);
+}
+
+.dark {
+  --primary: #22d3ee;
+  --accent: #0ea5e9;
+  --background-main: #060b13;
+  --background-secondary: #0a1220;
+  --text-main: #f4f6f8;
+  --text-muted: #94a3b8;
+  --icon-blue: #3b82f6;
+  --icon-blue-hover: #60a5fa;
+
+  --background: var(--background-main);
+  --foreground: var(--text-main);
 }
 
 html,
@@ -72,7 +103,7 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-cairo), sans-serif;
+  font-family: var(--font-ibm-plex-arabic), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

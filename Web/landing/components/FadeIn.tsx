@@ -25,7 +25,7 @@ export default function FadeIn({
   // "start 60%" means the animation finishes when the top of the element hits 60% of the viewport height.
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start 80%", "start 60%"], // Tweak these to change when the fade happens
+    offset: ["start 80%", "start 75%"], // Tweak these to change when the fade happens
   });
 
   // Map the scroll progress (0 to 1) directly to opacity (0 to 1)

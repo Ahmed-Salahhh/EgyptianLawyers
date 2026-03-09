@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { 
   Scale, 
   ShieldCheck, 
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 import FadeIn from "@/components/FadeIn";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -42,7 +44,7 @@ export default async function Home({ params }: Props) {
   ];
 
   const ctaPrimaryClass =
-    "group inline-flex items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 md:px-10 md:py-5 text-[16px] md:text-[18px] font-bold transition-all duration-500 hover:scale-105 hover:bg-text-main hover:shadow-[0_0_40px_#22d3ee66]";
+    "group inline-flex items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 md:px-10 md:py-5 text-[16px] md:text-[18px] font-bold transition-all duration-500 hover:scale-105 hover:bg-text-main hover:shadow-[0_0_40px_var(--color-primary-08)]";
   
   const ctaSecondaryClass =
     "inline-flex items-center justify-center gap-2 rounded-full border border-text-main/20 bg-transparent px-8 py-4 md:px-10 md:py-5 text-[16px] md:text-[18px] font-bold text-text-main transition-all duration-500 hover:border-primary/50 hover:bg-text-main/5 hover:text-primary";
@@ -52,41 +54,29 @@ export default async function Home({ params }: Props) {
   const isRtl = locale === 'ar';
 
   return (
-    <div className="min-h-screen bg-background-main text-text-main selection:bg-primary selection:text-background-main font-(--font-cairo) overflow-x-hidden">
+    <div className="min-h-screen bg-background-main text-text-main selection:bg-primary selection:text-background-main font-(--font-ibm-plex-arabic) overflow-x-hidden">
       
       {/* Super Minimalist Edge-to-Edge Header */}
-      <header className="absolute top-0 w-full z-50 py-6 px-6 md:px-12 flex items-center justify-between border-b border-text-main/5">
-        <div className="flex items-center gap-3 opacity-90 hover:opacity-100 transition-opacity">
-          <Scale className="w-10 h-10 md:w-12 md:h-12 text-primary" />
-          <p className="font-black tracking-widest text-[22px] md:text-[26px] text-text-main uppercase">{t("brand")}</p>
+      <header className="absolute top-0 w-full z-50 py-8 px-6 md:px-12 flex items-center justify-between border-b border-text-main/5 bg-background-main/50 backdrop-blur-xl">
+        <div className="flex items-center gap-4 opacity-90 hover:opacity-100 transition-opacity">
+          <Scale className="w-10 h-10 md:w-11 md:h-11 text-primary" />
+          <p className="font-black tracking-[0.2em] text-[20px] md:text-[22px] text-text-main uppercase">{t("brand")}</p>
         </div>
         
-        <nav className="hidden lg:flex items-center gap-10 text-[16px] md:text-[18px] font-medium tracking-wide uppercase text-text-muted">
+        <nav className="hidden lg:flex items-center gap-12 text-[14px] font-bold tracking-[0.2em] uppercase text-text-muted">
           <a href="#how" className="hover:text-text-main transition-colors">{t("navHow")}</a>
           <a href="#trust" className="hover:text-text-main transition-colors">{t("navTrust")}</a>
           <a href="#join" className="text-primary hover:text-text-main transition-colors">{t("navJoin")}</a>
         </nav>
 
-        <div className="flex items-center gap-4">
-          <Link
-            className={`text-[13px] font-bold tracking-widest uppercase transition-colors ${
-              locale === "en" ? "text-text-main scale-110" : "text-text-muted hover:text-text-muted"
-            }`}
-            href="/"
-            locale="en"
-          >
-            {localeEnLabel}
-          </Link>
-          <span className="text-text-main/20">|</span>
-          <Link
-            className={`text-[13px] font-bold tracking-widest uppercase transition-colors ${
-              locale === "ar" ? "text-text-main scale-110" : "text-text-muted hover:text-text-muted"
-            }`}
-            href="/"
-            locale="ar"
-          >
-            {localeArLabel}
-          </Link>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher 
+            locale={locale} 
+            localeEnLabel={localeEnLabel} 
+            localeArLabel={localeArLabel} 
+          />
+          <div className="w-px h-6 bg-text-main/10 mx-1" />
+          <ThemeToggle />
         </div>
       </header>
 
@@ -105,13 +95,13 @@ export default async function Home({ params }: Props) {
           </FadeIn>
           
           <FadeIn delay={0.4}>
-            <h1 className="font-(--font-playfair) text-[clamp(3.5rem,8vw,6.5rem)] leading-[0.95] text-text-main font-black tracking-tighter mb-8 md:mb-10 max-w-4xl text-balance">
+            <h1 className={`font-(--font-outfit) text-[clamp(3.5rem,8vw,6.5rem)] ${isRtl ? 'leading-[1.15]' : 'leading-[0.95]'} text-text-main font-black tracking-tighter mb-8 md:mb-10 max-w-4xl text-balance`}>
               {t("heroTitle")}
             </h1>
           </FadeIn>
           
           <FadeIn delay={0.6}>
-            <p className="text-[clamp(1.2rem,2vw,1.6rem)] leading-[1.6] text-text-muted max-w-3xl mb-12 md:mb-16 font-light text-balance">
+            <p className="text-[clamp(1.2rem,2vw,1.6rem)] leading-[1.75] text-text-muted max-w-3xl mb-12 md:mb-16 font-light text-balance">
               {t("heroLead")}
             </p>
           </FadeIn>
@@ -157,7 +147,7 @@ export default async function Home({ params }: Props) {
       <section className="py-32 px-6 md:px-12 lg:px-24 bg-background-secondary" id="how">
         <div className="max-w-7xl mx-auto">
           <FadeIn className="mb-24 flex flex-col items-center text-center">
-            <h2 className="font-(--font-playfair) text-[clamp(3rem,6vw,4.5rem)] font-bold text-text-main tracking-tighter mb-6">
+            <h2 className={`font-(--font-outfit) text-[clamp(3rem,6vw,4.5rem)] font-bold text-text-main tracking-tighter ${isRtl ? 'leading-[1.2]' : 'leading-tight'} mb-6`}>
               {t("howTitle")}
             </h2>
             <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-primary to-transparent" />
@@ -198,7 +188,7 @@ export default async function Home({ params }: Props) {
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-20 items-center">
           <div className="flex-1 relative z-10 w-full">
             <FadeIn>
-              <h2 className="font-(--font-playfair) text-[clamp(3.5rem,6vw,5rem)] leading-none font-bold text-text-main tracking-tighter mb-16 text-balance">
+              <h2 className={`font-(--font-outfit) text-[clamp(3.5rem,6vw,5rem)] ${isRtl ? 'leading-[1.2]' : 'leading-none'} font-bold text-text-main tracking-tighter mb-16 text-balance`}>
                 {t("trustTitle")}
               </h2>
             </FadeIn>
@@ -218,7 +208,7 @@ export default async function Home({ params }: Props) {
           </div>
           
           <div className="hidden lg:flex w-full flex-1 justify-center relative">
-            <Trophy className="w-80 h-80 text-primary opacity-10 drop-shadow-[0_0_50px_rgba(34,211,238,0.2)]" strokeWidth={0.5} />
+            <Trophy className="w-80 h-80 text-primary opacity-10 drop-shadow-[0_0_50px_var(--color-primary-08)]" strokeWidth={0.5} />
           </div>
         </div>
       </section>
@@ -227,7 +217,7 @@ export default async function Home({ params }: Props) {
       <section className="py-32 px-6 md:px-12 lg:px-24 bg-background-secondary">
         <div className="max-w-4xl mx-auto">
           <FadeIn className="mb-20">
-            <h2 className="font-(--font-playfair) text-[clamp(3rem,6vw,4.5rem)] font-bold text-text-main tracking-tighter mb-6">
+            <h2 className={`font-(--font-outfit) text-[clamp(3rem,6vw,4.5rem)] font-bold text-text-main tracking-tighter ${isRtl ? 'leading-[1.2]' : 'leading-tight'} mb-6`}>
               {t("useCaseTitle")}
             </h2>
             <p className="text-xl text-primary uppercase tracking-widest font-bold">
@@ -270,7 +260,7 @@ export default async function Home({ params }: Props) {
           <FadeIn>
             <BookOpen className="w-16 h-16 md:w-20 md:h-20 text-primary mb-10 opacity-80" strokeWidth={1} />
             
-            <h2 className="mb-8 font-(--font-playfair) text-[clamp(3.5rem,7vw,6rem)] leading-[1.05] font-black text-text-main text-balance tracking-tighter">
+            <h2 className={`mb-8 font-(--font-outfit) text-[clamp(3.5rem,7vw,6rem)] ${isRtl ? 'leading-[1.2]' : 'leading-[1.05]'} font-black text-text-main text-balance tracking-tighter`}>
               {t("ctaTitle")}
             </h2>
           </FadeIn>
