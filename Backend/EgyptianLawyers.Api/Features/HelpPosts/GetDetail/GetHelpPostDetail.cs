@@ -42,21 +42,26 @@ public sealed class GetHelpPostDetailHandler : IRequestHandler<GetHelpPostDetail
 
     public async Task<HelpPostDetailResult> Handle(GetHelpPostDetailQuery request, CancellationToken cancellationToken)
     {
+        // 1. Fetch the main Help Post and its direct relations (No replies yet)
         var post = await _dbContext.HelpPosts
             .Include(p => p.Court)
             .Include(p => p.City)
             .Include(p => p.Lawyer)
-            .Include(p => p.Replies.Where(r => r.ParentReplyId == null))
-                .ThenInclude(r => r.Lawyer)
-            .Include(p => p.Replies.Where(r => r.ParentReplyId == null))
-                .ThenInclude(r => r.ChildReplies)
-                .ThenInclude(c => c.Lawyer)
             .FirstOrDefaultAsync(p => p.Id == request.PostId, cancellationToken);
 
         if (post is null)
             throw new NotFoundException(new NotFoundError("HelpPost", request.PostId));
 
-        var replies = post.Replies
+        // 2. Fetch ALL replies for this post into memory at once.
+        // EF Core's Change Tracker will automatically link every ParentReply to its ChildReplies infinitely deep!
+        var allReplies = await _dbContext.HelpPostReplies
+            .Include(r => r.Lawyer)
+            .Where(r => r.HelpPostId == request.PostId)
+            .ToListAsync(cancellationToken);
+
+        // 3. Start your recursive mapping from the root comments only.
+        // Because of Step 2, these roots already have their children (and grandchildren) populated.
+        var replies = allReplies
             .Where(r => r.ParentReplyId == null)
             .OrderBy(r => r.CreatedAt)
             .Select(r => MapToReplyDto(r))
@@ -75,25 +80,6 @@ public sealed class GetHelpPostDetailHandler : IRequestHandler<GetHelpPostDetail
             post.Lawyer.WhatsAppNumber,
             post.CreatedAt,
             replies);
-    }
-
-    private static HelpPostReplyDto MapToReplyDto(Domain.Entities.HelpPostReply r)
-    {
-        var children = r.ChildReplies
-            .OrderBy(c => c.CreatedAt)
-            .Select(c => MapToReplyDto(c))
-            .ToList();
-
-        return new HelpPostReplyDto(
-            r.Id,
-            r.LawyerId,
-            r.Lawyer.FullName,
-            r.Lawyer.WhatsAppNumber,
-            r.ParentReplyId,
-            r.Comment,
-            r.AttachmentUrl,
-            r.CreatedAt,
-            children);
     }
 }
 
