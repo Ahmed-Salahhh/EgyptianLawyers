@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -72,10 +72,6 @@ export function CitiesPageClient() {
   const [updateCity, { isLoading: isUpdating }] = useUpdateCityMutation();
   const [deleteCity, { isLoading: isDeleting }] = useDeleteCityMutation();
   const isMutating = isCreating || isUpdating || isDeleting;
-
-  useEffect(() => {
-    setPageIndex(1);
-  }, [pageSize]);
 
   const filtersForm = useForm<CityFiltersFormValues>({
     defaultValues: { cityId: '' },
@@ -244,7 +240,10 @@ export function CitiesPageClient() {
               totalCount={citiesResponse?.totalCount ?? cities.length}
               onPageChange={setPageIndex}
               pageSize={pageSize}
-              onPageSizeChange={setPageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPageIndex(1);
+              }}
               resultsLabel={t('results')}
               ofLabel={t('of')}
               prevLabel={t('prev')}

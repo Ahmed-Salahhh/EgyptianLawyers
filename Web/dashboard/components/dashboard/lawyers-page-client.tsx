@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
@@ -45,14 +45,6 @@ export function LawyersPageClient({ locale, activeStatus }: Props) {
   });
   const { data: citiesResponse } = useGetCitiesLookupQuery();
   const cities = citiesResponse ?? [];
-
-  useEffect(() => {
-    setPageIndex(1);
-  }, [activeStatus]);
-
-  useEffect(() => {
-    setPageIndex(1);
-  }, [pageSize]);
 
   const listParams: GetLawyersRequest = {
     pageIndex,
@@ -274,7 +266,10 @@ export function LawyersPageClient({ locale, activeStatus }: Props) {
               totalCount={data?.totalCount ?? lawyers.length}
               onPageChange={setPageIndex}
               pageSize={pageSize}
-              onPageSizeChange={setPageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPageIndex(1);
+              }}
               resultsLabel={t('results')}
               ofLabel={t('of')}
               prevLabel={t('prev')}

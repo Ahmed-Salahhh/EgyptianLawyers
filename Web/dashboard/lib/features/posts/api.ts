@@ -5,13 +5,21 @@ import { appBaseQuery } from "../base-query";
 import type {
   GetHelpPostsFeedRequest,
   GetHelpPostsFeedResponse,
+  HelpPostReply,
   HelpPostDetails,
 } from "./types";
+
+function normalizeReply(reply: HelpPostReply): HelpPostReply {
+  return {
+    ...reply,
+    childReplies: (reply.childReplies ?? []).map(normalizeReply),
+  };
+}
 
 function normalizeHelpPostDetails(post: HelpPostDetails): HelpPostDetails {
   return {
     ...post,
-    replies: post.replies ?? [],
+    replies: (post.replies ?? []).map(normalizeReply),
   };
 }
 
@@ -41,7 +49,32 @@ export const postsApi = createApi({
         normalizeHelpPostDetails(response),
       providesTags: (_, __, helpPostId) => [{ type: "PostModeration", id: helpPostId }],
     }),
+    deleteHelpPost: builder.mutation<void, { postId: string }>({
+      query: ({ postId }) => ({
+        url: `/api/admin/help-posts/${postId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_, __, { postId }) => [
+        { type: "PostModeration", id: "LIST" },
+        { type: "PostModeration", id: postId },
+      ],
+    }),
+    deleteHelpPostReply: builder.mutation<void, { postId: string; replyId: string }>({
+      query: ({ replyId }) => ({
+        url: `/api/admin/help-post-replies/${replyId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_, __, { postId }) => [
+        { type: "PostModeration", id: "LIST" },
+        { type: "PostModeration", id: postId },
+      ],
+    }),
   }),
 });
 
-export const { useGetFlaggedItemsQuery, useGetHelpPostByIdQuery } = postsApi;
+export const {
+  useGetFlaggedItemsQuery,
+  useGetHelpPostByIdQuery,
+  useDeleteHelpPostMutation,
+  useDeleteHelpPostReplyMutation,
+} = postsApi;

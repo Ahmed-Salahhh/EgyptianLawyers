@@ -19,5 +19,5 @@ export default async function LawyersPage({ params, searchParams }: Props) {
   const { status: rawStatus } = await searchParams;
   setRequestLocale(locale);
   const activeStatus = parseStatus(rawStatus);
-  return <LawyersPageClient locale={locale} activeStatus={activeStatus} />;
+  return <LawyersPageClient key={activeStatus} locale={locale} activeStatus={activeStatus} />;
 }

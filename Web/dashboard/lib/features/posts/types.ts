@@ -25,9 +25,11 @@ export type HelpPostReply = {
   lawyerId: string;
   lawyerFullName: string;
   lawyerWhatsAppNumber: string;
-  comment: string;
+  parentReplyId?: string | null;
+  comment: string | null;
   attachmentUrl: string | null;
   createdAt: string;
+  childReplies?: HelpPostReply[];
 };
 
 export type HelpPostDetails = {
