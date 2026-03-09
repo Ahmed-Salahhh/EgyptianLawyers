@@ -30,13 +30,14 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 // ── Design tokens (match Feed LinkedIn-style) ─────────────────────────────────
 const C = {
@@ -91,7 +92,9 @@ export default function PostDetailScreen() {
     id: string;
     text: string;
     name: string;
+    attachmentUrl?: string | null;
   } | null>(null);
+  const [replyAttachmentUrl, setReplyAttachmentUrl] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [replyComment, setReplyComment] = useState("");
   const [replyFile, setReplyFile] = useState<PickedFile | null>(null);
@@ -143,6 +146,9 @@ export default function PostDetailScreen() {
         name: asset.fileName ?? `photo.${ext}`,
         mimeType: asset.mimeType ?? `image/${ext}`,
       });
+      if (editingComment) {
+        setReplyAttachmentUrl(null);
+      }
     }
   };
 
@@ -152,9 +158,13 @@ export default function PostDetailScreen() {
     if (!token || !postId) return;
 
     const trimmed = replyComment.trim();
-    const hasContent = editingComment ? trimmed : trimmed || replyFile;
+    const hasContent = editingComment
+      ? trimmed || replyFile || !!replyAttachmentUrl
+      : trimmed || replyFile;
     if (!hasContent) {
-      setReplyError(editingComment ? "Comment text is required." : "Please write a comment or attach an image.");
+      setReplyError(
+        editingComment ? "Comment text or attachment is required." : "Please write a comment or attach an image.",
+      );
       return;
     }
 
@@ -164,9 +174,14 @@ export default function PostDetailScreen() {
 
     try {
       if (editingComment) {
-        await updateHelpPostReply(token, editingComment.id, trimmed, null);
+        let attachmentUrl: string | null = replyAttachmentUrl;
+        if (replyFile) {
+          attachmentUrl = await uploadHelpPostAttachment(token, replyFile);
+        }
+        await updateHelpPostReply(token, editingComment.id, trimmed, attachmentUrl);
         setReplyComment("");
         setReplyFile(null);
+        setReplyAttachmentUrl(null);
         setEditingComment(null);
       } else {
         await replyToPost(
@@ -178,6 +193,7 @@ export default function PostDetailScreen() {
         );
         setReplyComment("");
         setReplyFile(null);
+        setReplyAttachmentUrl(null);
         setReplyingTo(null);
       }
       setReplySuccess(true);
@@ -194,10 +210,13 @@ export default function PostDetailScreen() {
     if (!activeMenu) return;
     if (activeMenu.type === "comment") {
       setReplyComment(activeMenu.text);
+      setReplyAttachmentUrl(activeMenu.attachmentUrl ?? null);
+      setReplyFile(null);
       setEditingComment({
         id: activeMenu.id,
         text: activeMenu.text,
         name: activeMenu.name ?? "",
+        attachmentUrl: activeMenu.attachmentUrl ?? undefined,
       });
       setReplyingTo(null);
     } else if (activeMenu.type === "post") {
@@ -438,6 +457,7 @@ export default function PostDetailScreen() {
                         type: "comment",
                         text: target.text ?? "",
                         name: target.name,
+                        attachmentUrl: target.attachmentUrl ?? undefined,
                       })
                     }
                     router={router}
@@ -473,6 +493,8 @@ export default function PostDetailScreen() {
                   onPress={() => {
                     setReplyingTo(null);
                     setEditingComment(null);
+                    setReplyAttachmentUrl(null);
+                    setReplyFile(null);
                   }}
                   hitSlop={8}
                 >
@@ -480,14 +502,25 @@ export default function PostDetailScreen() {
                 </TouchableOpacity>
               </View>
             )}
-            {replyFile ? (
+            {(replyFile || replyAttachmentUrl) ? (
               <View style={styles.replyPreviewRow}>
                 <Image
-                  source={{ uri: replyFile.uri }}
+                  source={{ uri: replyFile?.uri ?? replyAttachmentUrl ?? "" }}
                   style={styles.replyPreviewImage}
                   resizeMode="cover"
                 />
-                <Pressable style={styles.removePreviewBtn} onPress={() => setReplyFile(null)}>
+                <Pressable
+                  style={styles.removePreviewBtn}
+                  onPress={() => {
+                    setReplyFile(null);
+                    setReplyAttachmentUrl(null);
+                    if (editingComment) {
+                      setEditingComment((prev) =>
+                        prev ? { ...prev, attachmentUrl: null } : null,
+                      );
+                    }
+                  }}
+                >
                   <Ionicons name="close-circle" size={24} color={C.textSecondary} />
                 </Pressable>
               </View>
@@ -516,10 +549,18 @@ export default function PostDetailScreen() {
                 </Pressable>
                 <Pressable
                   onPress={handleSubmitReply}
-                  disabled={isSubmittingReply || (!replyComment.trim() && !replyFile)}
+                  disabled={
+                    isSubmittingReply ||
+                    (editingComment
+                      ? !replyComment.trim() && !replyFile && !replyAttachmentUrl
+                      : !replyComment.trim() && !replyFile)
+                  }
                   style={({ pressed }) => [
                     styles.sendBtn,
-                    (isSubmittingReply || (!replyComment.trim() && !replyFile)) && { opacity: 0.5 },
+                    (isSubmittingReply ||
+                      (editingComment
+                        ? !replyComment.trim() && !replyFile && !replyAttachmentUrl
+                        : !replyComment.trim() && !replyFile)) && { opacity: 0.5 },
                     pressed && !isSubmittingReply && { opacity: 0.8 },
                   ]}
                   hitSlop={8}
@@ -605,8 +646,17 @@ export default function PostDetailScreen() {
             setEditPostError(null);
           }}
         >
-          <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={["bottom"]}>
-            <View style={styles.editPostHeader}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+            <View
+              style={[
+                styles.editPostHeader,
+                {
+                  paddingTop:
+                    12 +
+                    (Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0),
+                },
+              ]}
+            >
               <TouchableOpacity
                 onPress={() => {
                   setEditingPost(null);
@@ -704,7 +754,12 @@ function CommentItem({
   currentUserId: string | null;
   isSuspended: boolean;
   onReplyPress: (target: { id: string; name: string }) => void;
-  onMenuPress: (target: { id: string; text: string | null; name: string }) => void;
+  onMenuPress: (target: {
+    id: string;
+    text: string | null;
+    name: string;
+    attachmentUrl?: string | null;
+  }) => void;
   router: ReturnType<typeof useRouter>;
 }) {
   const wrapperStyle = [
@@ -760,6 +815,7 @@ function CommentItem({
                       id: comment.id,
                       text: comment.comment ?? null,
                       name: comment.lawyerFullName,
+                      attachmentUrl: comment.attachmentUrl ?? undefined,
                     })
                   }
                   style={{ marginLeft: 8 }}
