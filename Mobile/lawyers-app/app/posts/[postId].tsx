@@ -1,6 +1,12 @@
 import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
-import { fetchHelpPostById, replyToPost } from "@/lib/features/posts/api";
+import {
+  deleteHelpPost,
+  deleteHelpPostReply,
+  fetchHelpPostById,
+  replyToPost,
+  updateHelpPostReply,
+} from "@/lib/features/posts/api";
 import {
   countTotalReplies,
   type HelpPostDetails,
@@ -14,9 +20,11 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -64,6 +72,17 @@ export default function PostDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [activeMenu, setActiveMenu] = useState<{
+    id: string;
+    type: "post" | "comment";
+    text: string;
+    name?: string;
+  } | null>(null);
+  const [editingComment, setEditingComment] = useState<{
+    id: string;
+    text: string;
+    name: string;
+  } | null>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [replyComment, setReplyComment] = useState("");
   const [replyFile, setReplyFile] = useState<PickedFile | null>(null);
@@ -115,12 +134,15 @@ export default function PostDetailScreen() {
     }
   };
 
+  const currentUserId = profile?.lawyerId ?? null;
+
   const handleSubmitReply = async () => {
     if (!token || !postId) return;
 
     const trimmed = replyComment.trim();
-    if (!trimmed && !replyFile) {
-      setReplyError("Please write a comment or attach an image.");
+    const hasContent = editingComment ? trimmed : trimmed || replyFile;
+    if (!hasContent) {
+      setReplyError(editingComment ? "Comment text is required." : "Please write a comment or attach an image.");
       return;
     }
 
@@ -129,16 +151,23 @@ export default function PostDetailScreen() {
     setIsSubmittingReply(true);
 
     try {
-      await replyToPost(
-        token,
-        postId,
-        trimmed || null,
-        replyFile,
-        replyingTo?.id ?? null,
-      );
-      setReplyComment("");
-      setReplyFile(null);
-      setReplyingTo(null);
+      if (editingComment) {
+        await updateHelpPostReply(token, editingComment.id, trimmed, null);
+        setReplyComment("");
+        setReplyFile(null);
+        setEditingComment(null);
+      } else {
+        await replyToPost(
+          token,
+          postId,
+          trimmed || null,
+          replyFile,
+          replyingTo?.id ?? null,
+        );
+        setReplyComment("");
+        setReplyFile(null);
+        setReplyingTo(null);
+      }
       setReplySuccess(true);
       loadPost();
     } catch (err) {
@@ -147,6 +176,59 @@ export default function PostDetailScreen() {
     } finally {
       setIsSubmittingReply(false);
     }
+  };
+
+  const handleMenuEdit = () => {
+    if (!activeMenu) return;
+    if (activeMenu.type === "comment") {
+      setReplyComment(activeMenu.text);
+      setEditingComment({
+        id: activeMenu.id,
+        text: activeMenu.text,
+        name: activeMenu.name ?? "",
+      });
+      setReplyingTo(null);
+      // Focus will happen when input is visible
+    } else if (activeMenu.type === "post") {
+      (router.push as (href: string) => void)(`/posts/${activeMenu.id}/edit`);
+    }
+    setActiveMenu(null);
+  };
+
+  const handleMenuDelete = () => {
+    if (!activeMenu) return;
+    const menu = activeMenu;
+    setActiveMenu(null);
+
+    const isPost = menu.type === "post";
+    Alert.alert(
+      isPost ? "Delete Post" : "Delete Comment",
+      isPost
+        ? "Are you sure you want to delete this post?"
+        : "Are you sure you want to delete this comment?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            if (!token) return;
+            try {
+              if (isPost) {
+                await deleteHelpPost(token, menu.id);
+                router.back();
+              } else {
+                await deleteHelpPostReply(token, menu.id);
+                loadPost();
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Failed to delete.";
+              Alert.alert("Error", msg);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
@@ -223,6 +305,21 @@ export default function PostDetailScreen() {
               </Pressable>
               <Text style={styles.subtitle}>{subtitle}</Text>
             </View>
+            {post.lawyerId === currentUserId && (
+              <TouchableOpacity
+                onPress={() =>
+                  setActiveMenu({
+                    id: post.id,
+                    type: "post",
+                    text: post.description,
+                  })
+                }
+                style={styles.menuButton}
+                hitSlop={8}
+              >
+                <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
+              </TouchableOpacity>
+            )}
           </View>
 
           <Text style={styles.postDescription}>{post.description}</Text>
@@ -265,8 +362,17 @@ export default function PostDetailScreen() {
                     key={reply.id}
                     comment={reply}
                     depth={0}
+                    currentUserId={currentUserId}
                     isSuspended={isSuspended}
                     onReplyPress={(target) => setReplyingTo(target)}
+                    onMenuPress={(target) =>
+                      setActiveMenu({
+                        id: target.id,
+                        type: "comment",
+                        text: target.text ?? "",
+                        name: target.name,
+                      })
+                    }
                     router={router}
                   />
                 ))
@@ -289,10 +395,20 @@ export default function PostDetailScreen() {
               gap: 8,
             }}
           >
-            {replyingTo && (
+            {(replyingTo || editingComment) && (
               <View style={styles.replyingToBanner}>
-                <Text style={styles.replyingToText}>Replying to {replyingTo.name}</Text>
-                <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={8}>
+                <Text style={styles.replyingToText}>
+                  {editingComment
+                    ? `Editing comment${editingComment.name ? ` by ${editingComment.name}` : ""}`
+                    : `Replying to ${replyingTo!.name}`}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setReplyingTo(null);
+                    setEditingComment(null);
+                  }}
+                  hitSlop={8}
+                >
                   <Text style={styles.replyingToClear}>✕</Text>
                 </TouchableOpacity>
               </View>
@@ -318,7 +434,7 @@ export default function PostDetailScreen() {
                   setReplyComment(t);
                   setReplySuccess(false);
                 }}
-                placeholder="Add a comment..."
+                placeholder={editingComment ? "Edit your comment..." : "Add a comment..."}
                 placeholderTextColor={C.textSecondary}
                 style={styles.replyInput}
                 editable={!isSubmittingReply}
@@ -356,6 +472,60 @@ export default function PostDetailScreen() {
             ) : null}
           </View>
         )}
+
+        {/* ── Bottom Sheet Modal ─────────────────────────────────────────────── */}
+        <Modal
+          visible={!!activeMenu}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setActiveMenu(null)}
+        >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "flex-end",
+            }}
+            activeOpacity={1}
+            onPress={() => setActiveMenu(null)}
+          >
+            <View
+              style={{
+                backgroundColor: "#FFF",
+                paddingBottom: Platform.OS === "ios" ? 40 : 20,
+                paddingTop: 10,
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+              }}
+              onStartShouldSetResponder={() => true}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: "#CCC",
+                  alignSelf: "center",
+                  marginBottom: 20,
+                }}
+              />
+              <TouchableOpacity
+                style={{ flexDirection: "row", alignItems: "center", padding: 16 }}
+                onPress={handleMenuEdit}
+              >
+                <Ionicons name="pencil-outline" size={24} color="#0A2540" />
+                <Text style={{ fontSize: 16, marginLeft: 16, color: "#0A2540" }}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flexDirection: "row", alignItems: "center", padding: 16 }}
+                onPress={handleMenuDelete}
+              >
+                <Ionicons name="trash-outline" size={24} color="#D32F2F" />
+                <Text style={{ fontSize: 16, marginLeft: 16, color: "#D32F2F" }}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </KeyboardAvoidingView>
     </>
   );
@@ -364,14 +534,18 @@ export default function PostDetailScreen() {
 function CommentItem({
   comment,
   depth = 0,
+  currentUserId,
   isSuspended,
   onReplyPress,
+  onMenuPress,
   router,
 }: {
   comment: HelpPostReply;
   depth?: number;
+  currentUserId: string | null;
   isSuspended: boolean;
   onReplyPress: (target: { id: string; name: string }) => void;
+  onMenuPress: (target: { id: string; text: string | null; name: string }) => void;
   router: ReturnType<typeof useRouter>;
 }) {
   const wrapperStyle = [
@@ -418,7 +592,24 @@ function CommentItem({
             >
               <Text style={styles.replyAuthorName}>{comment.lawyerFullName}</Text>
             </Pressable>
-            <Text style={styles.replyTimestamp}>{formatUtcRelative(comment.createdAt)}</Text>
+            <View style={styles.replyHeaderRight}>
+              <Text style={styles.replyTimestamp}>{formatUtcRelative(comment.createdAt)}</Text>
+              {comment.lawyerId === currentUserId && (
+                <TouchableOpacity
+                  onPress={() =>
+                    onMenuPress({
+                      id: comment.id,
+                      text: comment.comment ?? null,
+                      name: comment.lawyerFullName,
+                    })
+                  }
+                  style={{ marginLeft: 8 }}
+                  hitSlop={8}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={18} color="#666" />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
           {comment.comment ? <Text style={styles.replyCommentText}>{comment.comment}</Text> : null}
           <AttachmentPreview url={comment.attachmentUrl} variant="compact" />
@@ -449,8 +640,10 @@ function CommentItem({
               key={child.id}
               comment={child}
               depth={depth + 1}
+              currentUserId={currentUserId}
               isSuspended={isSuspended}
               onReplyPress={onReplyPress}
+              onMenuPress={onMenuPress}
               router={router}
             />
           ))
@@ -646,8 +839,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
+  replyHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   replyAuthorName: { fontSize: 13, fontWeight: "700", color: C.textPrimary },
   replyTimestamp: { fontSize: 11, color: C.textSecondary },
+  menuButton: { padding: 4 },
   replyCommentText: { fontSize: 14, color: C.textPrimary, lineHeight: 20 },
   replyButtonText: {
     fontSize: 12,
