@@ -120,10 +120,10 @@ public sealed class ReplyToPostHandler : IRequestHandler<ReplyToPostCommand, Rep
         if (commenter is null)
             throw new NotFoundException(new NotFoundError("Lawyer", request.IdentityUserId));
 
-        // If replying to another reply, validate the parent exists and belongs to the same post
+        HelpPostReply? parentReply = null;
         if (request.ParentReplyId.HasValue)
         {
-            var parentReply = await _dbContext.HelpPostReplies
+            parentReply = await _dbContext.HelpPostReplies
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     r => r.Id == request.ParentReplyId.Value && r.HelpPostId == request.HelpPostId,
@@ -155,33 +155,37 @@ public sealed class ReplyToPostHandler : IRequestHandler<ReplyToPostCommand, Rep
         _dbContext.HelpPostReplies.Add(reply);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // ── Notify post author (fire-and-forget safe) ─────────────────────────
-        // Wrapped in try-catch so a notification failure never rolls back a
-        // successfully saved reply. Common causes: pending DB migration for
-        // UserNotifications table, or Firebase not yet initialised.
-        if (commenter.Id != post.LawyerId)
+        // ── Notify target user (fire-and-forget safe) ─────────────────────────
+        // Target: parent comment author if replying to a comment, else post author.
+        // Users do not receive notifications for their own actions.
+        Guid targetUserId = parentReply is not null ? parentReply.LawyerId : post.LawyerId;
+        string message = parentReply is not null
+            ? $"{commenter.FullName} replied to your comment."
+            : $"{commenter.FullName} commented on your post.";
+
+        if (commenter.Id != targetUserId)
         {
             try
             {
-                var author = await _dbContext.Lawyers
+                var targetUser = await _dbContext.Lawyers
                     .AsNoTracking()
-                    .Where(l => l.Id == post.LawyerId)
+                    .Where(l => l.Id == targetUserId)
                     .Select(l => new { l.Id, l.FcmToken })
                     .FirstOrDefaultAsync(cancellationToken);
 
-                if (author is not null)
+                if (targetUser is not null)
                 {
                     await _notificationService.SendCommentNotificationAsync(
-                        postAuthorId: author.Id,
+                        targetUserId: targetUser.Id,
                         postId: post.Id,
                         commenterName: commenter.FullName,
-                        authorFcmToken: author.FcmToken,
+                        targetFcmToken: targetUser.FcmToken,
+                        notificationBody: message,
                         cancellationToken: cancellationToken);
                 }
             }
             catch (Exception ex)
             {
-                // Log but do not rethrow — the reply is already persisted.
                 _logger.LogError(ex,
                     "Comment notification failed for reply {ReplyId} on post {PostId}. " +
                     "The reply was saved successfully.",
