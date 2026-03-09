@@ -4,6 +4,7 @@ public class City
 {
     public Guid Id { get; set; }
     public required string Name { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public List<Court> Courts { get; set; } = [];
     public List<HelpPost> HelpPosts { get; set; } = [];

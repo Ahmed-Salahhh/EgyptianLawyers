@@ -25,13 +25,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
         });
+        modelBuilder.Entity<City>().HasQueryFilter(e => !e.IsDeleted);
 
         // Court belongs to a City. Restrict deletion of a City that still has Courts.
         modelBuilder.Entity<Court>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             entity
                 .HasOne(e => e.City)
@@ -39,6 +42,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(e => e.CityId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+        modelBuilder.Entity<Court>().HasQueryFilter(e => !e.IsDeleted);
 
         modelBuilder.Entity<Lawyer>(entity =>
         {
@@ -51,7 +55,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.IsSuspended).HasDefaultValue(false);
             entity.Property(e => e.FcmToken).HasMaxLength(500);
             entity.Property(e => e.IdentityUserId).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
         });
+        modelBuilder.Entity<Lawyer>().HasQueryFilter(e => !e.IsDeleted);
 
         modelBuilder.Entity<HelpPost>(entity =>
         {
