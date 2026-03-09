@@ -16,10 +16,15 @@ export default function Home() {
       <main id="home" className="bg-[#f5f8ff]">
         <HeroSection />
 
+        <ServicesSection />
+        
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <ServicesSection />
           <ProjectsSection />
-          <TestimonialsSection />
+        </div>
+
+        <TestimonialsSection />
+        
+        <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <ClientsSection />
         </div>
 

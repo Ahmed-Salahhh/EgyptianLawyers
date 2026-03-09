@@ -182,7 +182,7 @@ function ServicesExperience() {
   const activeService = services[reduceMotionIndex];
 
   return (
-    <section ref={servicesRef} className="relative left-1/2 min-h-[280vh] w-screen -translate-x-1/2 lg:min-h-[320vh]">
+    <section ref={servicesRef} className="relative min-h-[280vh] w-full lg:min-h-[320vh]">
       <div
         style={stickyStyle}
         className="sticky top-[var(--header-offset)] h-[calc(100vh-var(--header-offset))] overflow-hidden bg-[linear-gradient(180deg,#050f23_0%,#071734_52%,#061227_100%)]"
