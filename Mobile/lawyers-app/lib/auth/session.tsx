@@ -111,8 +111,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (!accessToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/lawyers/me`, {
-        method: "GET",
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: "POST",
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -122,22 +122,28 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) return;
 
       const data = (await response.json()) as {
-        id: string;
+        token: string;
+        role: string;
         fullName: string;
         isVerified: boolean;
         isSuspended: boolean;
+        lawyerId?: string | null;
       };
       const current = await SecureStore.getItemAsync(PROFILE_KEY);
       const parsed = current ? (JSON.parse(current) as AuthProfile) : null;
       const nextProfile: AuthProfile = {
         fullName: data.fullName ?? parsed?.fullName ?? "",
         email: parsed?.email ?? "",
-        role: parsed?.role ?? "Lawyer",
-        lawyerId: data.id ?? parsed?.lawyerId ?? null,
+        role: data.role ?? parsed?.role ?? "Lawyer",
+        lawyerId: data.lawyerId ?? parsed?.lawyerId ?? null,
         isVerified: data.isVerified ?? parsed?.isVerified ?? false,
         isSuspended: data.isSuspended ?? parsed?.isSuspended ?? false,
       };
-      await SecureStore.setItemAsync(PROFILE_KEY, JSON.stringify(nextProfile));
+      await Promise.all([
+        SecureStore.setItemAsync(TOKEN_KEY, data.token),
+        SecureStore.setItemAsync(PROFILE_KEY, JSON.stringify(nextProfile)),
+      ]);
+      setToken(data.token);
       setProfile(nextProfile);
     } catch {
       // Silently ignore — refresh is best-effort
