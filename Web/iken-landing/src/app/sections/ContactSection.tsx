@@ -2,7 +2,7 @@
 
 export function ContactSection() {
   return (
-    <section id="contact" className="relative mt-16 overflow-hidden bg-slate-950 text-white">
+    <section id="contact" className="relative overflow-hidden bg-slate-950 text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(22,199,255,0.2),transparent_35%),radial-gradient(circle_at_90%_18%,rgba(168,85,247,0.2),transparent_45%),#020617]" />
       <div className="relative mx-auto max-w-7xl px-6 pb-6 pt-16">
         <div className="mx-auto max-w-4xl py-8 text-center">

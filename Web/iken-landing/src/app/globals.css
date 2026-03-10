@@ -56,7 +56,7 @@ body {
     transform: perspective(900px) rotateY(30deg) scale(0.92);
   }
 
-  .projects-carousel .slick-center + .slick-slide .project-card {
+  .projects-carousel .slick-center+.slick-slide .project-card {
     transform: perspective(900px) rotateY(-30deg) scale(0.92);
   }
 }
@@ -139,4 +139,30 @@ body {
   border-color: #1f5fbe;
   background: #1f5fbe;
   box-shadow: 0 0 0 4px rgba(31, 95, 190, 0.18);
+}
+
+@theme {
+  --animate-waterfall-down: waterfall-down 20s linear infinite;
+  --animate-waterfall-up: waterfall-up 15s linear infinite;
+  --animate-waterfall-down-slow: waterfall-down 30s linear infinite;
+
+  @keyframes waterfall-down {
+    0% {
+      transform: translateY(-50%);
+    }
+
+    100% {
+      transform: translateY(0%);
+    }
+  }
+
+  @keyframes waterfall-up {
+    0% {
+      transform: translateY(0%);
+    }
+
+    100% {
+      transform: translateY(-50%);
+    }
+  }
 }

@@ -110,7 +110,9 @@ export function ProjectsSection() {
     >
       <div className="mb-12 space-y-3 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#2f5fae]">Some Top Projects</p>
-        <h2 className="text-4xl font-semibold tracking-tight text-[#112d5c] sm:text-5xl">Our Recent Projects</h2>
+        <h2 className="text-4xl font-semibold tracking-tight text-[#112d5c] sm:text-5xl">
+          Our Recent <span className="bg-gradient-to-r from-[#2f5fae] to-[#6366f1] bg-clip-text text-transparent">Projects</span>
+        </h2>
       </div>
 
       <div className="projects-carousel mx-auto max-w-7xl px-0 sm:px-2">
