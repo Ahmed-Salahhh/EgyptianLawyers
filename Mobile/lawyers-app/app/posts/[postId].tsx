@@ -838,14 +838,6 @@ function CommentItem({
             </TouchableOpacity>
           )}
         </View>
-
-        <Pressable
-          onPress={() => openWhatsApp(comment.lawyerWhatsAppNumber)}
-          style={({ pressed }) => [styles.replyWhatsAppLink, pressed && { opacity: 0.7 }]}
-        >
-          <Ionicons name="logo-whatsapp" size={14} color={C.whatsAppGreen} />
-          <Text style={styles.replyWhatsAppText}>WhatsApp</Text>
-        </Pressable>
       </View>
       </View>
 
@@ -1067,14 +1059,6 @@ const styles = StyleSheet.create({
     color: "#666",
     fontWeight: "600",
   },
-  replyWhatsAppLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 6,
-    alignSelf: "flex-start",
-  },
-  replyWhatsAppText: { fontSize: 12, fontWeight: "600", color: C.whatsAppGreen },
 
   // Edit Post modal
   editPostHeader: {
