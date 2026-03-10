@@ -37,6 +37,7 @@ const C = {
 export default function CreatePostScreen() {
   const router = useRouter();
   const { token, profile } = useSession();
+  const isVerified = profile?.isVerified ?? false;
   const isSuspended = profile?.isSuspended ?? false;
 
   const [cities, setCities] = useState<LookupCity[]>([]);
@@ -153,7 +154,14 @@ export default function CreatePostScreen() {
       setPickedFile(null);
       router.push("/(tabs)");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to create post.";
+      let msg = err instanceof Error ? err.message : "Failed to create post.";
+      if (msg.includes("403") || msg.includes("Forbidden")) {
+        if (profile?.isSuspended) {
+          msg = "Your account is suspended. You cannot create posts. You have read-only access to the feed.";
+        } else if (!profile?.isVerified) {
+          msg = "Your account is pending approval. You cannot create posts until an admin verifies your account. Check your Profile tab for status.";
+        }
+      }
       setSubmitError(msg);
     } finally {
       setIsSubmitting(false);
@@ -168,6 +176,19 @@ export default function CreatePostScreen() {
         <Text style={styles.suspendedSubtitle}>
           Your account has been temporarily suspended from posting. You still have
           read-only access to the community feed.
+        </Text>
+      </View>
+    );
+  }
+
+  if (!isVerified) {
+    return (
+      <View style={styles.suspendedContainer}>
+        <Ionicons name="time-outline" size={64} color="#B76E00" />
+        <Text style={styles.suspendedTitle}>Pending Approval</Text>
+        <Text style={styles.suspendedSubtitle}>
+          Your account is being verified. You cannot create posts until an admin
+          approves your syndicate credentials. Check your Profile tab for updates.
         </Text>
       </View>
     );

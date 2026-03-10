@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -97,11 +97,15 @@ export default function ProfileTab() {
     loadProfile();
   }, [loadProfile]);
 
-  // Refresh session (approval status) when Profile tab gains focus
+  // Refresh session (approval status) when Profile tab gains focus — only when pending approval
+  const refreshRef = useRef(refreshProfile);
+  refreshRef.current = refreshProfile;
   useFocusEffect(
     useCallback(() => {
-      refreshProfile();
-    }, [refreshProfile])
+      if (!authProfile?.isVerified) {
+        refreshRef.current();
+      }
+    }, [authProfile?.isVerified])
   );
 
   const toggleCity = (cityId: string) => {
