@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -7,6 +7,7 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { useSession, SessionProvider } from "@/lib/auth/session";
+import { ThemeProvider } from "@/lib/ThemeContext";
 import {
   configureNotificationHandler,
   registerForPushNotificationsAsync,
@@ -42,7 +43,9 @@ export default function RootLayout() {
 
   return (
     <SessionProvider>
-      <RootLayoutNav />
+      <ThemeProvider>
+        <RootLayoutNav />
+      </ThemeProvider>
     </SessionProvider>
   );
 }
@@ -101,7 +104,7 @@ function RootLayoutNav() {
   }, [isAuthenticated, token, profile?.role]);
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <NavThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: "#0A2540" },
@@ -134,6 +137,6 @@ function RootLayoutNav() {
           }}
         />
       </Stack>
-    </ThemeProvider>
+    </NavThemeProvider>
   );
 }

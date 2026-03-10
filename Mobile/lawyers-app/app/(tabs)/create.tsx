@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
 import type { LookupCity } from "@/lib/features/lookups/types";
 import { createHelpPost } from "@/lib/features/posts/api";
@@ -37,6 +38,7 @@ const C = {
 export default function CreatePostScreen() {
   const router = useRouter();
   const { token, profile } = useSession();
+  const { theme } = useTheme();
   const isVerified = profile?.isVerified ?? false;
   const isSuspended = profile?.isSuspended ?? false;
 
@@ -170,10 +172,10 @@ export default function CreatePostScreen() {
 
   if (isSuspended) {
     return (
-      <View style={styles.suspendedContainer}>
+      <View style={[styles.suspendedContainer, { backgroundColor: theme.background }]}>
         <Ionicons name="ban-outline" size={64} color="#D32F2F" />
-        <Text style={styles.suspendedTitle}>Account Suspended</Text>
-        <Text style={styles.suspendedSubtitle}>
+        <Text style={[styles.suspendedTitle, { color: theme.text }]}>Account Suspended</Text>
+        <Text style={[styles.suspendedSubtitle, { color: theme.textSecondary }]}>
           Your account has been temporarily suspended from posting. You still have
           read-only access to the community feed.
         </Text>
@@ -183,10 +185,10 @@ export default function CreatePostScreen() {
 
   if (!isVerified) {
     return (
-      <View style={styles.suspendedContainer}>
+      <View style={[styles.suspendedContainer, { backgroundColor: theme.background }]}>
         <Ionicons name="time-outline" size={64} color="#B76E00" />
-        <Text style={styles.suspendedTitle}>Pending Approval</Text>
-        <Text style={styles.suspendedSubtitle}>
+        <Text style={[styles.suspendedTitle, { color: theme.text }]}>Pending Approval</Text>
+        <Text style={[styles.suspendedSubtitle, { color: theme.textSecondary }]}>
           Your account is being verified. You cannot create posts until an admin
           approves your syndicate credentials. Check your Profile tab for updates.
         </Text>
@@ -196,15 +198,15 @@ export default function CreatePostScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardWrap}
+      style={[styles.keyboardWrap, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         {isLoadingLookups ? (
           <View style={styles.loadingBlock}>
             <ActivityIndicator size="small" color={C.primary} />
-            <Text style={styles.helperText}>Loading cities and courts...</Text>
+            <Text style={[styles.helperText, { color: theme.textSecondary }]}>Loading cities and courts...</Text>
           </View>
         ) : lookupsError ? (
           <View style={styles.errorCard}>
@@ -223,13 +225,13 @@ export default function CreatePostScreen() {
                 </Text>
               </View>
               <View style={styles.topRight}>
-                <Text style={styles.userName}>{profile?.fullName?.trim() ?? "You"}</Text>
+                <Text style={[styles.userName, { color: theme.text }]}>{profile?.fullName?.trim() ?? "You"}</Text>
                 {courtOptions.length > 0 ? (
                   <Pressable
                     onPress={() => setIsCourtDropdownOpen((prev) => !prev)}
-                    style={styles.courtBadge}
+                    style={[styles.courtBadge, { backgroundColor: theme.card }]}
                   >
-                    <Text style={styles.courtBadgeText}>
+                    <Text style={[styles.courtBadgeText, { color: theme.text }]}>
                       {selectedCourt
                         ? `${selectedCourt.courtName} • ${selectedCourt.cityName}`
                         : "Select court"}
@@ -237,18 +239,18 @@ export default function CreatePostScreen() {
                     <Ionicons
                       name={isCourtDropdownOpen ? "chevron-up" : "chevron-down"}
                       size={14}
-                      color="#666666"
+                      color={theme.textSecondary}
                       style={{ marginLeft: 4 }}
                     />
                   </Pressable>
                 ) : (
-                  <Text style={styles.helperText}>No courts available.</Text>
+                  <Text style={[styles.helperText, { color: theme.textSecondary }]}>No courts available.</Text>
                 )}
               </View>
             </View>
 
             {isCourtDropdownOpen && courtOptions.length > 0 ? (
-              <View style={styles.dropdownMenu}>
+              <View style={[styles.dropdownMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
                   {courtOptions.map((item, index) => {
                     const active = selectedCourtId === item.courtId;
@@ -258,15 +260,16 @@ export default function CreatePostScreen() {
                         onPress={() => handleSelectCourt(item.courtId, item.cityId)}
                         style={[
                           styles.courtOption,
-                          active && styles.courtOptionActive,
+                          { borderBottomColor: theme.border },
+                          active && { backgroundColor: theme.background },
                           index === courtOptions.length - 1 && styles.courtOptionLast,
                         ]}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.courtOptionTitle, active && styles.courtOptionTitleActive]}>
+                          <Text style={[styles.courtOptionTitle, { color: active ? C.primary : theme.text }, active && styles.courtOptionTitleActive]}>
                             {item.courtName}
                           </Text>
-                          <Text style={styles.courtOptionSubtitle}>{item.cityName}</Text>
+                          <Text style={[styles.courtOptionSubtitle, { color: theme.textSecondary }]}>{item.cityName}</Text>
                         </View>
                         {active ? <Ionicons name="checkmark-circle" size={18} color={C.accent} /> : null}
                       </Pressable>
@@ -283,14 +286,14 @@ export default function CreatePostScreen() {
                 value={description}
                 onChangeText={setDescription}
                 placeholder="What legal help do you need in this court?..."
-                placeholderTextColor="#999999"
-                style={styles.textInput}
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.textInput, { color: theme.text }]}
               />
               {pickedFile ? (
                 <View style={styles.previewWrap}>
                   <Image
                     source={{ uri: pickedFile.uri }}
-                    style={styles.previewImage}
+                    style={[styles.previewImage, { backgroundColor: theme.background }]}
                     resizeMode="cover"
                   />
                   <Pressable style={styles.removeImageButton} onPress={() => setPickedFile(null)}>
@@ -303,9 +306,9 @@ export default function CreatePostScreen() {
             {submitError ? <Text style={styles.inlineError}>{submitError}</Text> : null}
 
             {/* Bottom toolbar */}
-            <View style={styles.toolbar}>
+            <View style={[styles.toolbar, { borderTopColor: theme.border }]}>
               <Pressable onPress={handlePickImage} style={({ pressed }) => [styles.photoBtn, pressed && { opacity: 0.6 }]}>
-                <Ionicons name="image-outline" size={26} color="#0A2540" />
+                <Ionicons name="image-outline" size={26} color={theme.text} />
               </Pressable>
               <Pressable
                 onPress={handleSubmit}

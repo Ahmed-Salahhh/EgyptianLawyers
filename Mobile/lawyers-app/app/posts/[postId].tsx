@@ -1,5 +1,6 @@
 import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import {
   deleteHelpPost,
   deleteHelpPostReply,
@@ -29,6 +30,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   SafeAreaView,
   StatusBar,
@@ -70,10 +72,12 @@ export default function PostDetailScreen() {
   const router = useRouter();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const { token, profile } = useSession();
+  const { theme } = useTheme();
   const isSuspended = profile?.isSuspended ?? false;
 
   const [post, setPost] = useState<HelpPostDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [activeMenu, setActiveMenu] = useState<{
@@ -105,13 +109,16 @@ export default function PostDetailScreen() {
   const [editPostError, setEditPostError] = useState<string | null>(null);
   const [editingPostFile, setEditingPostFile] = useState<PickedFile | null>(null);
 
-  const loadPost = () => {
+  const loadPost = (isRefresh = false) => {
     if (!postId || !token) {
       setError("Missing post ID or auth token.");
       setIsLoading(false);
+      setIsRefreshing(false);
       return;
     }
-    setIsLoading(true);
+    if (!isRefresh) {
+      setIsLoading(true);
+    }
     setError(null);
     fetchHelpPostById(token, postId)
       .then(setPost)
@@ -120,7 +127,15 @@ export default function PostDetailScreen() {
         setError(msg);
         console.error("[PostDetail]", msg);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      });
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadPost(true);
   };
 
   useEffect(loadPost, [postId, token]);
@@ -318,16 +333,16 @@ export default function PostDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={C.primary} />
-        <Text style={styles.loadingText}>Loading post...</Text>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading post...</Text>
       </View>
     );
   }
 
   if (error || !post) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <Text style={styles.errorText}>{error ?? "Post not found."}</Text>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>Go Back</Text>
@@ -348,16 +363,24 @@ export default function PostDetailScreen() {
       >
         {/* ── Child 1: Scrollable content (post + replies) ───────────────────── */}
         <ScrollView
-          style={styles.container}
+          style={[styles.container, { backgroundColor: theme.background }]}
           contentContainerStyle={[
             styles.content,
             !isSuspended && { paddingBottom: 120 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[C.primary]}
+              tintColor={C.primary}
+            />
+          }
         >
-          {/* ── Main post card (white, Feed-style) ─────────────────────────────── */}
-          <View style={styles.postCard}>
+          {/* ── Main post card (Feed-style) ───────────────────────────────────── */}
+          <View style={[styles.postCard, { backgroundColor: theme.card }]}>
           <View style={styles.postHeader}>
             <Pressable
               onPress={() =>
@@ -386,9 +409,9 @@ export default function PostDetailScreen() {
                 style={({ pressed }) => [pressed && { opacity: 0.7 }]}
                 hitSlop={8}
               >
-                <Text style={styles.authorName}>{post.lawyerFullName}</Text>
+                <Text style={[styles.authorName, { color: theme.text }]}>{post.lawyerFullName}</Text>
               </Pressable>
-              <Text style={styles.subtitle}>{subtitle}</Text>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
             </View>
             {post.lawyerId === currentUserId && (
               <TouchableOpacity
@@ -403,12 +426,12 @@ export default function PostDetailScreen() {
                 style={styles.menuButton}
                 hitSlop={8}
               >
-                <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
+                <Ionicons name="ellipsis-horizontal" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
 
-          <Text style={styles.postDescription}>{post.description}</Text>
+          <Text style={[styles.postDescription, { color: theme.text }]}>{post.description}</Text>
 
           {post.attachmentUrl ? (
             <View style={styles.mediaWrapper}>
@@ -430,7 +453,7 @@ export default function PostDetailScreen() {
           const totalCount = countTotalReplies(post.replies);
           return (
             <>
-              <Text style={styles.repliesTitle}>
+              <Text style={[styles.repliesTitle, { color: theme.text }]}>
                 {totalCount === 0
                   ? "No Replies Yet"
                   : totalCount === 1
@@ -439,8 +462,8 @@ export default function PostDetailScreen() {
               </Text>
 
               {post.replies.length === 0 ? (
-                <View style={styles.emptyReplies}>
-                  <Text style={styles.emptyText}>Be the first to reply and offer your help.</Text>
+                <View style={[styles.emptyReplies, { backgroundColor: theme.card }]}>
+                  <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Be the first to reply and offer your help.</Text>
                 </View>
               ) : (
                 post.replies.map((reply) => (
@@ -461,6 +484,7 @@ export default function PostDetailScreen() {
                       })
                     }
                     router={router}
+                    theme={theme}
                   />
                 ))
               )}
@@ -473,9 +497,9 @@ export default function PostDetailScreen() {
         {!isSuspended && (
           <View
             style={{
-              backgroundColor: "#FFFFFF",
+              backgroundColor: theme.card,
               borderTopWidth: 1,
-              borderColor: "#EBEBEB",
+              borderColor: theme.border,
               paddingHorizontal: 16,
               paddingVertical: 12,
               paddingBottom: Platform.OS === "ios" ? 24 : 12,
@@ -483,8 +507,8 @@ export default function PostDetailScreen() {
             }}
           >
             {(replyingTo || editingComment) && (
-              <View style={styles.replyingToBanner}>
-                <Text style={styles.replyingToText}>
+              <View style={[styles.replyingToBanner, { backgroundColor: theme.background }]}>
+                <Text style={[styles.replyingToText, { color: theme.textSecondary }]}>
                   {editingComment
                     ? `Editing comment${editingComment.name ? ` by ${editingComment.name}` : ""}`
                     : `Replying to ${replyingTo!.name}`}
@@ -498,7 +522,7 @@ export default function PostDetailScreen() {
                   }}
                   hitSlop={8}
                 >
-                  <Text style={styles.replyingToClear}>✕</Text>
+                  <Text style={[styles.replyingToClear, { color: theme.textSecondary }]}>✕</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -521,7 +545,7 @@ export default function PostDetailScreen() {
                     }
                   }}
                 >
-                  <Ionicons name="close-circle" size={24} color={C.textSecondary} />
+                  <Ionicons name="close-circle" size={24} color={theme.textSecondary} />
                 </Pressable>
               </View>
             ) : null}
@@ -535,8 +559,8 @@ export default function PostDetailScreen() {
                   setReplySuccess(false);
                 }}
                 placeholder={editingComment ? "Edit your comment..." : "Add a comment..."}
-                placeholderTextColor={C.textSecondary}
-                style={styles.replyInput}
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.replyInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                 editable={!isSubmittingReply}
               />
               <View style={styles.replyActions}>
@@ -545,7 +569,7 @@ export default function PostDetailScreen() {
                   style={({ pressed }) => [styles.replyIconBtn, pressed && { opacity: 0.6 }]}
                   hitSlop={8}
                 >
-                  <Ionicons name="image-outline" size={22} color={C.textSecondary} />
+                  <Ionicons name="image-outline" size={22} color={theme.textSecondary} />
                 </Pressable>
                 <Pressable
                   onPress={handleSubmitReply}
@@ -599,7 +623,7 @@ export default function PostDetailScreen() {
           >
             <View
               style={{
-                backgroundColor: "#FFF",
+                backgroundColor: theme.card,
                 paddingBottom: Platform.OS === "ios" ? 40 : 20,
                 paddingTop: 10,
                 borderTopLeftRadius: 20,
@@ -612,7 +636,7 @@ export default function PostDetailScreen() {
                   width: 40,
                   height: 4,
                   borderRadius: 2,
-                  backgroundColor: "#CCC",
+                  backgroundColor: theme.border,
                   alignSelf: "center",
                   marginBottom: 20,
                 }}
@@ -621,8 +645,8 @@ export default function PostDetailScreen() {
                 style={{ flexDirection: "row", alignItems: "center", padding: 16 }}
                 onPress={handleMenuEdit}
               >
-                <Ionicons name="pencil-outline" size={24} color="#0A2540" />
-                <Text style={{ fontSize: 16, marginLeft: 16, color: "#0A2540" }}>Edit</Text>
+                <Ionicons name="pencil-outline" size={24} color={theme.text} />
+                <Text style={{ fontSize: 16, marginLeft: 16, color: theme.text }}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ flexDirection: "row", alignItems: "center", padding: 16 }}
@@ -646,7 +670,7 @@ export default function PostDetailScreen() {
             setEditPostError(null);
           }}
         >
-          <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: theme.card }}>
             <View
               style={[
                 styles.editPostHeader,
@@ -654,6 +678,8 @@ export default function PostDetailScreen() {
                   paddingTop:
                     12 +
                     (Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0),
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
                 },
               ]}
             >
@@ -665,9 +691,9 @@ export default function PostDetailScreen() {
                 }}
                 hitSlop={8}
               >
-                <Text style={styles.editPostCancel}>Cancel</Text>
+                <Text style={[styles.editPostCancel, { color: theme.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
-              <Text style={styles.editPostTitle}>Edit Post</Text>
+              <Text style={[styles.editPostTitle, { color: theme.text }]}>Edit Post</Text>
               <TouchableOpacity
                 onPress={handleSaveEditPost}
                 disabled={isSavingPost}
@@ -676,7 +702,7 @@ export default function PostDetailScreen() {
                 {isSavingPost ? (
                   <ActivityIndicator size="small" color={C.primary} />
                 ) : (
-                  <Text style={[styles.editPostSave, isSavingPost && { opacity: 0.5 }]}>
+                  <Text style={[styles.editPostSave, { color: theme.text }, isSavingPost && { opacity: 0.5 }]}>
                     Save
                   </Text>
                 )}
@@ -694,8 +720,8 @@ export default function PostDetailScreen() {
                   setEditingPost((prev) => (prev ? { ...prev, text } : null))
                 }
                 placeholder="Describe your legal need..."
-                placeholderTextColor={C.textSecondary}
-                style={styles.editPostInput}
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.editPostInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                 editable={!isSavingPost}
               />
               {(editingPostFile || editingPost?.attachmentUrl) ? (
@@ -716,17 +742,17 @@ export default function PostDetailScreen() {
                       );
                     }}
                   >
-                    <Text style={styles.removeImageText}>Remove Image</Text>
+                    <Text style={[styles.removeImageText, { color: "#FFFFFF" }]}>Remove Image</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity
-                  style={styles.addAttachmentBtn}
+                  style={[styles.addAttachmentBtn, { borderColor: theme.border }]}
                   onPress={handlePickEditImage}
                   disabled={isSavingPost}
                 >
-                  <Ionicons name="image-outline" size={24} color={C.primary} />
-                  <Text style={styles.addAttachmentText}>Add Attachment</Text>
+                  <Ionicons name="image-outline" size={24} color={theme.text} />
+                  <Text style={[styles.addAttachmentText, { color: theme.text }]}>Add Attachment</Text>
                 </TouchableOpacity>
               )}
               {editPostError ? (
@@ -740,6 +766,8 @@ export default function PostDetailScreen() {
   );
 }
 
+type AppTheme = { background: string; card: string; text: string; textSecondary: string; border: string };
+
 function CommentItem({
   comment,
   depth = 0,
@@ -748,6 +776,7 @@ function CommentItem({
   onReplyPress,
   onMenuPress,
   router,
+  theme,
 }: {
   comment: HelpPostReply;
   depth?: number;
@@ -761,12 +790,13 @@ function CommentItem({
     attachmentUrl?: string | null;
   }) => void;
   router: ReturnType<typeof useRouter>;
+  theme: AppTheme;
 }) {
   const wrapperStyle = [
     depth > 0 && {
       marginLeft: 32,
       borderLeftWidth: 2,
-      borderColor: "#EBEBEB",
+      borderColor: theme.border,
       paddingLeft: 12,
     },
   ];
@@ -792,7 +822,7 @@ function CommentItem({
       </Pressable>
 
       <View style={styles.replyBubbleWrap}>
-        <View style={styles.replyBubble}>
+        <View style={[styles.replyBubble, { backgroundColor: theme.background }]}>
           <View style={styles.replyBubbleHeader}>
             <Pressable
               onPress={() =>
@@ -804,10 +834,10 @@ function CommentItem({
               style={({ pressed }) => [pressed && { opacity: 0.7 }]}
               hitSlop={6}
             >
-              <Text style={styles.replyAuthorName}>{comment.lawyerFullName}</Text>
+              <Text style={[styles.replyAuthorName, { color: theme.text }]}>{comment.lawyerFullName}</Text>
             </Pressable>
             <View style={styles.replyHeaderRight}>
-              <Text style={styles.replyTimestamp}>{formatUtcRelative(comment.createdAt)}</Text>
+              <Text style={[styles.replyTimestamp, { color: theme.textSecondary }]}>{formatUtcRelative(comment.createdAt)}</Text>
               {comment.lawyerId === currentUserId && (
                 <TouchableOpacity
                   onPress={() =>
@@ -821,12 +851,12 @@ function CommentItem({
                   style={{ marginLeft: 8 }}
                   hitSlop={8}
                 >
-                  <Ionicons name="ellipsis-horizontal" size={18} color="#666" />
+                <Ionicons name="ellipsis-horizontal" size={18} color={theme.textSecondary} />
                 </TouchableOpacity>
               )}
             </View>
           </View>
-          {comment.comment ? <Text style={styles.replyCommentText}>{comment.comment}</Text> : null}
+          {comment.comment ? <Text style={[styles.replyCommentText, { color: theme.text }]}>{comment.comment}</Text> : null}
           <AttachmentPreview url={comment.attachmentUrl} variant="compact" />
           {!isSuspended && (
             <TouchableOpacity
@@ -834,7 +864,7 @@ function CommentItem({
               style={{ marginTop: 4 }}
               hitSlop={8}
             >
-              <Text style={styles.replyButtonText}>Reply</Text>
+              <Text style={[styles.replyButtonText, { color: theme.textSecondary }]}>Reply</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -852,6 +882,7 @@ function CommentItem({
               onReplyPress={onReplyPress}
               onMenuPress={onMenuPress}
               router={router}
+              theme={theme}
             />
           ))
         : null}

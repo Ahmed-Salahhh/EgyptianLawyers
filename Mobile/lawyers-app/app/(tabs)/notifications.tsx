@@ -1,4 +1,5 @@
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import {
   getNotifications,
   markAllNotificationsAsRead,
@@ -41,6 +42,7 @@ const C = {
 export default function NotificationsScreen() {
   const router = useRouter();
   const { token } = useSession();
+  const { theme } = useTheme();
 
   const [items, setItems] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -149,15 +151,15 @@ export default function NotificationsScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={C.primary} />
-        <Text style={styles.loadingText}>Loading notifications...</Text>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading notifications...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
@@ -179,13 +181,14 @@ export default function NotificationsScreen() {
             error={error}
             onMarkAll={handleMarkAll}
             onRetry={handleRefresh}
+            theme={theme}
           />
         }
         ListEmptyComponent={
           !error ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No notifications yet</Text>
-              <Text style={styles.emptySubtitle}>
+            <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>No notifications yet</Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
                 You'll be notified about new help requests in your area.
               </Text>
             </View>
@@ -199,7 +202,7 @@ export default function NotificationsScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <NotificationItem item={item} onPress={handleTap} />
+          <NotificationItem item={item} onPress={handleTap} theme={theme} />
         )}
       />
     </View>
@@ -208,25 +211,28 @@ export default function NotificationsScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+type AppTheme = { background: string; card: string; text: string; textSecondary: string; border: string };
+
 type ListHeaderProps = {
   unreadCount: number;
   isMarkingAll: boolean;
   error: string | null;
   onMarkAll: () => void;
   onRetry: () => void;
+  theme: AppTheme;
 };
 
-function ListHeader({ unreadCount, isMarkingAll, error, onMarkAll, onRetry }: ListHeaderProps) {
+function ListHeader({ unreadCount, isMarkingAll, error, onMarkAll, onRetry, theme }: ListHeaderProps) {
   return (
     <>
       {/* ── Summary row ── */}
       <View style={styles.summaryRow}>
         {unreadCount > 0 ? (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadBadgeText}>{unreadCount} unread</Text>
+          <View style={[styles.unreadBadge, { backgroundColor: theme.background, borderColor: theme.border }]}>
+            <Text style={[styles.unreadBadgeText, { color: theme.text }]}>{unreadCount} unread</Text>
           </View>
         ) : (
-          <Text style={styles.allReadText}>All caught up ✓</Text>
+          <Text style={[styles.allReadText, { color: theme.textSecondary }]}>All caught up ✓</Text>
         )}
 
         <Pressable
@@ -262,9 +268,10 @@ function ListHeader({ unreadCount, isMarkingAll, error, onMarkAll, onRetry }: Li
 type NotificationItemProps = {
   item: UserNotification;
   onPress: (item: UserNotification) => void;
+  theme: AppTheme;
 };
 
-function NotificationItem({ item, onPress }: NotificationItemProps) {
+function NotificationItem({ item, onPress, theme }: NotificationItemProps) {
   const hasPostLink = !!parseNotificationPayload(item.dataPayload).postId;
 
   return (
@@ -272,7 +279,11 @@ function NotificationItem({ item, onPress }: NotificationItemProps) {
       onPress={() => onPress(item)}
       style={({ pressed }) => [
         styles.notifCard,
-        !item.isRead && styles.notifCardUnread,
+        {
+          backgroundColor: theme.card,
+          borderColor: theme.border,
+        },
+        !item.isRead && { backgroundColor: theme.background, borderColor: theme.border },
         pressed && { opacity: 0.82 },
       ]}
     >
@@ -284,20 +295,24 @@ function NotificationItem({ item, onPress }: NotificationItemProps) {
       <View style={styles.notifContent}>
         <View style={styles.notifTopRow}>
           <Text
-            style={[styles.notifTitle, !item.isRead && styles.notifTitleUnread]}
+            style={[
+              styles.notifTitle,
+              { color: item.isRead ? theme.text : C.accent },
+              !item.isRead && styles.notifTitleUnread,
+            ]}
             numberOfLines={1}
           >
             {item.title}
           </Text>
-          <Text style={styles.notifTime}>{formatUtcRelative(item.createdAt)}</Text>
+          <Text style={[styles.notifTime, { color: theme.textSecondary }]}>{formatUtcRelative(item.createdAt)}</Text>
         </View>
 
-        <Text style={styles.notifBody} numberOfLines={2}>
+        <Text style={[styles.notifBody, { color: theme.textSecondary }]} numberOfLines={2}>
           {item.body}
         </Text>
 
         {hasPostLink ? (
-          <Text style={styles.notifCta}>View post →</Text>
+          <Text style={[styles.notifCta, { color: C.accent }]}>View post →</Text>
         ) : null}
       </View>
     </Pressable>
@@ -435,8 +450,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   notifTitleUnread: {
-    color: C.primary,
-    fontWeight: "800",
+    color: C.accent,
+    fontWeight: "700",
   },
   notifTime: {
     fontSize: 11,

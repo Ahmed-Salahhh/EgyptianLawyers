@@ -1,5 +1,6 @@
 import { AttachmentPreview, isImageAttachment } from "@/components/AttachmentPreview";
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import { fetchHelpPostsFeed, replyToPost } from "@/lib/features/posts/api";
 import type { HelpPostFeedItem } from "@/lib/features/posts/types";
 import { formatUtcRelative } from "@/lib/utils/date";
@@ -41,6 +42,7 @@ const C = {
 export default function HomeScreen() {
   const router = useRouter();
   const { token, profile } = useSession();
+  const { theme } = useTheme();
   const isVerified = profile?.isVerified ?? false;
   const isSuspended = profile?.isSuspended ?? false;
 
@@ -110,19 +112,19 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={C.primary} />
-        <Text style={styles.loadingText}>Loading feed...</Text>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading feed...</Text>
       </View>
     );
   }
 
   if (!isVerified) {
     return (
-      <View style={styles.centered}>
-        <Ionicons name="lock-closed-outline" size={64} color="#666" />
-        <Text style={styles.pendingTitle}>Account Pending Approval</Text>
-        <Text style={styles.pendingSubtitle}>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
+        <Ionicons name="lock-closed-outline" size={64} color={theme.textSecondary} />
+        <Text style={[styles.pendingTitle, { color: theme.text }]}>Account Pending Approval</Text>
+        <Text style={[styles.pendingSubtitle, { color: theme.textSecondary }]}>
           Your syndicate card is currently under review by our admins. Please check
           your profile for updates.
         </Text>
@@ -131,7 +133,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
@@ -176,9 +178,9 @@ export default function HomeScreen() {
         }
         ListEmptyComponent={
           !error ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No posts yet</Text>
-              <Text style={styles.emptySubtitle}>New help requests will appear here.</Text>
+            <View style={[styles.emptyCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>No posts yet</Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>New help requests will appear here.</Text>
             </View>
           ) : null
         }
@@ -196,6 +198,7 @@ export default function HomeScreen() {
             token={token}
             isSuspended={isSuspended}
             onReplySubmitted={() => loadPage(1, false)}
+            theme={theme}
           />
         )}
       />
@@ -203,18 +206,22 @@ export default function HomeScreen() {
   );
 }
 
+type AppTheme = { background: string; card: string; text: string; textSecondary: string; border: string };
+
 function PostCard({
   item,
   router,
   token,
   isSuspended,
   onReplySubmitted,
+  theme,
 }: {
   item: HelpPostFeedItem;
   router: ReturnType<typeof useRouter>;
   token: string | null;
   isSuspended: boolean;
   onReplySubmitted: () => void;
+  theme: AppTheme;
 }) {
   const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -252,7 +259,7 @@ function PostCard({
   };
 
   return (
-    <View style={styles.postCard}>
+    <View style={[styles.postCard, { backgroundColor: theme.card }]}>
       {/* ── Header: Avatar | Name + Subtitle ────────────────────────────────── */}
       <View style={styles.postHeader}>
         <Pressable onPress={goToProfile} style={({ pressed }) => [pressed && { opacity: 0.7 }]} hitSlop={8}>
@@ -264,22 +271,22 @@ function PostCard({
         </Pressable>
         <View style={styles.headerCenter}>
           <Pressable onPress={goToProfile} style={({ pressed }) => [pressed && { opacity: 0.7 }]} hitSlop={8}>
-            <Text style={styles.authorName}>{item.lawyerFullName}</Text>
+            <Text style={[styles.authorName, { color: theme.text }]}>{item.lawyerFullName}</Text>
           </Pressable>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
         </View>
       </View>
 
       {/* ── Body + Media (tappable → post) ─────────────────────────────────── */}
       <Pressable onPress={goToPost} style={({ pressed }) => [pressed && { opacity: 0.95 }]}>
-        <Text style={styles.postDescription}>{item.description}</Text>
+        <Text style={[styles.postDescription, { color: theme.text }]}>{item.description}</Text>
         {item.attachmentUrl ? (
           isImageAttachment(item.attachmentUrl) ? (
             <View style={styles.mediaImageWrapper}>
               <AttachmentPreview url={item.attachmentUrl} variant="feed" />
             </View>
           ) : (
-            <View style={styles.mediaDocWrapper}>
+            <View style={[styles.mediaDocWrapper, { backgroundColor: theme.background, borderColor: theme.border }]}>
               <AttachmentPreview url={item.attachmentUrl} variant="feed" />
             </View>
           )
@@ -287,17 +294,17 @@ function PostCard({
       </Pressable>
 
       {/* ── Divider ────────────────────────────────────────────────────────── */}
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
       {/* ── Compact inline reply pill ───────────────────────────────────────── */}
       {!isSuspended && (
-      <View style={styles.replyPill}>
+      <View style={[styles.replyPill, { backgroundColor: theme.background }]}>
         <TextInput
           value={replyText}
           onChangeText={setReplyText}
           placeholder="Add a comment..."
-          placeholderTextColor={C.textSecondary}
-          style={styles.replyPillInput}
+          placeholderTextColor={theme.textSecondary}
+          style={[styles.replyPillInput, { color: theme.text }]}
           editable={!isSubmitting}
           onSubmitEditing={handleSubmitReply}
           returnKeyType="send"

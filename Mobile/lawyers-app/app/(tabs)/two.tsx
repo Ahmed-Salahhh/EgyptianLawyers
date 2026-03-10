@@ -6,12 +6,14 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
 import type { LookupCity } from "@/lib/features/lookups/types";
 import { fetchMyLawyerProfile, updateMyLawyerProfile } from "@/lib/features/lawyers/api";
@@ -43,9 +45,35 @@ const C = {
 
 type CityOption = { id: string; name: string };
 
+type ThemeColors = {
+  background: string;
+  card: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+};
+
+function createThemedStyles(theme: ThemeColors) {
+  return {
+    container: { flex: 1, backgroundColor: theme.background },
+    centered: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: theme.background,
+      padding: 24,
+      gap: 14,
+    },
+    helperText: { color: theme.textSecondary, fontSize: 14 },
+    errorText: { color: C.danger, textAlign: "center" as const, fontSize: 15 },
+    bannerText: { color: theme.text, fontSize: 14, fontWeight: "500" as const },
+  };
+}
+
 export default function ProfileTab() {
   const router = useRouter();
   const { token, signOut, profile: authProfile, refreshProfile } = useSession();
+  const { isDarkMode, theme, toggleTheme } = useTheme();
 
   const [profile, setProfile] = useState<MyLawyerProfile | null>(null);
   const [cities, setCities] = useState<LookupCity[]>([]);
@@ -154,19 +182,21 @@ export default function ProfileTab() {
     router.replace("/login");
   };
 
+  const themedStyles = useMemo(() => createThemedStyles(theme), [theme]);
+
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[themedStyles.centered]}>
         <ActivityIndicator size="large" color={C.primary} />
-        <Text style={styles.helperText}>Loading profile...</Text>
+        <Text style={themedStyles.helperText}>Loading profile...</Text>
       </View>
     );
   }
 
   if (error || !profile) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error ?? "Failed to load profile."}</Text>
+      <View style={[themedStyles.centered]}>
+        <Text style={themedStyles.errorText}>{error ?? "Failed to load profile."}</Text>
         <Pressable onPress={loadProfile} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Retry</Text>
         </Pressable>
@@ -179,7 +209,7 @@ export default function ProfileTab() {
   const isSuspended = authProfile?.isSuspended ?? false;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[themedStyles.container]} contentContainerStyle={styles.content}>
       {/* ── Pending approval banner ─────────────────────────────────────────── */}
       {!isVerified && (
         <View style={styles.bannerPending}>
@@ -201,7 +231,7 @@ export default function ProfileTab() {
         <View style={styles.bannerDanger}>
           <Ionicons name="ban-outline" size={20} color={C.danger} />
           <View style={styles.bannerDangerContent}>
-            <Text style={styles.bannerText}>
+            <Text style={themedStyles.bannerText}>
               Your account is suspended. You are in read-only mode.
             </Text>
             <Pressable
@@ -226,13 +256,20 @@ export default function ProfileTab() {
         </View>
       </View>
 
-      {/* ── Intro card (white) ──────────────────────────────────────────────── */}
-      <View style={styles.introCard}>
-        <Text style={styles.profileName}>{profile.fullName}</Text>
-        <Text style={styles.profileTitle}>
+      {/* ── Intro card ──────────────────────────────────────────────────────── */}
+      <View style={[styles.introCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.profileName, { color: theme.text }]}>{profile.fullName}</Text>
+        <Text style={[styles.profileTitle, { color: theme.text }]}>
           {profile.title || "Lawyer"} • Syndicate #{profile.syndicateCardNumber}
         </Text>
-        <Text style={styles.profileLocation}>{cityNames}</Text>
+        <Text style={[styles.profileLocation, { color: theme.textSecondary }]}>{cityNames}</Text>
+      </View>
+
+      {/* ── Appearance row ─────────────────────────────────────────────────── */}
+      <View style={[styles.settingsRow, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <Ionicons name="moon-outline" size={20} color={theme.text} />
+        <Text style={[styles.settingsRowText, { color: theme.text }]}>Dark Mode</Text>
+        <Switch value={isDarkMode} onValueChange={toggleTheme} />
       </View>
 
       {/* ── Stats row ──────────────────────────────────────────────────────── */}
@@ -242,7 +279,7 @@ export default function ProfileTab() {
           onPress={() => router.push("/profile-viewers")}
         >
           <Ionicons name="eye-outline" size={18} color={C.primary} />
-          <Text style={styles.statsText}>Who viewed your profile</Text>
+          <Text style={[styles.statsText, { color: theme.text }]}>Who viewed your profile</Text>
           <Ionicons name="chevron-forward" size={16} color={C.primary} />
         </Pressable>
       )}
@@ -261,50 +298,50 @@ export default function ProfileTab() {
             <Text style={styles.primaryButtonText}>Edit Profile</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.outlineButton, pressed && { opacity: 0.9 }]}
+            style={({ pressed }) => [styles.outlineButton, { backgroundColor: theme.card, borderColor: theme.border }, pressed && { opacity: 0.9 }]}
             onPress={() => router.push({ pathname: "/public-profile/[lawyerId]", params: { lawyerId: profile.id } })}
           >
-            <Text style={styles.outlineButtonText}>View as others see</Text>
+            <Text style={[styles.outlineButtonText, { color: theme.text }]}>View as others see</Text>
           </Pressable>
         </View>
       ) : null}
 
       {/* ── About / Info card ───────────────────────────────────────────────── */}
       {!isEditing && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>About</Text>
-          <InfoRow label="Title" value={profile.title || "—"} />
-          <RowDivider />
-          <InfoRow label="WhatsApp" value={profile.whatsAppNumber || "—"} />
-          <RowDivider />
-          <InfoRow label="Active Cities" value={cityNames} />
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>About</Text>
+          <InfoRow label="Title" value={profile.title || "—"} theme={theme} />
+          <RowDivider theme={theme} />
+          <InfoRow label="WhatsApp" value={profile.whatsAppNumber || "—"} theme={theme} />
+          <RowDivider theme={theme} />
+          <InfoRow label="Active Cities" value={cityNames} theme={theme} />
         </View>
       )}
 
       {/* ── Edit form ──────────────────────────────────────────────────────── */}
       {isEditing && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Edit Profile</Text>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Edit Profile</Text>
 
-          <Text style={styles.fieldLabel}>Title</Text>
+          <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>Title</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
             placeholder="e.g. Lawyer, Legal Consultant"
-            placeholderTextColor={C.textSecondary}
+            placeholderTextColor={theme.textSecondary}
           />
 
-          <Text style={styles.fieldLabel}>WhatsApp Number</Text>
+          <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>WhatsApp Number</Text>
           <TextInput
             value={whatsAppNumber}
             onChangeText={setWhatsAppNumber}
             keyboardType="phone-pad"
-            style={styles.input}
-            placeholderTextColor={C.textSecondary}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+            placeholderTextColor={theme.textSecondary}
           />
 
-          <Text style={styles.fieldLabel}>Active Cities</Text>
+          <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>Active Cities</Text>
           <View style={styles.citiesWrap}>
             {cityOptions.map((city) => {
               const selected = cityIds.includes(city.id);
@@ -312,9 +349,21 @@ export default function ProfileTab() {
                 <Pressable
                   key={city.id}
                   onPress={() => toggleCity(city.id)}
-                  style={[styles.cityChip, selected && styles.cityChipActive]}
+                  style={[
+                    styles.cityChip,
+                    {
+                      backgroundColor: selected ? "#EFF6FF" : theme.background,
+                      borderColor: selected ? C.primary : theme.border,
+                    },
+                  ]}
                 >
-                  <Text style={[styles.cityChipText, selected && styles.cityChipTextActive]}>
+                  <Text
+                    style={[
+                      styles.cityChipText,
+                      { color: selected ? C.primary : theme.textSecondary },
+                      selected && styles.cityChipTextActive,
+                    ]}
+                  >
                     {city.name}
                   </Text>
                 </Pressable>
@@ -347,9 +396,9 @@ export default function ProfileTab() {
                 setSaveMessage(null);
                 setIsEditing(false);
               }}
-              style={({ pressed }) => [styles.outlineButton, pressed && { opacity: 0.9 }]}
+              style={({ pressed }) => [styles.outlineButton, { backgroundColor: theme.card, borderColor: theme.border }, pressed && { opacity: 0.9 }]}
             >
-              <Text style={styles.outlineButtonText}>Cancel</Text>
+              <Text style={[styles.outlineButtonText, { color: theme.text }]}>Cancel</Text>
             </Pressable>
             <Pressable
               onPress={handleSave}
@@ -376,17 +425,17 @@ export default function ProfileTab() {
 
 // ── Sub-components ──────────────────────────────────────────────────────────
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, theme }: { label: string; value: string; theme: ThemeColors }) {
   return (
     <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+      <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>{label}</Text>
+      <Text style={[styles.infoValue, { color: theme.text }]}>{value}</Text>
     </View>
   );
 }
 
-function RowDivider() {
-  return <View style={styles.rowDivider} />;
+function RowDivider({ theme }: { theme: ThemeColors }) {
+  return <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />;
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
@@ -480,13 +529,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     padding: 20,
-    backgroundColor: C.card,
     borderRadius: 12,
     ...C.shadow,
   },
-  profileName: { fontSize: 24, fontWeight: "700", color: C.textPrimary },
-  profileTitle: { fontSize: 16, color: C.textPrimary, marginTop: 4 },
-  profileLocation: { fontSize: 14, color: C.textSecondary, marginTop: 4 },
+  profileName: { fontSize: 24, fontWeight: "700" },
+  profileTitle: { fontSize: 16, marginTop: 4 },
+  profileLocation: { fontSize: 14, marginTop: 4 },
+
+  settingsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderRadius: 12,
+  },
+  settingsRowText: { flex: 1, fontSize: 15, fontWeight: "600" },
 
   statsRow: {
     flexDirection: "row",
