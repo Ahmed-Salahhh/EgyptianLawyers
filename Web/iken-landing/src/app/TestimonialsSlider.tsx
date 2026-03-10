@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TESTIMONIALS = [
@@ -33,25 +33,37 @@ const TESTIMONIALS = [
 
 export function TestimonialsSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const directionRef = useRef<1 | -1>(1);
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      directionRef.current = 1;
+      setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+    }, 6000);
+  }, []);
 
   // Auto-advance
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS.length);
-    }, 6000); // Changed from 8s to 6s for better pacing
-    return () => clearInterval(timer);
-  }, []);
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [startTimer]);
 
   const handleNext = () => {
+    directionRef.current = 1;
     setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+    startTimer();
   };
 
   const handlePrev = () => {
+    directionRef.current = -1;
     setCurrentIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
+    startTimer();
   };
 
   return (
-    <div className="relative overflow-hidden bg-[#0a0f18] py-16 sm:py-20 flex items-center min-h-[70vh]">
+    <div className="relative overflow-hidden bg-[#0a0f18] py-10 sm:py-14 flex items-center">
       
       {/* Background Graphic elements */}
       <div className="absolute inset-0 z-0">
@@ -62,9 +74,9 @@ export function TestimonialsSlider() {
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 h-full">
         
         {/* Section Header */}
-        <div className="mb-16 flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
+        <div className="mb-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
           <div className="max-w-2xl">
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight text-white mb-3">
               Trusted by <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Visionaries</span>
             </h2>
             <p className="text-slate-400 font-light text-lg sm:text-xl leading-relaxed">
@@ -76,10 +88,10 @@ export function TestimonialsSlider() {
           <div className="flex gap-4 items-center shrink-0">
             <button
               onClick={handlePrev}
-              className="group flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-all duration-300 hover:bg-white hover:text-[#0a0f18] hover:border-white focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="group flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-all duration-300 hover:bg-white hover:text-[#0a0f18] hover:border-white focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="Previous testimonial"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:-translate-x-1"><path d="m15 18-6-6 6-6"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:-translate-x-1"><path d="m15 18-6-6 6-6"/></svg>
             </button>
             <div className="text-slate-500 font-mono text-sm tracking-widest px-2 hidden sm:block">
               <motion.span 
@@ -95,32 +107,32 @@ export function TestimonialsSlider() {
             </div>
             <button
               onClick={handleNext}
-              className="group flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white transition-all duration-300 hover:bg-blue-500 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="group flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white transition-all duration-300 hover:bg-blue-500 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               aria-label="Next testimonial"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:translate-x-1"><path d="m9 18 6-6-6-6"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:translate-x-1"><path d="m9 18 6-6-6-6"/></svg>
             </button>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="relative min-h-[600px] lg:h-[540px] w-full rounded-3xl lg:rounded-[2.5rem] bg-[#111827]/60 backdrop-blur-xl border border-white/5 overflow-hidden shadow-2xl">
+        <div className="relative min-h-[420px] lg:h-[400px] w-full rounded-3xl lg:rounded-[2.5rem] bg-[#111827]/60 backdrop-blur-xl border border-white/5 overflow-hidden shadow-2xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
               className="absolute inset-0 flex flex-col lg:flex-row"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.02, transition: { duration: 0.3 } }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, x: directionRef.current * 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: directionRef.current * -40, transition: { duration: 0.4, ease: [0.32, 0, 0.67, 0] } }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             >
               
               {/* Left Side: Massive Photo */}
-              <div className="relative w-full h-[45%] min-h-[250px] lg:h-full lg:w-[45%] xl:w-[40%] overflow-hidden bg-[#0a0f18] shrink-0">
+              <div className="relative w-full h-[45%] min-h-[180px] lg:h-full lg:w-[45%] xl:w-[40%] overflow-hidden bg-[#0a0f18] shrink-0">
                 <motion.div
-                  initial={{ scale: 1.1, filter: "brightness(0.8)" }}
-                  animate={{ scale: 1, filter: "brightness(1.05)" }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  initial={{ scale: 1.08, x: directionRef.current * 20, filter: "brightness(0.75)" }}
+                  animate={{ scale: 1, x: 0, filter: "brightness(1.05)" }}
+                  transition={{ duration: 1.4, ease: "easeOut" }}
                   className="relative h-full w-full"
                 >
                   <Image
@@ -128,7 +140,7 @@ export function TestimonialsSlider() {
                     alt={TESTIMONIALS[currentIndex].name}
                     fill
                     sizes="(max-width: 1024px) 100vw, 40vw"
-                    className="object-cover object-center"
+                    className="object-contain object-center"
                     priority
                   />
                   {/* Subtle vignette/fade over image */}
@@ -137,33 +149,33 @@ export function TestimonialsSlider() {
               </div>
 
               {/* Right Side: Typography & Quote */}
-              <div className="relative w-full lg:w-[55%] xl:w-[60%] flex flex-col justify-between p-8 sm:p-12 lg:p-16 z-20 h-[55%] lg:h-full">
+              <div className="relative w-full lg:w-[55%] xl:w-[60%] flex flex-col justify-between p-6 sm:p-8 lg:p-10 z-20 h-[55%] lg:h-full">
                 
                 {/* Decorative Quote Mark */}
                 <motion.div 
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
+                  transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
                   className="absolute top-8 right-12 text-8xl font-serif text-white/5 leading-none select-none hidden sm:block"
                 >
                   &rdquo;
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+                  transition={{ delay: 0.25, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                   className="flex-1 flex flex-col justify-center max-w-3xl"
                 >
-                  <p className="text-xl sm:text-2xl lg:text-3xl lg:leading-[1.5] font-light text-slate-200 mb-8 lg:mb-12 text-pretty">
-                    "{TESTIMONIALS[currentIndex].quote}"
+                  <p className="text-lg sm:text-xl lg:text-2xl lg:leading-[1.5] font-light text-slate-200 mb-4 lg:mb-6 text-pretty">
+                    &ldquo;{TESTIMONIALS[currentIndex].quote}&rdquo;
                   </p>
                 </motion.div>
                 
                 <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.42, duration: 0.5, ease: "easeOut" }}
                   className="mt-auto pt-6 border-t border-white/10 flex items-center justify-between gap-4"
                 >
                   <div>
@@ -183,11 +195,11 @@ export function TestimonialsSlider() {
         </div>
         
         {/* Bottom Pager Indicators */}
-        <div className="flex gap-3 justify-center mt-10">
+        <div className="flex gap-3 justify-center mt-5">
           {TESTIMONIALS.map((_, idx) => (
              <button
              key={idx}
-             onClick={() => setCurrentIndex(idx)}
+             onClick={() => { setCurrentIndex(idx); startTimer(); }}
              className={`h-1.5 rounded-full transition-all duration-500 ${
                idx === currentIndex ? "w-10 bg-blue-500" : "w-4 bg-slate-700 hover:bg-slate-500"
              }`}

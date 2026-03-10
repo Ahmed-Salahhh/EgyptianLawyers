@@ -160,7 +160,7 @@ function ServicesExperience() {
     target: servicesRef,
     offset: ["start start", "end end"],
   });
-  const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  const progressHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     const maxIndex = services.length - 1;
@@ -191,7 +191,7 @@ function ServicesExperience() {
         <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-[#0bb4ff]/16 blur-3xl" />
 
         <div className="relative grid h-full gap-0 lg:grid-cols-[0.88fr_1.12fr]">
-          <aside className="border-b border-white/10 px-6 py-8 sm:px-10 lg:flex lg:h-full lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:border-white/10 lg:px-12 lg:py-12">
+          <aside className="border-b border-white/10 px-6 py-8 pb-6 sm:px-10 lg:flex lg:h-full lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:border-white/10 lg:px-12 lg:py-12">
             <div className="w-full lg:mx-auto lg:max-w-[34rem]">
               <div className="inline-flex items-center gap-2 text-[#4ea7ff]">
                 <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[#2f8fff]" />
@@ -200,7 +200,14 @@ function ServicesExperience() {
               <h3 className="mt-4 max-w-[18ch] text-4xl font-semibold tracking-tight text-white sm:text-5xl">
                 We Provide Great IT &amp; Business Solutions
               </h3>
-              <ol className="mt-8 border-l border-white/15 pl-5">
+              <ol className="relative mt-8 pl-5">
+                {/* Track line */}
+                <div className="absolute left-0 top-0 h-full w-px bg-white/15" />
+                {/* Animated fill */}
+                <motion.div
+                  style={shouldReduceMotion ? undefined : { height: progressHeight }}
+                  className="absolute left-0 top-0 w-px origin-top bg-[linear-gradient(180deg,#2b7dff,#5ed0ff)]"
+                />
                 {services.map((service, idx) => (
                   <ServiceTimelineItem
                     key={service.title}
@@ -216,6 +223,23 @@ function ServicesExperience() {
 
           <div className="relative h-full p-4 lg:p-5">
             <div className="relative h-full overflow-hidden rounded-2xl border border-white/10">
+              {/* Service counter — top right */}
+              <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 font-mono text-xs tracking-widest backdrop-blur-sm">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={reduceMotionIndex}
+                    initial={{ y: 6, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -6, opacity: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="inline-block text-white/70"
+                  >
+                    {String(reduceMotionIndex + 1).padStart(2, "0")}
+                  </motion.span>
+                </AnimatePresence>
+                <span className="text-white/25">/</span>
+                <span className="text-white/25">{String(services.length).padStart(2, "0")}</span>
+              </div>
               {shouldReduceMotion ? (
                 <ServiceShowcaseImageLayer service={services[reduceMotionIndex]} />
               ) : (
@@ -238,8 +262,8 @@ function ServicesExperience() {
                   )}
                 </>
               )}
-            </div>
-            <div className="pointer-events-none absolute inset-x-4 bottom-4 bg-[linear-gradient(180deg,rgba(6,17,37,0)_0%,rgba(6,17,37,0.76)_34%,#061125_100%)] px-6 pb-14 pt-20 lg:inset-x-5 lg:bottom-5 lg:px-8 lg:pb-16">
+              {/* Text overlay — inside the card so overflow-hidden rounds all 4 corners */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(6,17,37,0)_0%,rgba(6,17,37,0.76)_34%,#061125_100%)] px-6 pb-8 pt-20 lg:px-8 lg:pb-10">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={activeService.title}
@@ -249,33 +273,27 @@ function ServicesExperience() {
                   transition={{ duration: 0.32, ease: "easeOut" }}
                   className="max-w-3xl"
                 >
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#dbeafe] backdrop-blur-sm">
-                    <span>Now Viewing</span>
-                    <span>{activeService.title}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-5">
-                    <div className="max-w-[38ch] space-y-2">
-                      <h3 className="text-3xl font-semibold tracking-tight text-white sm:text-[2rem]">
+                  <div className="border-t border-white/10 pt-5">
+                    {/* Icon + Title */}
+                    <div className="mb-2 flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#8bc9ff]/30 bg-[linear-gradient(145deg,#2166de,#40b1ff)] text-white">
+                        <ServiceGlyph kind={activeService.icon} />
+                      </div>
+                      <h3 className="text-2xl font-semibold tracking-tight text-white sm:text-[1.85rem]">
                         {activeService.title}
                       </h3>
-                      <p className="text-sm leading-relaxed text-[#d5e3fa]">{activeService.desc}</p>
                     </div>
-                    <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl border border-[#8bc9ff]/40 bg-[linear-gradient(145deg,#2166de,#40b1ff)] text-white">
-                      <ServiceGlyph kind={activeService.icon} />
-                    </div>
+                    <p className="text-sm leading-relaxed text-[#d5e3fa]">{activeService.desc}</p>
                   </div>
-                  <div className="mt-4 max-w-[32rem] rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <p className="text-xs font-medium uppercase tracking-[0.13em] text-[#dcedff]">{activeService.short}</p>
+                  {/* Short tag — left accent bar */}
+                  <div className="mt-4 border-l-2 border-blue-400 pl-3">
+                    <p className="text-xs font-medium uppercase tracking-[0.13em] text-[#a8c8f0]">{activeService.short}</p>
                   </div>
                 </motion.div>
               </AnimatePresence>
-            </div>
-            <div className="absolute bottom-7 left-6 right-6 rounded-full bg-white/12 p-1 lg:bottom-9 lg:left-8 lg:right-8">
-              <motion.div
-                style={shouldReduceMotion ? undefined : { width: progressWidth }}
-                className="h-1.5 rounded-full bg-[linear-gradient(90deg,#2b7dff,#5ed0ff)]"
-              />
-            </div>
+              </div> {/* closes overlay */}
+            </div> {/* closes rounded-2xl card */}
+
           </div>
         </div>
       </div>
@@ -292,7 +310,6 @@ export function ServicesSection() {
       viewport={{ once: true, amount: 0.15 }}
       variants={fade}
       transition={{ duration: 0.45 }}
-      className="pb-14"
     >
       <ServicesExperience />
     </motion.section>

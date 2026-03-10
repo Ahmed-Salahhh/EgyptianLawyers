@@ -64,6 +64,8 @@ export function ProjectsSection() {
     cssEase: "cubic-bezier(0.22, 1, 0.36, 1)",
     arrows: true,
     dots: true,
+    autoplay: true,
+    autoplaySpeed: 3000,
     centerMode: true,
     centerPadding: "0px",
     variableWidth: true,
@@ -106,36 +108,43 @@ export function ProjectsSection() {
       viewport={{ once: true, amount: 0.15 }}
       variants={fade}
       transition={{ duration: 0.45 }}
-      className="pb-24 pt-14 sm:pt-16"
+      className="relative overflow-hidden bg-[#0a0f18] pb-24 pt-14 sm:pt-16"
     >
-      <div className="mb-12 space-y-3 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#2f5fae]">Some Top Projects</p>
-        <h2 className="text-4xl font-semibold tracking-tight text-[#112d5c] sm:text-5xl">
-          Our Recent <span className="bg-gradient-to-r from-[#2f5fae] to-[#6366f1] bg-clip-text text-transparent">Projects</span>
-        </h2>
+      {/* Background glow */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-blue-900/10 rounded-full blur-[100px]" />
       </div>
 
-      <div className="projects-carousel mx-auto max-w-7xl px-0 sm:px-2">
-        <Slider {...settings}>
-          {products.map((project, idx) => (
-            <div key={project.title} className="px-3 py-2" style={{ width: 420 }}>
-              <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[#d4e5ff] bg-white shadow-[0_24px_52px_rgba(21,62,128,0.25)]">
-                <div className="relative h-64">
-                  <Image src={project.image} alt={project.title} fill className="object-cover" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(12,20,54,0.03)_0%,rgba(12,20,54,0.26)_100%)]" />
-                </div>
-                <div className="space-y-2 p-5">
-                  <h3 className="text-3xl font-semibold tracking-tight text-[#122f5b]">{project.title}</h3>
-                </div>
-              </article>
-            </div>
-          ))}
-        </Slider>
-      </div>
+      <div className="relative z-10">
+        <div className="mb-12 space-y-3 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-400">Some Top Projects</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+            Our Recent <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Projects</span>
+          </h2>
+        </div>
 
-      <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-medium leading-relaxed text-[#1b3358]">
-        We Have Done More Than 20 Projects in Last 4 Years, With 100% Satisfaction.
-      </p>
+        <div className="projects-carousel mx-auto max-w-7xl px-0 sm:px-2">
+          <Slider {...settings}>
+            {products.map((project, idx) => (
+              <div key={project.title} className="px-3 py-2" style={{ width: 420 }}>
+                <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-white/8 bg-[#111827]/80 shadow-[0_24px_52px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+                  <div className="relative h-64">
+                    <Image src={project.image} alt={project.title} fill className="object-cover" />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,15,24,0.05)_0%,rgba(10,15,24,0.55)_100%)]" />
+                  </div>
+                  <div className="space-y-2 p-5">
+                    <h3 className="text-2xl font-semibold tracking-tight text-white">{project.title}</h3>
+                  </div>
+                </article>
+              </div>
+            ))}
+          </Slider>
+        </div>
+
+        <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-medium leading-relaxed text-slate-300">
+          We Have Done More Than 20 Projects in Last 4 Years, With 100% Satisfaction.
+        </p>
+      </div>
     </motion.section>
   );
 }
