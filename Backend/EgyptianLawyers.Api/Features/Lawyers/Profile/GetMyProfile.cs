@@ -41,6 +41,7 @@ public sealed class GetMyProfileHandler : IRequestHandler<GetMyProfileQuery, Law
             lawyer.SyndicateCardNumber,
             lawyer.WhatsAppNumber,
             lawyer.IsVerified,
+            lawyer.IsSuspended,
             lawyer.CreatedAt,
             activeCities
         );

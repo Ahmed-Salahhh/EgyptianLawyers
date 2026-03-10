@@ -24,6 +24,7 @@ public sealed record LawyerProfileResult(
     string SyndicateCardNumber,
     string WhatsAppNumber,
     bool IsVerified,
+    bool IsSuspended,
     DateTime CreatedAt,
     List<LawyerCityDto> ActiveCities
 );
@@ -60,6 +61,7 @@ public sealed class GetLawyerProfileHandler
             lawyer.SyndicateCardNumber,
             lawyer.WhatsAppNumber,
             lawyer.IsVerified,
+            lawyer.IsSuspended,
             lawyer.CreatedAt,
             activeCities
         );
