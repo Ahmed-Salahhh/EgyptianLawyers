@@ -97,15 +97,15 @@ export default function ProfileTab() {
     loadProfile();
   }, [loadProfile]);
 
-  // Refresh session (approval status) when Profile tab gains focus — only when pending approval
+  // Refresh session when Profile tab gains focus — when pending approval or suspended
   const refreshRef = useRef(refreshProfile);
   refreshRef.current = refreshProfile;
   useFocusEffect(
     useCallback(() => {
-      if (!authProfile?.isVerified) {
+      if (!authProfile?.isVerified || authProfile?.isSuspended) {
         refreshRef.current();
       }
-    }, [authProfile?.isVerified])
+    }, [authProfile?.isVerified, authProfile?.isSuspended])
   );
 
   const toggleCity = (cityId: string) => {
@@ -200,9 +200,17 @@ export default function ProfileTab() {
       {isSuspended && (
         <View style={styles.bannerDanger}>
           <Ionicons name="ban-outline" size={20} color={C.danger} />
-          <Text style={styles.bannerText}>
-            Your account is suspended. You are in read-only mode.
-          </Text>
+          <View style={styles.bannerDangerContent}>
+            <Text style={styles.bannerText}>
+              Your account is suspended. You are in read-only mode.
+            </Text>
+            <Pressable
+              onPress={() => refreshProfile()}
+              style={({ pressed }) => [styles.bannerDangerBtn, pressed && { opacity: 0.8 }]}
+            >
+              <Text style={styles.bannerDangerBtnText}>Check status</Text>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -435,7 +443,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FECACA",
   },
-  bannerText: { flex: 1, color: C.textPrimary, fontSize: 14, fontWeight: "500" },
+  bannerDangerContent: { flex: 1, gap: 8 },
+  bannerDangerBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: C.danger,
+  },
+  bannerDangerBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
+  bannerText: { color: C.textPrimary, fontSize: 14, fontWeight: "500" },
 
   cover: {
     height: 120,
