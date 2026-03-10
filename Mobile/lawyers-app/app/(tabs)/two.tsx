@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -44,7 +45,7 @@ type CityOption = { id: string; name: string };
 
 export default function ProfileTab() {
   const router = useRouter();
-  const { token, signOut, profile: authProfile } = useSession();
+  const { token, signOut, profile: authProfile, refreshProfile } = useSession();
 
   const [profile, setProfile] = useState<MyLawyerProfile | null>(null);
   const [cities, setCities] = useState<LookupCity[]>([]);
@@ -95,6 +96,13 @@ export default function ProfileTab() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  // Refresh session (approval status) when Profile tab gains focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshProfile();
+    }, [refreshProfile])
+  );
 
   const toggleCity = (cityId: string) => {
     setCityIds((prev) =>
@@ -172,9 +180,17 @@ export default function ProfileTab() {
       {!isVerified && (
         <View style={styles.bannerPending}>
           <Ionicons name="time-outline" size={20} color="#B76E00" />
-          <Text style={styles.bannerPendingText}>
-            Pending Approval. We are verifying your syndicate credentials.
-          </Text>
+          <View style={styles.bannerPendingContent}>
+            <Text style={styles.bannerPendingText}>
+              Pending Approval. We are verifying your syndicate credentials.
+            </Text>
+            <Pressable
+              onPress={() => refreshProfile()}
+              style={({ pressed }) => [styles.bannerPendingBtn, pressed && { opacity: 0.8 }]}
+            >
+              <Text style={styles.bannerPendingBtnText}>Check status</Text>
+            </Pressable>
+          </View>
         </View>
       )}
       {isSuspended && (
@@ -389,12 +405,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FFB020",
   },
+  bannerPendingContent: { flex: 1, gap: 8 },
   bannerPendingText: {
-    flex: 1,
     color: "#B76E00",
     fontWeight: "700",
     fontSize: 14,
   },
+  bannerPendingBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: "#B76E00",
+  },
+  bannerPendingBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
   bannerDanger: {
     flexDirection: "row",
     alignItems: "center",

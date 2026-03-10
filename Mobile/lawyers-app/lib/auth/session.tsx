@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { AppState, type AppStateStatus } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "eln_mobile_token";
@@ -51,6 +52,7 @@ type SessionContextValue = {
   isAuthenticated: boolean;
   signIn: (credentials: LoginRequest) => Promise<AuthProfile>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -102,6 +104,54 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  const refreshProfile = async () => {
+    const accessToken = token ?? (await SecureStore.getItemAsync(TOKEN_KEY));
+    if (!accessToken) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/lawyers/me`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) return;
+
+      const data = (await response.json()) as {
+        id: string;
+        fullName: string;
+        isVerified: boolean;
+        isSuspended: boolean;
+      };
+      const current = await SecureStore.getItemAsync(PROFILE_KEY);
+      const parsed = current ? (JSON.parse(current) as AuthProfile) : null;
+      const nextProfile: AuthProfile = {
+        fullName: data.fullName ?? parsed?.fullName ?? "",
+        email: parsed?.email ?? "",
+        role: parsed?.role ?? "Lawyer",
+        lawyerId: data.id ?? parsed?.lawyerId ?? null,
+        isVerified: data.isVerified ?? parsed?.isVerified ?? false,
+        isSuspended: data.isSuspended ?? parsed?.isSuspended ?? false,
+      };
+      await SecureStore.setItemAsync(PROFILE_KEY, JSON.stringify(nextProfile));
+      setProfile(nextProfile);
+    } catch {
+      // Silently ignore — refresh is best-effort
+    }
+  };
+
+  // Refresh profile when app comes to foreground (e.g. after admin approves)
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState: AppStateStatus) => {
+      if (nextState === "active") {
+        void refreshProfile();
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   const signIn = async ({ email, password }: LoginRequest) => {
@@ -187,6 +237,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(token),
       signIn,
       signOut,
+      refreshProfile,
     }),
     [isHydrated, token, profile],
   );

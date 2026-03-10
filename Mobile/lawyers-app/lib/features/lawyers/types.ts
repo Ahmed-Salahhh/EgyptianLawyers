@@ -24,6 +24,7 @@ export type MyLawyerProfile = {
   syndicateCardNumber: string;
   whatsAppNumber: string;
   isVerified: boolean;
+  isSuspended: boolean;
   createdAt: string;
   activeCities: LawyerActiveCity[];
 };
