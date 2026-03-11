@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 const INITIAL_BRANDS = [
   { name: "Contactcars", logo: "/clients/br-contactcars.jpg" }, // Central Hub initially
@@ -79,6 +79,8 @@ export function GlowingOrbDashedClients() {
   
   // Clean mathematical generation executing only once on mount
   const networkData = useMemo(() => generateConstellationNetwork(INITIAL_BRANDS.length), []);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const handleSwap = (clickedIndex: number) => {
     if (clickedIndex === 0) return; // Already in center
@@ -93,32 +95,38 @@ export function GlowingOrbDashedClients() {
     setBrands(newBrands);
   };
 
+  if (!mounted) {
+    return <div className="relative w-full h-[600px] md:h-[700px] bg-transparent" />;
+  }
+
   return (
     <div className="relative w-full h-[600px] md:h-[700px] bg-transparent overflow-hidden">
       
       {/* Shared Coordinate Space for Lines and Orbs */}
       <div className="relative w-full h-full max-w-[1200px] mx-auto">
         
-        {/* SVG Lines - Now perfectly aligned with orb centers */}
+        {/* SVG Lines - rendered client-side only to avoid hydration mismatch */}
         <div className="absolute inset-0 pointer-events-none">
-          <svg className="w-full h-full opacity-30" preserveAspectRatio="none">
-            {networkData.connections.map((conn, idx) => {
-              const p1 = networkData.positions[conn.from];
-              const p2 = networkData.positions[conn.to];
-              return (
-                <line 
-                  key={`line-${idx}`}
-                  x1={`${p1.x}%`} 
-                  y1={`${p1.y}%`} 
-                  x2={`${p2.x}%`} 
-                  y2={`${p2.y}%`} 
-                  stroke="#38bdf8" 
-                  strokeWidth={conn.width} 
-                  strokeDasharray={conn.dash} 
-                />
-              );
-            })}
-          </svg>
+          {mounted && (
+            <svg className="w-full h-full opacity-30" preserveAspectRatio="none">
+              {networkData.connections.map((conn, idx) => {
+                const p1 = networkData.positions[conn.from];
+                const p2 = networkData.positions[conn.to];
+                return (
+                  <line
+                    key={`line-${idx}`}
+                    x1={`${p1.x}%`}
+                    y1={`${p1.y}%`}
+                    x2={`${p2.x}%`}
+                    y2={`${p2.y}%`}
+                    stroke="#38bdf8"
+                    strokeWidth={conn.width}
+                    strokeDasharray={conn.dash}
+                  />
+                );
+              })}
+            </svg>
+          )}
         </div>
 
         {/* The Orbs */}
