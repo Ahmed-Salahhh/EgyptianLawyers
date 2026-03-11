@@ -119,7 +119,7 @@ export function GlowingOrbDashedClients() {
                     y1={`${p1.y}%`}
                     x2={`${p2.x}%`}
                     y2={`${p2.y}%`}
-                    stroke="#38bdf8"
+                    stroke="var(--color-brand-cyan)"
                     strokeWidth={conn.width}
                     strokeDasharray={conn.dash}
                   />
@@ -149,13 +149,13 @@ export function GlowingOrbDashedClients() {
             >
               {/* Pulsing ring background */}
               <motion.div
-                className={`absolute inset-0 bg-[#38bdf8] rounded-full ${isCenter ? 'opacity-40' : 'opacity-20'}`}
+                className={`absolute inset-0 bg-[var(--color-brand-cyan)] rounded-full ${isCenter ? 'opacity-40' : 'opacity-20'}`}
                 animate={{ scale: [1, LAYOUT_CONFIG.PULSE_SCALE, 1], opacity: [isCenter ? 0.4 : 0.2, 0, isCenter ? 0.4 : 0.2] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               />
               
               {/* The actual Orb containing the logo */}
-              <div className={`relative ${isCenter ? 'w-40 h-40 md:w-56 md:h-56 shadow-[0_0_80px_rgba(56,189,248,0.5)]' : 'w-20 h-20 md:w-24 md:h-24 shadow-[0_0_30px_rgba(56,189,248,0.1)]'} bg-[#0f172a]/80 backdrop-blur-md rounded-full border border-[#38bdf8]/30 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-[#1e293b] hover:border-[#38bdf8] hover:shadow-[0_0_50px_rgba(56,189,248,0.4)] z-10 ${!isCenter && 'hover:scale-110'}`}>
+              <div className={`relative ${isCenter ? 'w-40 h-40 md:w-56 md:h-56 shadow-[0_0_80px_var(--color-brand-cyan-glow)]' : 'w-20 h-20 md:w-24 md:h-24 shadow-[0_0_30px_var(--color-brand-cyan-glow)]'} bg-[var(--color-bg-card)] backdrop-blur-md rounded-full border border-[var(--color-brand-cyan)]/30 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] hover:bg-[var(--color-bg-glass-strong)] hover:border-[var(--color-brand-cyan)] hover:shadow-[0_0_50px_var(--color-brand-cyan-glow)] z-10 ${!isCenter && 'hover:scale-110'}`}>
                 <div className="w-[85%] h-[85%] bg-white rounded-full flex items-center justify-center p-2 md:p-3 shadow-inner">
                   <Image 
                     src={client.logo} 

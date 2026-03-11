@@ -115,18 +115,18 @@ export function ProjectsSection() {
       viewport={{ once: true, amount: 0.15 }}
       variants={fade}
       transition={{ duration: 0.45 }}
-      className="relative overflow-hidden bg-[#080e1a] pb-24 pt-14 sm:pt-16"
+      className="relative overflow-hidden bg-[var(--color-bg-main)] pb-24 pt-14 sm:pt-16"
     >
       {/* Background glow */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-blue-900/10 rounded-full blur-[100px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[var(--color-brand-blue)] opacity-[0.1] rounded-full blur-[100px]" />
       </div>
 
       <div className="relative z-10">
         <div className="mb-12 space-y-3 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-400">Some Top Projects</p>
-          <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Our Recent <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Projects</span>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-text-brand)]">Some Top Projects</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
+            Our Recent <span className="bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] bg-clip-text text-transparent">Projects</span>
           </h2>
         </div>
 
@@ -134,28 +134,28 @@ export function ProjectsSection() {
           <Slider {...settings}>
             {products.map((project, idx) => (
               <div key={project.title} className="px-3 py-2" style={{ width: 420 }}>
-                <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-white/8 bg-[#0d1525]/80 shadow-[0_24px_52px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+                <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[var(--color-border-light)] bg-[var(--color-bg-card)] shadow-[0_24px_52px_rgba(0,0,0,0.4)] backdrop-blur-sm">
                   <div className="relative h-64">
                     {project.logo ? (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1525] to-[#0a1020]">
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(47,143,255,0.12),transparent)]" />
-                        <div className="relative flex h-36 w-36 items-center justify-center rounded-2xl bg-white p-4 shadow-[0_0_40px_rgba(59,130,246,0.2)]">
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--color-brand-deep)] to-[var(--color-bg-main)]">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,var(--color-brand-blue-glow),transparent)]" />
+                        <div className="relative flex h-36 w-36 items-center justify-center rounded-2xl bg-white p-4 shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:shadow-[0_0_40px_var(--color-brand-blue-glow)]">
                           <Image src={project.logo} alt={project.title} width={120} height={120} className="h-28 w-28 object-contain" />
                         </div>
                       </div>
                     ) : (
                       <>
                         <Image src={project.image} alt={project.title} fill className="object-cover" />
-                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,15,24,0.05)_0%,rgba(10,15,24,0.65)_100%)]" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
                       </>
                     )}
 
                   </div>
                   <div className="flex items-center justify-between p-5">
-                    <h3 className="text-xl font-semibold tracking-tight text-white">{project.title}</h3>
+                    <h3 className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)]">{project.title}</h3>
                     {project.href && (
                       <Link href={project.href}
-                        className="rounded-full border border-blue-400/25 bg-blue-500/10 px-3.5 py-1.5 text-xs font-semibold text-blue-300 transition-all hover:bg-blue-500/20">
+                        className="rounded-full border border-[var(--color-border-brand)] bg-[var(--color-brand-blue-glow)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-text-brand)] transition-all hover:bg-[var(--color-brand-blue-glow)]/20">
                         Case Study →
                       </Link>
                     )}
@@ -166,7 +166,7 @@ export function ProjectsSection() {
           </Slider>
         </div>
 
-        <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-medium leading-relaxed text-slate-300">
+        <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-medium leading-relaxed text-[var(--color-text-secondary)]">
           We Have Done More Than 20 Projects in Last 4 Years, With 100% Satisfaction.
         </p>
       </div>

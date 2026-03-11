@@ -2,7 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
+
+function GetThemedLogo({ className = "h-10 w-auto" }) {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return (
+    <Image src="/iken-logo-new.png" alt="IKEN" width={120} height={40}
+      className={`${className} object-contain transition-all ${mounted && theme === "dark" ? "brightness-0 invert" : ""}`} />
+  );
+}
 
 const contactInfo = [
   {
@@ -114,28 +125,22 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080e1a] text-white">
+    <div className="min-h-screen bg-[var(--color-bg-main)] text-[var(--color-text-primary)]">
       {/* Ambient glows */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute -left-40 top-20 h-[600px] w-[600px] rounded-full bg-blue-600/8 blur-[130px]" />
-        <div className="absolute -right-40 bottom-20 h-[500px] w-[500px] rounded-full bg-cyan-600/6 blur-[130px]" />
+        <div className="absolute -left-40 top-20 h-[600px] w-[600px] rounded-full bg-[var(--color-brand-blue-glow)] opacity-[0.5] blur-[130px]" />
+        <div className="absolute -right-40 bottom-20 h-[500px] w-[500px] rounded-full bg-[var(--color-brand-cyan-glow)] opacity-[0.4] blur-[130px]" />
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-white/8 bg-[#080e1a]/85 backdrop-blur-md">
+      <header className="relative z-10 border-b border-[var(--color-border-light)] bg-[var(--color-bg-glass)] backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           <Link href="/" className="group flex items-center">
-            <Image
-              src="/iken-logo-new.png"
-              alt="IKEN Technology"
-              width={120}
-              height={40}
-              className="h-10 w-auto object-contain brightness-0 invert transition-opacity group-hover:opacity-80"
-            />
+            <GetThemedLogo />
           </Link>
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+            className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5m7-7-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -149,17 +154,17 @@ export default function ContactPage() {
       <main className="relative z-10 mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-24">
         {/* Page title */}
         <div className="mb-14 max-w-2xl">
-          <div className="mb-3 inline-flex items-center gap-2 text-[#4ea7ff]">
-            <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[#2f8fff]" />
+          <div className="mb-3 inline-flex items-center gap-2 text-[var(--color-text-brand)]">
+            <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[var(--color-brand-blue)]" />
             <span className="text-xs font-semibold uppercase tracking-[0.18em]">Get In Touch</span>
           </div>
-          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
+          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl text-[var(--color-text-primary)]">
             Let&apos;s Build{" "}
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] bg-clip-text text-transparent">
               Something Great
             </span>
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-slate-400">
+          <p className="mt-4 text-base leading-relaxed text-[var(--color-text-secondary)]">
             Ready to start your next project? Fill in the form and our team will get back to you within 24 hours.
           </p>
         </div>
@@ -174,35 +179,35 @@ export default function ContactPage() {
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
                   rel="noreferrer"
-                  className="group flex items-start gap-4 rounded-2xl border border-white/8 bg-white/[0.03] p-5 transition-all hover:border-blue-400/30 hover:bg-white/[0.06]"
+                  className="group flex items-start gap-4 rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-bg-card)] p-5 transition-all hover:border-[var(--color-border-brand)] hover:bg-[var(--color-bg-glass-strong)]"
                 >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-300 transition-colors group-hover:bg-blue-500/20">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border-brand)] bg-[var(--color-brand-blue-glow)] text-[var(--color-text-brand)] transition-colors group-hover:bg-[var(--color-brand-blue-glow)]">
                     {item.icon}
                   </div>
                   <div>
-                    <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                    <p className="text-sm font-medium text-slate-200 group-hover:text-white">{item.value}</p>
+                    <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{item.label}</p>
+                    <p className="text-sm font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]">{item.value}</p>
                   </div>
                 </a>
               ) : (
                 <div
                   key={item.label}
-                  className="flex items-start gap-4 rounded-2xl border border-white/8 bg-white/[0.03] p-5"
+                  className="flex items-start gap-4 rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-bg-card)] p-5"
                 >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-300">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border-brand)] bg-[var(--color-brand-blue-glow)] text-[var(--color-text-brand)]">
                     {item.icon}
                   </div>
                   <div>
-                    <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                    <p className="text-sm font-medium text-slate-200">{item.value}</p>
+                    <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{item.label}</p>
+                    <p className="text-sm font-medium text-[var(--color-text-secondary)]">{item.value}</p>
                   </div>
                 </div>
               )
             )}
 
             {/* Social */}
-            <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-5">
-              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Follow Us</p>
+            <div className="rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-bg-card)] p-5">
+              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Follow Us</p>
               <div className="flex gap-3">
                 {socials.map((s) => (
                   <a
@@ -211,7 +216,7 @@ export default function ContactPage() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={s.label}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-400 transition-all hover:border-blue-400/30 hover:bg-blue-500/10 hover:text-blue-300"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-border-brand)] hover:bg-[var(--color-bg-glass-strong)] hover:text-[var(--color-text-brand)]"
                   >
                     {s.icon}
                   </a>
@@ -221,22 +226,22 @@ export default function ContactPage() {
           </div>
 
           {/* Right — Form */}
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-8">
+          <div className="rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-bg-card)] p-8">
             {submitted ? (
               <div className="flex h-full flex-col items-center justify-center py-16 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/15 text-blue-400">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-brand-blue-glow)] text-[var(--color-text-brand)]">
                   <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M22 4 12 14.01l-3-3" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <h2 className="mb-2 text-2xl font-bold text-white">Message Sent!</h2>
-                <p className="max-w-xs text-sm text-slate-400">
+                <h2 className="mb-2 text-2xl font-bold text-[var(--color-text-primary)]">Message Sent!</h2>
+                <p className="max-w-xs text-sm text-[var(--color-text-secondary)]">
                   Thank you for reaching out. Our team will get back to you within 24 hours.
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="mt-8 rounded-full border border-white/10 px-5 py-2 text-sm text-slate-300 transition hover:border-blue-400/30 hover:text-white"
+                  className="mt-8 rounded-full border border-[var(--color-border-light)] px-5 py-2 text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-brand)] hover:text-[var(--color-text-primary)]"
                 >
                   Send another message
                 </button>
@@ -245,25 +250,25 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                      Full Name <span className="text-blue-400">*</span>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.15em] text-[var(--color-text-muted)]">
+                      Full Name <span className="text-[var(--color-brand-blue)]">*</span>
                     </label>
                     <input
                       required
                       type="text"
                       placeholder="Ahmed Mohamed"
-                      className="w-full rounded-xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition focus:border-blue-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-400/20"
+                      className="w-full rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-border-brand)] focus:bg-[var(--color-bg-glass-strong)] focus:ring-1 focus:ring-[var(--color-brand-blue)]/20"
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
-                      Email <span className="text-blue-400">*</span>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.15em] text-[var(--color-text-muted)]">
+                      Email <span className="text-[var(--color-brand-blue)]">*</span>
                     </label>
                     <input
                       required
                       type="email"
                       placeholder="you@company.com"
-                      className="w-full rounded-xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition focus:border-blue-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-400/20"
+                      className="w-full rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-border-brand)] focus:bg-[var(--color-bg-glass-strong)] focus:ring-1 focus:ring-[var(--color-brand-blue)]/20"
                     />
                   </div>
                 </div>
@@ -276,7 +281,7 @@ export default function ContactPage() {
                     <input
                       type="text"
                       placeholder="Your Company"
-                      className="w-full rounded-xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition focus:border-blue-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-400/20"
+                      className="w-full rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-border-brand)] focus:bg-[var(--color-bg-glass-strong)] focus:ring-1 focus:ring-blue-400/20"
                     />
                   </div>
                   <div>
@@ -286,17 +291,17 @@ export default function ContactPage() {
                     <input
                       type="tel"
                       placeholder="+20 10 0000 0000"
-                      className="w-full rounded-xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition focus:border-blue-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-400/20"
+                      className="w-full rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-border-brand)] focus:bg-[var(--color-bg-glass-strong)] focus:ring-1 focus:ring-blue-400/20"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.15em] text-[var(--color-text-muted)]">
                     Service Interested In
                   </label>
                   <select
-                    className="w-full rounded-xl border border-white/8 bg-[#080e1a] px-4 py-3 text-sm text-slate-300 outline-none transition focus:border-blue-400/50 focus:ring-1 focus:ring-blue-400/20"
+                    className="w-full rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-main)] px-4 py-3 text-sm text-[var(--color-text-secondary)] outline-none transition focus:border-[var(--color-border-brand)] focus:ring-1 focus:ring-blue-400/20"
                   >
                     <option value="">Select a service…</option>
                     {services.map((s) => (
@@ -313,14 +318,14 @@ export default function ContactPage() {
                     required
                     rows={5}
                     placeholder="Tell us about your project — goals, timeline, budget…"
-                    className="w-full resize-none rounded-xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition focus:border-blue-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-400/20"
+                    className="w-full resize-none rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-border-brand)] focus:bg-[var(--color-bg-glass-strong)] focus:ring-1 focus:ring-blue-400/20"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_0_18px_rgba(59,130,246,0.35)] transition-all hover:-translate-y-px hover:shadow-[0_0_28px_rgba(59,130,246,0.55)] disabled:opacity-70"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-px hover:shadow-xl disabled:opacity-70"
                 >
                   {loading ? (
                     <>
@@ -346,7 +351,7 @@ export default function ContactPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/8 py-4 text-center text-xs text-slate-500">
+      <footer className="relative z-10 border-t border-[var(--color-border-light)] py-4 text-center text-xs text-[var(--color-text-muted)]">
         © {new Date().getFullYear()} IKEN Technology. All rights reserved.
       </footer>
     </div>

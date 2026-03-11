@@ -3,6 +3,53 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Default (Light Mode) Variables */
+  --color-brand-blue: #004c99;
+  --color-brand-blue-glow: rgba(0, 76, 153, 0.1);
+  --color-brand-cyan: #0ea5e9;
+  --color-brand-cyan-glow: rgba(14, 165, 233, 0.1);
+  --color-brand-deep: #002b54;
+
+  /* Backgrounds */
+  --color-bg-main: #ffffff;
+  --color-bg-card: #f8fafc;
+  --color-bg-glass: rgba(0, 76, 153, 0.04);
+  --color-bg-glass-strong: rgba(0, 76, 153, 0.08);
+
+  /* Text Colors */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-brand: #004c99;
+
+  /* Borders & Accents */
+  --color-border-light: rgba(0, 76, 153, 0.08);
+  --color-border-brand: rgba(0, 76, 153, 0.2);
+  --color-accent-blue: #004c99;
+}
+
+.dark {
+  /* Dark Mode Overrides */
+  --color-brand-blue: #3b82f6;
+  --color-brand-blue-glow: rgba(59, 130, 246, 0.15);
+  --color-brand-cyan: #22d3ee;
+  --color-brand-cyan-glow: rgba(34, 211, 238, 0.15);
+  --color-brand-deep: #060c18;
+
+  --color-bg-main: #080e1a;
+  --color-bg-card: rgba(13, 21, 37, 0.8);
+  --color-bg-glass: rgba(255, 255, 255, 0.04);
+  --color-bg-glass-strong: rgba(255, 255, 255, 0.08);
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-text-brand: #60a5fa;
+
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-border-brand: rgba(59, 130, 246, 0.25);
+  --color-accent-blue: #3b82f6;
 }
 
 html {
@@ -10,8 +57,8 @@ html {
 }
 
 body {
-  background: #080e1a;
-  color: #e2e8f0;
+  background: var(--color-bg-main);
+  color: var(--color-text-secondary);
   font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
 }
 
@@ -46,8 +93,8 @@ body {
 .projects-carousel .slick-slide.slick-center .project-card {
   filter: blur(0);
   transform: scale(1);
-  background: rgb(17 24 39 / 0.85) !important;
-  border-color: rgb(255 255 255 / 0.1) !important;
+  background: var(--color-bg-card) !important;
+  border-color: var(--color-border-light) !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
@@ -68,9 +115,9 @@ body {
   width: 50px;
   height: 50px;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.06);
-  color: #e2e8f0;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-glass);
+  color: var(--color-text-secondary);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   display: inline-flex !important;
   align-items: center;
@@ -83,8 +130,8 @@ body {
 .projects-carousel .slick-prev:hover,
 .projects-carousel .slick-next:hover {
   transform: translateY(calc(-50% - 1px)) scale(1.03);
-  border-color: rgb(59 130 246 / 0.5);
-  background: rgb(59 130 246 / 0.15);
+  border-color: var(--color-border-brand);
+  background: var(--color-brand-blue-glow);
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
 }
 
@@ -128,17 +175,17 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.15);
-  background: rgb(100 116 139 / 0.4);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-glass-strong);
   transition: all 220ms ease;
 }
 
 .projects-carousel .slick-dots .slick-active .project-dot,
 .projects-carousel .slick-dots li.slick-active .project-dot {
   width: 36px;
-  border-color: #3b82f6;
-  background: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-brand-blue);
+  background: var(--color-brand-blue);
+  box-shadow: 0 0 0 4px var(--color-brand-blue-glow);
 }
 
 @theme {

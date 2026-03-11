@@ -48,27 +48,27 @@ export function ContactSection() {
   ];
 
   return (
-    <section id="contact" className="relative overflow-hidden bg-[#080e1a] text-white">
-      <div className="pointer-events-none absolute inset-0 border-t border-white/6" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(22,199,255,0.1),transparent_35%),radial-gradient(circle_at_90%_18%,rgba(59,130,246,0.1),transparent_45%)]" />
+    <section id="contact" className="relative overflow-hidden bg-[var(--color-bg-main)] text-[var(--color-text-primary)]">
+      <div className="pointer-events-none absolute inset-0 border-t border-[var(--color-border-light)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,var(--color-brand-cyan-glow),transparent_35%),radial-gradient(circle_at_90%_18%,var(--color-brand-blue-glow),transparent_45%)]" />
 
       <div className="relative mx-auto max-w-7xl px-6 pb-12 pt-16 lg:px-8">
         {/* Header */}
         <div className="mb-12 grid gap-8 lg:grid-cols-2 lg:items-end">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 text-[#4ea7ff]">
-              <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[#2f8fff]" />
+            <div className="mb-3 inline-flex items-center gap-2 text-[var(--color-text-brand)]">
+              <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[var(--color-brand-blue)]" />
               <span className="text-xs font-semibold uppercase tracking-[0.18em]">Get In Touch</span>
             </div>
-            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl text-[var(--color-text-primary)]">
               Ready to{" "}
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] bg-clip-text text-transparent">
                 Transform
               </span>{" "}
               Your Product?
             </h2>
           </div>
-          <p className="text-base leading-relaxed text-slate-400 lg:text-right">
+          <p className="text-base leading-relaxed text-[var(--color-text-secondary)] lg:text-right">
             Let&apos;s start a conversation about your next big project. Reach us through any of the channels below.
           </p>
         </div>
@@ -81,36 +81,36 @@ export function ContactSection() {
               href={item.href}
               target={item.href.startsWith("http") ? "_blank" : undefined}
               rel="noreferrer"
-              className="group flex flex-col gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-5 transition-all duration-300 hover:border-blue-400/30 hover:bg-white/[0.06]"
+              className="group flex flex-col gap-3 rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] p-5 transition-all duration-300 hover:border-[var(--color-border-brand)] hover:bg-[var(--color-bg-glass-strong)]"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-300 transition-colors group-hover:border-blue-400/40 group-hover:bg-blue-500/15">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-border-brand)] bg-[var(--color-brand-blue-glow)] text-[var(--color-text-brand)] transition-colors group-hover:bg-[var(--color-brand-blue-glow)]/80">
                 {item.icon}
               </div>
               <div>
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                <p className="text-sm font-medium text-slate-200 transition-colors group-hover:text-white">{item.value}</p>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{item.label}</p>
+                <p className="text-sm font-medium text-[var(--color-text-secondary)] transition-colors group-hover:text-[var(--color-text-primary)]">{item.value}</p>
               </div>
             </a>
           ))}
         </div>
 
         {/* Footer links */}
-        <div className="grid gap-8 border-t border-white/8 pt-8 md:grid-cols-3">
+        <div className="grid gap-8 border-t border-[var(--color-border-light)] pt-8 md:grid-cols-3">
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">Quick Links</p>
-            <div className="flex flex-col gap-2 text-sm text-slate-400">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-brand)]">Quick Links</p>
+            <div className="flex flex-col gap-2 text-sm text-[var(--color-text-secondary)]">
               {["Services", "Projects", "Clients", "Contact"].map((l) => (
-                <a key={l} href={`#${l.toLowerCase()}`} className="transition hover:text-white">{l}</a>
+                <a key={l} href={`#${l.toLowerCase()}`} className="transition hover:text-[var(--color-text-primary)]">{l}</a>
               ))}
             </div>
           </div>
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">Hours</p>
-            <p className="text-sm text-slate-400">Sunday – Thursday</p>
-            <p className="text-sm text-slate-400">8:00 AM – 7:00 PM (CAT)</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-brand)]">Hours</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">Sunday – Thursday</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">8:00 AM – 7:00 PM (CAT)</p>
           </div>
           <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">Social</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-brand)]">Social</p>
               <div className="flex gap-3">
                 {[
                   { label: "LinkedIn", href: "https://eg.linkedin.com/company/iken-tech", icon: <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg> },
@@ -119,7 +119,7 @@ export function ContactSection() {
                   { label: "X (Twitter)", href: "https://twitter.com/iken_tech", icon: <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg> },
                 ].map((s) => (
                   <a key={s.label} href={s.href} target="_blank" rel="noreferrer" aria-label={s.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-slate-400 transition-all hover:border-blue-400/30 hover:bg-blue-500/10 hover:text-blue-300">
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-border-brand)] hover:bg-[var(--color-brand-blue-glow)] hover:text-[var(--color-text-brand)]">
                     {s.icon}
                   </a>
                 ))}
@@ -128,7 +128,7 @@ export function ContactSection() {
         </div>
       </div>
 
-      <div className="relative border-t border-white/8 py-4 text-center text-xs text-slate-500">
+      <div className="relative border-t border-[var(--color-border-light)] py-4 text-center text-xs text-[var(--color-text-muted)]">
         © {new Date().getFullYear()} IKEN Technology. All rights reserved.
       </div>
     </section>

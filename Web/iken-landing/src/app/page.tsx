@@ -13,10 +13,10 @@ import { TestimonialsSection } from "./sections/TestimonialsSection";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#080e1a] text-[#15233b]">
+    <div className="min-h-screen bg-[var(--color-bg-main)] text-[var(--color-text-primary)]">
       <Header />
 
-      <main id="home" className="bg-[#080e1a]">
+      <main id="home" className="bg-[var(--color-bg-main)]">
         <HeroSection />
 
         <AboutSection />

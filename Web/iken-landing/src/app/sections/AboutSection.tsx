@@ -76,7 +76,7 @@ function PillarTimelineItem({
   const right = Math.min(1, center + 0.18);
   const opacity = useTransform(progress, [left, center, right], [0.4, 1, 0.4]);
   const x = useTransform(progress, [left, center, right], [0, 10, 0]);
-  const color = useTransform(progress, [left, center, right], ["#7f96bc", "#f1f6ff", "#7f96bc"]);
+  const color = useTransform(progress, [left, center, right], ["var(--color-text-muted)", "var(--color-text-primary)", "var(--color-text-muted)"]);
   const dotScale = useTransform(progress, [left, center, right], [0.8, 1.25, 0.8]);
   const dotOpacity = useTransform(progress, [left, center, right], [0.3, 1, 0.3]);
 
@@ -84,7 +84,7 @@ function PillarTimelineItem({
     <li className="relative pl-7">
       <motion.span
         style={{ scale: dotScale, opacity: dotOpacity }}
-        className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-[#5eb8ff]"
+        className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-[var(--color-brand-blue)]"
       />
       <motion.p style={{ opacity, x, color }} className="py-3 text-xl font-semibold tracking-tight sm:text-2xl">
         {title}
@@ -102,10 +102,10 @@ function AboutImageLayer({ pillar, opacity = 1, y = 0, scale = 1 }: {
       transition={{ duration: 0.2, ease: "linear" }}
       className="absolute inset-0"
     >
-      <div className="relative h-full overflow-hidden bg-[#080e1a]">
+      <div className="relative h-full overflow-hidden bg-[var(--color-bg-main)]">
         <Image src={pillar.image} alt={pillar.title} fill className="object-cover" />
-        <div className="absolute inset-0 bg-[linear-gradient(118deg,rgba(3,10,24,0.08)_0%,rgba(3,10,24,0.32)_46%,rgba(3,10,24,0.76)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(79,170,255,0.18),transparent_30%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(118deg,rgba(3,10,24,0.12)_0%,rgba(3,10,24,0.4)_46%,rgba(3,10,24,0.85)_100%)] opacity-[0.95]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,var(--color-brand-blue-glow),transparent_30%)]" />
       </div>
     </motion.article>
   );
@@ -140,33 +140,33 @@ function AboutExperience() {
     <section id="about" ref={sectionRef} className="relative min-h-[280vh] w-full lg:min-h-[320vh]">
       <div
         style={{ "--header-offset": "73px" } as React.CSSProperties}
-        className="sticky top-[var(--header-offset)] h-[calc(100vh-var(--header-offset))] overflow-hidden bg-[linear-gradient(180deg,#080e1a_0%,#0c1628_52%,#080e1a_100%)]"
+        className="sticky top-[var(--header-offset)] h-[calc(100vh-var(--header-offset))] overflow-hidden bg-[linear-gradient(180deg,var(--color-bg-main)_0%,var(--color-bg-card)_52%,var(--color-bg-main)_100%)]"
       >
-        <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#2f8fff]/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-[#0bb4ff]/12 blur-3xl" />
+        <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[var(--color-brand-blue)] opacity-[0.2] blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-[var(--color-brand-cyan)] opacity-[0.12] blur-3xl" />
 
         <div className="relative grid h-full gap-0 lg:grid-cols-[0.88fr_1.12fr]">
           {/* Left — fixed info + pillar list */}
-          <aside className="border-b border-white/10 px-6 py-8 pb-6 sm:px-10 lg:flex lg:h-full lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:border-white/10 lg:px-12 lg:py-12">
+          <aside className="border-b border-[var(--color-border-light)] px-6 py-8 pb-6 sm:px-10 lg:flex lg:h-full lg:flex-col lg:justify-center lg:border-b-0 lg:border-r lg:border-[var(--color-border-light)] lg:px-12 lg:py-12">
             <div className="w-full lg:mx-auto lg:max-w-[34rem]">
-              <div className="inline-flex items-center gap-2 text-[#4ea7ff]">
-                <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[#2f8fff]" />
+              <div className="inline-flex items-center gap-2 text-[var(--color-text-brand)]">
+                <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[var(--color-brand-blue)]" />
                 <span className="text-xs font-semibold uppercase tracking-[0.18em]">About IKEN</span>
               </div>
-              <h2 className="mt-4 max-w-[18ch] text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              <h2 className="mt-4 max-w-[18ch] text-4xl font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
                 Empowering Businesses{" "}
-                <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Since 2018</span>
+                <span className="bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] bg-clip-text text-transparent">Since 2018</span>
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+              <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                 IKEN Technology pioneers cutting-edge solutions tailored for all business sizes. Backed by over 7 years of unparalleled expertise, we build long-term, reliable partnerships that deliver real results — from startups to enterprise.
               </p>
 
               {/* Pillar timeline list */}
               <ol className="relative mt-8 pl-5">
-                <div className="absolute left-0 top-0 h-full w-px bg-white/15" />
+                <div className="absolute left-0 top-0 h-full w-px bg-[var(--color-bg-glass-strong)]" />
                 <motion.div
                   style={{ height: progressHeight }}
-                  className="absolute left-0 top-0 w-px origin-top bg-[linear-gradient(180deg,#2b7dff,#5ed0ff)]"
+                  className="absolute left-0 top-0 w-px origin-top bg-[linear-gradient(180deg,var(--color-brand-blue),var(--color-brand-cyan))]"
                 />
                 {pillars.map((p, idx) => (
                   <PillarTimelineItem
@@ -183,21 +183,21 @@ function AboutExperience() {
 
           {/* Right — image crossfade */}
           <div className="relative h-full p-4 lg:p-5">
-            <div className="relative h-full overflow-hidden rounded-2xl border border-white/10">
+            <div className="relative h-full overflow-hidden rounded-2xl border border-[var(--color-border-light)]">
               {/* Counter */}
-              <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 font-mono text-xs tracking-widest backdrop-blur-sm">
+              <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 font-mono text-xs tracking-widest backdrop-blur-sm border border-white/10">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={activeIndex}
                     initial={{ y: 6, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -6, opacity: 0 }}
                     transition={{ duration: 0.22 }}
-                    className="inline-block text-white/70"
+                    className="inline-block text-white"
                   >
                     {String(activeIndex + 1).padStart(2, "0")}
                   </motion.span>
                 </AnimatePresence>
-                <span className="text-white/25">/</span>
-                <span className="text-white/25">{String(pillars.length).padStart(2, "0")}</span>
+                <span className="text-white/40">/</span>
+                <span className="text-white/40">{String(pillars.length).padStart(2, "0")}</span>
               </div>
 
               {/* Crossfade images */}
@@ -215,7 +215,7 @@ function AboutExperience() {
               )}
 
               {/* Text overlay */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(6,17,37,0)_0%,rgba(6,17,37,0.76)_34%,#061125_100%)] px-6 pb-8 pt-20 lg:px-8 lg:pb-10">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent_0%,rgba(6,12,24,0.85)_40%,var(--color-brand-deep)_100%)] px-6 pb-8 pt-20 lg:px-8 lg:pb-10">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={activePillar.title}
@@ -223,19 +223,19 @@ function AboutExperience() {
                     transition={{ duration: 0.32, ease: "easeOut" }}
                     className="max-w-3xl"
                   >
-                    <div className="border-t border-white/10 pt-5">
+                    <div className="border-t border-[var(--color-border-light)] pt-5">
                       <div className="mb-2 flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#8bc9ff]/30 bg-[linear-gradient(145deg,#2166de,#40b1ff)] text-white">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border-brand)] bg-[linear-gradient(145deg,var(--color-brand-blue),var(--color-brand-cyan))] text-[var(--color-text-primary)]">
                           <PillarGlyph kind={activePillar.icon} />
                         </div>
                         <h3 className="text-2xl font-semibold tracking-tight text-white sm:text-[1.85rem]">
                           {activePillar.title}
                         </h3>
                       </div>
-                      <p className="text-sm leading-relaxed text-[#d5e3fa]">{activePillar.desc}</p>
+                      <p className="text-sm leading-relaxed text-white/70">{activePillar.desc}</p>
                     </div>
-                    <div className="mt-4 border-l-2 border-blue-400 pl-3">
-                      <p className="text-xs font-medium uppercase tracking-[0.13em] text-[#a8c8f0]">{activePillar.short}</p>
+                    <div className="mt-4 border-l-2 border-[var(--color-brand-blue)] pl-3">
+                      <p className="text-xs font-medium uppercase tracking-[0.13em] text-white/50">{activePillar.short}</p>
                     </div>
                   </motion.div>
                 </AnimatePresence>

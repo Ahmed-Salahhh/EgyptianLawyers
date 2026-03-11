@@ -81,17 +81,17 @@ export function ServicesSection() {
     <section
       id="services"
       ref={containerRef}
-      className="relative bg-[#080e1a]"
+      className="relative bg-[var(--color-bg-main)]"
       style={{ minHeight: `${(services.length + 1) * 100}vh` }}
     >
       <div className="sticky top-0 h-screen overflow-hidden">
         {/* Top label */}
         <div className="absolute left-0 top-8 z-10 flex items-center gap-6 px-8 lg:px-12">
-          <div className="inline-flex items-center gap-2 text-[#4ea7ff]">
-            <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[#2f8fff]" />
+          <div className="inline-flex items-center gap-2 text-[var(--color-text-brand)]">
+            <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[var(--color-brand-blue)]" />
             <span className="text-xs font-semibold uppercase tracking-[0.18em]">Our Services</span>
           </div>
-          <span className="text-xs text-slate-500">Scroll to explore →</span>
+          <span className="text-xs text-[var(--color-text-muted)]">Scroll to explore →</span>
         </div>
 
         {/* Horizontal track */}
@@ -104,10 +104,10 @@ export function ServicesSection() {
             className="flex h-full shrink-0 flex-col justify-center overflow-hidden pb-16 pl-8 pt-16 lg:pl-12"
             style={{ width: `${INTRO_R * 100}vw` }}
           >
-            <h2 className="text-[clamp(1.8rem,3vw,4rem)] font-black leading-[1.1] tracking-tighter text-white">
+            <h2 className="text-[clamp(1.8rem,3vw,4rem)] font-black leading-[1.1] tracking-tighter text-[var(--color-text-primary)]">
               WE PROVIDE
               <br />
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] bg-clip-text text-transparent">
                 GREAT IT
               </span>
               <br />
@@ -130,22 +130,22 @@ export function ServicesSection() {
                 fill
                 className="object-cover grayscale transition-[filter] duration-500 group-hover:grayscale-0"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-              <div className="absolute inset-0 bg-black/15" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-black/10" />
 
 
               {/* Bottom content */}
               <div className="absolute bottom-8 left-8 right-8">
                 <div className="mb-3 flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand-blue)]" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-brand)]">
                     {s.tag}
                   </span>
                 </div>
                 <h3 className="whitespace-pre-line text-5xl font-black leading-[0.88] text-white lg:text-6xl xl:text-7xl">
                   {s.title}
                 </h3>
-                <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-300">{s.desc}</p>
+                <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/80">{s.desc}</p>
               </div>
             </div>
           ))}

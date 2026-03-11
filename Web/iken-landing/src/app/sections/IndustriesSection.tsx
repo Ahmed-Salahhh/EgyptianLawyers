@@ -64,10 +64,10 @@ const fade = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
 export function IndustriesSection() {
   return (
-    <section id="industries" className="relative overflow-hidden bg-[#080e1a] py-20 sm:py-24">
+    <section id="industries" className="relative overflow-hidden bg-[var(--color-bg-main)] py-20 sm:py-24">
       {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-blue-600/6 blur-[120px]" />
+        <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-[var(--color-brand-blue-glow)] blur-[120px]" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
@@ -80,17 +80,17 @@ export function IndustriesSection() {
           transition={{ duration: 0.45 }}
           className="mb-14 text-center"
         >
-          <div className="mb-3 inline-flex items-center gap-2 text-[#4ea7ff]">
-            <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[#2f8fff]" />
+          <div className="mb-3 inline-flex items-center gap-2 text-[var(--color-text-brand)]">
+            <span className="inline-flex h-3.5 w-3.5 rounded-[3px] bg-[var(--color-brand-blue)]" />
             <span className="text-xs font-semibold uppercase tracking-[0.18em]">Industries We Serve</span>
           </div>
-          <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h2 className="text-4xl font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
             Built for{" "}
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] bg-clip-text text-transparent">
               Every Sector
             </span>
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
             Our services cater to a wide range of industries — from healthcare and finance to e-commerce and automotive — delivering measurable improvements in operations and efficiency.
           </p>
         </motion.div>
@@ -105,18 +105,18 @@ export function IndustriesSection() {
               viewport={{ once: true, amount: 0.1 }}
               variants={fade}
               transition={{ duration: 0.4, delay: i * 0.07 }}
-              className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-6 transition-all duration-300 hover:border-blue-400/30 hover:bg-white/[0.06]"
+              className="group relative overflow-hidden rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-bg-glass)] p-6 transition-all duration-300 hover:border-[var(--color-border-brand)] hover:bg-[var(--color-bg-glass-strong)]"
             >
               {/* Hover glow */}
               <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
               </div>
               <div className="relative">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-blue-400/20 bg-gradient-to-br from-blue-500/20 to-cyan-400/10 text-blue-300">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-border-brand)] bg-[var(--color-brand-blue-glow)] text-[var(--color-text-brand)]">
                   {item.icon}
                 </div>
-                <h3 className="mb-1.5 text-lg font-semibold text-white">{item.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-400">{item.desc}</p>
+                <h3 className="mb-1.5 text-lg font-semibold text-[var(--color-text-primary)]">{item.title}</h3>
+                <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{item.desc}</p>
               </div>
             </motion.div>
           ))}
