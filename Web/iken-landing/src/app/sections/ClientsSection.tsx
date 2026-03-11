@@ -6,7 +6,7 @@ export function ClientsSection() {
   return (
     <section 
       id="clients" 
-      className="relative py-24 bg-[#020617] overflow-hidden"
+      className="relative py-24 bg-[#080e1a] overflow-hidden"
     >
       {/* Dark Ambient Atmosphere */}
       <div className="absolute inset-0 pointer-events-none z-0">

@@ -63,7 +63,7 @@ export function TestimonialsSlider() {
   };
 
   return (
-    <div className="relative overflow-hidden bg-[#0a0f18] py-10 sm:py-14 flex items-center">
+    <div className="relative overflow-hidden bg-[#080e1a] py-10 sm:py-14 flex items-center">
       
       {/* Background Graphic elements */}
       <div className="absolute inset-0 z-0">
@@ -128,7 +128,7 @@ export function TestimonialsSlider() {
             >
               
               {/* Left Side: Massive Photo */}
-              <div className="relative w-full h-[45%] min-h-[180px] lg:h-full lg:w-[45%] xl:w-[40%] overflow-hidden bg-[#0a0f18] shrink-0">
+              <div className="relative w-full h-[45%] min-h-[180px] lg:h-full lg:w-[45%] xl:w-[40%] overflow-hidden bg-[#080e1a] shrink-0">
                 <motion.div
                   initial={{ scale: 1.08, x: directionRef.current * 20, filter: "brightness(0.75)" }}
                   animate={{ scale: 1, x: 0, filter: "brightness(1.05)" }}

@@ -108,7 +108,7 @@ export function ProjectsSection() {
       viewport={{ once: true, amount: 0.15 }}
       variants={fade}
       transition={{ duration: 0.45 }}
-      className="relative overflow-hidden bg-[#0a0f18] pb-24 pt-14 sm:pt-16"
+      className="relative overflow-hidden bg-[#080e1a] pb-24 pt-14 sm:pt-16"
     >
       {/* Background glow */}
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -127,7 +127,7 @@ export function ProjectsSection() {
           <Slider {...settings}>
             {products.map((project, idx) => (
               <div key={project.title} className="px-3 py-2" style={{ width: 420 }}>
-                <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-white/8 bg-[#111827]/80 shadow-[0_24px_52px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+                <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-white/8 bg-[#0d1525]/80 shadow-[0_24px_52px_rgba(0,0,0,0.4)] backdrop-blur-sm">
                   <div className="relative h-64">
                     <Image src={project.image} alt={project.title} fill className="object-cover" />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,15,24,0.05)_0%,rgba(10,15,24,0.55)_100%)]" />

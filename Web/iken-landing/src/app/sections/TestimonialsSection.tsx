@@ -11,6 +11,7 @@ const fade = {
 export function TestimonialsSection() {
   return (
     <motion.section
+      id="testimonials"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.15 }}

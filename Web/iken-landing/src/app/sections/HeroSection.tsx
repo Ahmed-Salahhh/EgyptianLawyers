@@ -14,7 +14,7 @@ export function HeroSection() {
       animate="visible"
       variants={fade}
       transition={{ duration: 0.55, ease: "easeOut" }}
-      className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden border-b border-slate-800 bg-slate-950 px-4 py-20 text-white"
+      className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden bg-[#080e1a] px-4 py-20 text-white"
     >
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute right-0 top-0 h-96 w-96 animate-pulse rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-transparent opacity-25 blur-3xl mix-blend-screen" />
