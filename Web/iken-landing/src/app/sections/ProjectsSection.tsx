@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import type { CSSProperties, MouseEventHandler } from "react";
 import Slider, { type Settings } from "react-slick";
 
@@ -11,6 +12,12 @@ const fade = {
 };
 
 const products = [
+  {
+    title: "ELAbd Patisserie",
+    image: "/products/p-homecare.jpg",
+    logo: "/clients/br-elabd.png",
+    href: "/projects/elabd",
+  },
   {
     title: "Contact Cars",
     image: "/products/p-contactcars.jpg",
@@ -129,11 +136,29 @@ export function ProjectsSection() {
               <div key={project.title} className="px-3 py-2" style={{ width: 420 }}>
                 <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-white/8 bg-[#0d1525]/80 shadow-[0_24px_52px_rgba(0,0,0,0.4)] backdrop-blur-sm">
                   <div className="relative h-64">
-                    <Image src={project.image} alt={project.title} fill className="object-cover" />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,15,24,0.05)_0%,rgba(10,15,24,0.55)_100%)]" />
+                    {project.logo ? (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1525] to-[#0a1020]">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(47,143,255,0.12),transparent)]" />
+                        <div className="relative flex h-36 w-36 items-center justify-center rounded-2xl bg-white p-4 shadow-[0_0_40px_rgba(59,130,246,0.2)]">
+                          <Image src={project.logo} alt={project.title} width={120} height={120} className="h-28 w-28 object-contain" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Image src={project.image} alt={project.title} fill className="object-cover" />
+                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,15,24,0.05)_0%,rgba(10,15,24,0.65)_100%)]" />
+                      </>
+                    )}
+
                   </div>
-                  <div className="space-y-2 p-5">
-                    <h3 className="text-2xl font-semibold tracking-tight text-white">{project.title}</h3>
+                  <div className="flex items-center justify-between p-5">
+                    <h3 className="text-xl font-semibold tracking-tight text-white">{project.title}</h3>
+                    {project.href && (
+                      <Link href={project.href}
+                        className="rounded-full border border-blue-400/25 bg-blue-500/10 px-3.5 py-1.5 text-xs font-semibold text-blue-300 transition-all hover:bg-blue-500/20">
+                        Case Study →
+                      </Link>
+                    )}
                   </div>
                 </article>
               </div>
