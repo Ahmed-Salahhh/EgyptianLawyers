@@ -75,7 +75,7 @@ function createThemedStyles(theme: ThemeColors) {
 
 export default function ProfileTab() {
   const router = useRouter();
-  const { token, signOut, profile: authProfile, refreshProfile } = useSession();
+  const { token, signOut, profile: authProfile, refreshProfile, isHydrated } = useSession();
   const { isDarkMode, theme, toggleTheme } = useTheme();
 
   const [profile, setProfile] = useState<MyLawyerProfile | null>(null);
@@ -233,6 +233,16 @@ export default function ProfileTab() {
 
   const themedStyles = useMemo(() => createThemedStyles(theme), [theme]);
 
+  // Safeguard: prevent crash during auto-logout navigation when token is cleared
+  if (!isHydrated || !token) {
+    return (
+      <View style={[themedStyles.centered]}>
+        <ActivityIndicator size="large" color={C.primary} />
+        <Text style={themedStyles.helperText}>Loading...</Text>
+      </View>
+    );
+  }
+
   if (isLoading) {
     return (
       <View style={[themedStyles.centered]}>
@@ -244,9 +254,12 @@ export default function ProfileTab() {
 
   if (error || !profile) {
     return (
-      <View style={[themedStyles.centered]}>
-        <Text style={themedStyles.errorText}>{error ?? "Failed to load profile."}</Text>
-        <Pressable onPress={loadProfile} style={styles.primaryButton}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+        <Text style={[themedStyles.errorText, { marginBottom: 8 }]}>{error ?? "Failed to load profile."}</Text>
+        <Pressable
+          onPress={loadProfile}
+          style={{ backgroundColor: "#0A2540", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 16 }}
+        >
           <Text style={styles.primaryButtonText}>Retry</Text>
         </Pressable>
       </View>
@@ -650,6 +663,14 @@ const styles = StyleSheet.create({
     backgroundColor: C.primary,
     alignItems: "center",
     justifyContent: "center",
+  },
+  retryButton: {
+    backgroundColor: C.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    alignSelf: "center",
   },
   primaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
   outlineButton: {

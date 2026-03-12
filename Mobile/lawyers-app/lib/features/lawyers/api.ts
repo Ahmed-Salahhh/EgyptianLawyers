@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "@/lib/apiClient";
 import type {
   MyLawyerProfile,
   ProfileViewersPage,
@@ -30,7 +31,7 @@ export async function registerLawyer(
 }
 
 export async function fetchMyLawyerProfile(token: string): Promise<MyLawyerProfile> {
-  const response = await fetch(`${API_BASE_URL}/api/lawyers/me`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/lawyers/me`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -49,7 +50,7 @@ export async function fetchPublicLawyerProfile(
   token: string,
   lawyerId: string,
 ): Promise<PublicLawyerProfile> {
-  const response = await fetch(`${API_BASE_URL}/api/lawyers/${lawyerId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/lawyers/${lawyerId}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -75,7 +76,7 @@ export async function getProfileViewers(
     pageSize: String(pageSize),
   });
 
-  const response = await fetch(`${API_BASE_URL}/api/lawyers/viewers?${params.toString()}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/lawyers/viewers?${params.toString()}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -95,7 +96,7 @@ export async function updateMyLawyerProfile(
   token: string,
   payload: UpdateMyLawyerProfileRequest,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/lawyers/me`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/lawyers/me`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -118,7 +119,7 @@ export async function uploadAvatar(
   // React Native FormData accepts { uri, name, type } for file uploads
   formData.append("file", { uri: file.uri, name: file.name, type: file.type } as never);
 
-  const response = await fetch(`${API_BASE_URL}/api/lawyers/me/avatar`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/lawyers/me/avatar`, {
     method: "POST",
     headers: {
       Accept: "application/json",

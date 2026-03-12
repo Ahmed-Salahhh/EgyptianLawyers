@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "@/lib/apiClient";
 import {
   normalizeHelpPostDetails,
   normalizeFeedPage,
@@ -40,7 +41,7 @@ export async function fetchHelpPostsFeed(
   if (filters?.courtId) params.set("courtId", filters.courtId);
   if (filters?.cityId) params.set("cityId", filters.cityId);
 
-  const response = await fetch(`${API_BASE_URL}/api/help-posts/feed?${params.toString()}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-posts/feed?${params.toString()}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -60,7 +61,7 @@ export async function fetchHelpPostsFeed(
 // ── Single post ───────────────────────────────────────────────────────────────
 
 export async function fetchHelpPostById(token: string, postId: string): Promise<HelpPostDetails> {
-  const response = await fetch(`${API_BASE_URL}/api/help-posts/${postId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-posts/${postId}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -90,7 +91,7 @@ export async function createHelpPost(
   form.append("cityId", fields.cityId);
   if (file) appendFile(form, file);
 
-  const response = await fetch(`${API_BASE_URL}/api/help-posts`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-posts`, {
     method: "POST",
     // DO NOT set Content-Type — fetch adds the multipart boundary automatically.
     headers: {
@@ -120,7 +121,7 @@ export async function replyToPost(
   if (parentReplyId) form.append("parentReplyId", parentReplyId);
   if (file) appendFile(form, file);
 
-  const response = await fetch(`${API_BASE_URL}/api/help-posts/${helpPostId}/replies`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-posts/${helpPostId}/replies`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -144,7 +145,7 @@ export async function uploadHelpPostAttachment(
   const form = new FormData();
   appendFile(form, file);
 
-  const response = await fetch(`${API_BASE_URL}/api/help-posts/upload-attachment`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-posts/upload-attachment`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -170,7 +171,7 @@ export async function updateHelpPost(
   description: string,
   attachmentUrl?: string | null,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/help-posts/${postId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-posts/${postId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -187,7 +188,7 @@ export async function updateHelpPost(
 }
 
 export async function deleteHelpPost(token: string, postId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/help-posts/${postId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-posts/${postId}`, {
     method: "DELETE",
     headers: {
       Accept: "application/json",
@@ -209,7 +210,7 @@ export async function updateHelpPostReply(
   comment: string,
   attachmentUrl?: string | null,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/help-post-replies/${replyId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-post-replies/${replyId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -226,7 +227,7 @@ export async function updateHelpPostReply(
 }
 
 export async function deleteHelpPostReply(token: string, replyId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/help-post-replies/${replyId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/help-post-replies/${replyId}`, {
     method: "DELETE",
     headers: {
       Accept: "application/json",

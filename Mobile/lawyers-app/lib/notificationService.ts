@@ -2,6 +2,8 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 
+import { fetchWithAuth } from "@/lib/apiClient";
+
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ??
   "http://egyptianlawyers-001-site1.stempurl.com";
@@ -146,7 +148,7 @@ export async function syncDeviceTokenWithBackend(
   const url = `${API_BASE_URL}/api/lawyers/me/device-token`;
   console.info(`${TAG} Syncing FCM token with backend → POST ${url}`);
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

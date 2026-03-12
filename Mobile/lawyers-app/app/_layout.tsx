@@ -1,11 +1,13 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter, type ErrorBoundaryProps } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef } from "react";
+import { Pressable, Text, View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
+import { setUnauthorizedHandler } from "@/lib/apiClient";
 import { useSession, SessionProvider } from "@/lib/auth/session";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import {
@@ -14,7 +16,30 @@ import {
   syncDeviceTokenWithBackend,
 } from "@/lib/notificationService";
 
-export { ErrorBoundary } from "expo-router";
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return (
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+      <Text style={{ color: "#333", fontSize: 16, textAlign: "center", marginBottom: 8 }}>
+        Something went wrong
+      </Text>
+      <Text style={{ color: "#666", fontSize: 14, textAlign: "center", paddingHorizontal: 20 }}>
+        {error?.message ?? "An unexpected error occurred"}
+      </Text>
+      <Pressable
+        onPress={retry}
+        style={{
+          backgroundColor: "#0A2540",
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          borderRadius: 8,
+          marginTop: 16,
+        }}
+      >
+        <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>Retry</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 // Configures foreground notification display.
 // Uses a lazy require() internally so expo-notifications is never loaded in Expo Go.
@@ -52,7 +77,16 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, token, profile } = useSession();
+  const router = useRouter();
+  const { isAuthenticated, token, profile, signOut } = useSession();
+
+  useEffect(() => {
+    setUnauthorizedHandler(async () => {
+      await signOut();
+      router.replace("/login");
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [signOut, router]);
 
   // Tracks the last token we synced so the effect runs exactly once per
   // auth session (re-runs only if the user signs out and back in with a

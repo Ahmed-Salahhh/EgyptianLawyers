@@ -5,6 +5,8 @@ import * as SecureStore from "expo-secure-store";
 const TOKEN_KEY = "eln_mobile_token";
 const PROFILE_KEY = "eln_mobile_profile";
 
+import { fetchWithAuth } from "@/lib/apiClient";
+
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://egyptianlawyers-001-site1.stempurl.com";
 
@@ -111,7 +113,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (!accessToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/auth/refresh`, {
         method: "POST",
         headers: {
           Accept: "application/json",

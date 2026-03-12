@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "@/lib/apiClient";
 import { normalizeCourtsAndCities, type LookupCity } from "./types";
 
 const API_BASE_URL =
@@ -7,7 +8,8 @@ export async function fetchCourtsAndCities(token?: string | null): Promise<Looku
   const headers: Record<string, string> = { Accept: "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE_URL}/api/lookups/courts-and-cities`, {
+  const fetcher = token ? fetchWithAuth : fetch;
+  const response = await fetcher(`${API_BASE_URL}/api/lookups/courts-and-cities`, {
     method: "GET",
     headers,
   });

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "@/lib/apiClient";
 import type { NotificationsPage } from "./types";
 
 const API_BASE_URL =
@@ -17,7 +18,7 @@ export async function getNotifications(
     pageSize: String(pageSize),
   });
 
-  const response = await fetch(`${API_BASE_URL}/api/notifications?${params}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/notifications?${params}`, {
     method: "GET",
     headers: authHeaders(token),
   });
@@ -31,7 +32,7 @@ export async function getNotifications(
 }
 
 export async function markNotificationAsRead(token: string, id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/notifications/${id}/read`, {
     method: "PUT",
     headers: authHeaders(token),
   });
@@ -43,7 +44,7 @@ export async function markNotificationAsRead(token: string, id: string): Promise
 }
 
 export async function markAllNotificationsAsRead(token: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/notifications/read-all`, {
     method: "PUT",
     headers: authHeaders(token),
   });
