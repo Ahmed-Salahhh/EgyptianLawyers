@@ -12,10 +12,12 @@ import {
 } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, isAuthenticated, isHydrated } = useSession();
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -52,39 +54,39 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.select({ ios: "padding", default: undefined })}
-      style={styles.screen}
+      style={[styles.screen, { backgroundColor: theme.background }]}
     >
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
         <View style={styles.header}>
           <Ionicons name="scale-outline" size={64} color="#0A2540" />
-          <Text style={styles.brand}>The Egyptian Lawyers Network</Text>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to access your legal community.</Text>
+          <Text style={[styles.brand, { color: theme.text }]}>The Egyptian Lawyers Network</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Welcome Back</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Sign in to access your legal community.</Text>
         </View>
 
-        <View style={styles.inputRow}>
-          <Ionicons name="mail-outline" size={20} color="#666666" />
+        <View style={[styles.inputRow, { backgroundColor: theme.background }]}>
+          <Ionicons name="mail-outline" size={20} color={theme.textSecondary} />
           <TextInput
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
             placeholder="Email"
-            placeholderTextColor="#999999"
+            placeholderTextColor={theme.textSecondary}
             value={email}
             onChangeText={setEmail}
-            style={styles.input}
+            style={[styles.input, { color: theme.text }]}
           />
         </View>
 
-        <View style={styles.inputRow}>
-          <Ionicons name="lock-closed-outline" size={20} color="#666666" />
+        <View style={[styles.inputRow, { backgroundColor: theme.background }]}>
+          <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} />
           <TextInput
             secureTextEntry
             placeholder="Password"
-            placeholderTextColor="#999999"
+            placeholderTextColor={theme.textSecondary}
             value={password}
             onChangeText={setPassword}
-            style={styles.input}
+            style={[styles.input, { color: theme.text }]}
           />
         </View>
 
@@ -107,8 +109,8 @@ export default function LoginScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Pressable onPress={() => router.push("/register")} style={styles.signUpLink}>
-          <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
-          <Text style={styles.signUpBold}>Sign Up</Text>
+          <Text style={[styles.signUpText, { color: theme.textSecondary }]}>Don&apos;t have an account? </Text>
+          <Text style={[styles.signUpBold, { color: theme.text }]}>Sign Up</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

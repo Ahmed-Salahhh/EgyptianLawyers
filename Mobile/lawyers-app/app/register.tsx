@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
+import { useTheme } from "@/lib/ThemeContext";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
 import type { LookupCity } from "@/lib/features/lookups/types";
 import { registerLawyer } from "@/lib/features/lawyers/api";
@@ -30,6 +31,7 @@ const countries = [
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
 
   const [fullName, setFullName] = useState("");
   const [title, setTitle] = useState("");
@@ -131,56 +133,63 @@ export default function RegisterScreen() {
   return (
     <>
       <Stack.Screen options={{ title: "Lawyer Registration" }} />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Lawyer Registration</Text>
-        <Text style={styles.subtitle}>Create your lawyer account request.</Text>
+      <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
+        <Text style={[styles.title, { color: theme.text }]}>Lawyer Registration</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Create your lawyer account request.</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Full Name *</Text>
-          <TextInput value={fullName} onChangeText={setFullName} style={styles.input} />
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name *</Text>
+          <TextInput
+            value={fullName}
+            onChangeText={setFullName}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+            placeholderTextColor={theme.textSecondary}
+          />
 
-          <Text style={styles.label}>Title</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Title</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
             placeholder="e.g. Lawyer"
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+            placeholderTextColor={theme.textSecondary}
           />
 
-          <Text style={styles.label}>Syndicate Card Number *</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Syndicate Card Number *</Text>
           <TextInput
             value={syndicateCardNumber}
             onChangeText={setSyndicateCardNumber}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+            placeholderTextColor={theme.textSecondary}
           />
 
-          <Text style={styles.label}>WhatsApp Number *</Text>
-          <View style={styles.whatsAppRow}>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>WhatsApp Number *</Text>
+          <View style={[styles.whatsAppRow, { backgroundColor: theme.background }]}>
             <TouchableOpacity
               onPress={() => setIsDropdownVisible(true)}
               style={{ flexDirection: "row", alignItems: "center" }}
             >
-              <Text style={styles.whatsAppPrefix}>
+              <Text style={[styles.whatsAppPrefix, { color: theme.text }]}>
                 {countryCode.flag} {countryCode.code}
               </Text>
               <Ionicons
                 name="chevron-down-outline"
                 size={16}
-                color="#0A2540"
+                color={theme.text}
                 style={{ marginLeft: 4 }}
               />
             </TouchableOpacity>
-            <View style={styles.whatsAppDivider} />
+            <View style={[styles.whatsAppDivider, { backgroundColor: theme.border }]} />
             <TextInput
               value={whatsAppNumber}
               onChangeText={setWhatsAppNumber}
               keyboardType="phone-pad"
               placeholder="1015985768"
-              placeholderTextColor="#999999"
-              style={styles.whatsAppInput}
+              placeholderTextColor={theme.textSecondary}
+              style={[styles.whatsAppInput, { color: theme.text }]}
             />
             {isDropdownVisible && (
-              <View style={styles.dropdown}>
+              <View style={[styles.dropdown, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <ScrollView
                   nestedScrollEnabled
                   style={{ maxHeight: 200 }}
@@ -193,9 +202,9 @@ export default function RegisterScreen() {
                         setCountryCode(item);
                         setIsDropdownVisible(false);
                       }}
-                      style={styles.dropdownRow}
+                      style={[styles.dropdownRow, { borderBottomColor: theme.border }]}
                     >
-                      <Text style={styles.dropdownText}>
+                      <Text style={[styles.dropdownText, { color: theme.text }]}>
                         {item.flag} {item.code}
                       </Text>
                     </TouchableOpacity>
@@ -205,36 +214,38 @@ export default function RegisterScreen() {
             )}
           </View>
 
-          <Text style={styles.label}>Email *</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Email *</Text>
           <TextInput
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+            placeholderTextColor={theme.textSecondary}
           />
 
-          <Text style={styles.label}>Password *</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Password *</Text>
           <TextInput
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+            placeholderTextColor={theme.textSecondary}
           />
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.rowBetween}>
-            <Text style={styles.labelInline}>Active Cities *</Text>
+            <Text style={[styles.labelInline, { color: theme.text }]}>Active Cities *</Text>
             <Pressable onPress={loadLookups}>
-              <Text style={styles.reloadText}>Reload</Text>
+              <Text style={[styles.reloadText, { color: theme.text }]}>Reload</Text>
             </Pressable>
           </View>
 
           {isLoadingLookups ? (
             <View style={styles.row}>
-              <ActivityIndicator size="small" color="#1f5bd8" />
-              <Text style={styles.helperText}>Loading cities...</Text>
+              <ActivityIndicator size="small" color={theme.text} />
+              <Text style={[styles.helperText, { color: theme.textSecondary }]}>Loading cities...</Text>
             </View>
           ) : lookupsError ? (
             <Text style={styles.errorText}>{lookupsError}</Text>
@@ -246,9 +257,16 @@ export default function RegisterScreen() {
                   <Pressable
                     key={city.id}
                     onPress={() => toggleCity(city.id)}
-                    style={[styles.cityChip, selected ? styles.cityChipActive : null]}
+                    style={[
+                      styles.cityChip,
+                      {
+                        backgroundColor: selected ? theme.card : theme.background,
+                        borderColor: theme.border,
+                      },
+                      selected && { borderColor: theme.text },
+                    ]}
                   >
-                    <Text style={[styles.cityText, selected ? styles.cityTextActive : null]}>
+                    <Text style={[styles.cityText, { color: theme.text }, selected && styles.cityTextActive]}>
                       {city.name}
                     </Text>
                   </Pressable>

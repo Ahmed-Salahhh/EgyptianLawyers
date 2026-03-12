@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import { getProfileViewers } from "@/lib/features/lawyers/api";
 import type { ProfileViewer } from "@/lib/features/lawyers/types";
 
@@ -54,6 +55,7 @@ function getInitial(name: string): string {
 export default function ProfileViewersScreen() {
   const router = useRouter();
   const { token } = useSession();
+  const { theme } = useTheme();
 
   const [viewers, setViewers] = useState<ProfileViewer[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -118,9 +120,9 @@ export default function ProfileViewersScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={C.primary} />
-        <Text style={styles.loadingText}>Loading viewers...</Text>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading viewers...</Text>
       </View>
     );
   }
@@ -129,10 +131,10 @@ export default function ProfileViewersScreen() {
 
   if (error && viewers.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Ionicons name="wifi-outline" size={48} color={C.textSecondary} />
-        <Text style={styles.errorTitle}>Something went wrong</Text>
-        <Text style={styles.errorSubtitle}>{error}</Text>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
+        <Ionicons name="wifi-outline" size={48} color={theme.textSecondary} />
+        <Text style={[styles.errorTitle, { color: theme.text }]}>Something went wrong</Text>
+        <Text style={[styles.errorSubtitle, { color: theme.textSecondary }]}>{error}</Text>
         <Pressable style={styles.retryButton} onPress={() => { setIsLoading(true); loadPage(1, false); }}>
           <Text style={styles.retryButtonText}>Try again</Text>
         </Pressable>
@@ -143,7 +145,7 @@ export default function ProfileViewersScreen() {
   // ── Main list ─────────────────────────────────────────────────────────────
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={viewers}
         keyExtractor={(item) => item.id}
@@ -161,14 +163,14 @@ export default function ProfileViewersScreen() {
         ListHeaderComponent={
           viewers.length > 0 ? (
             <View style={styles.listHeader}>
-              <Text style={styles.listHeaderText}>
+              <Text style={[styles.listHeaderText, { color: theme.textSecondary }]}>
                 {totalCount} {totalCount === 1 ? "person" : "people"} viewed your profile
               </Text>
             </View>
           ) : null
         }
         ListEmptyComponent={
-          !error ? <EmptyState /> : null
+          !error ? <EmptyState theme={theme} /> : null
         }
         ListFooterComponent={
           isLoadingMore ? (
@@ -180,6 +182,7 @@ export default function ProfileViewersScreen() {
         renderItem={({ item }) => (
           <ViewerCard
             viewer={item}
+            theme={theme}
             onPress={() =>
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (router.push as any)({
@@ -196,11 +199,11 @@ export default function ProfileViewersScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function ViewerCard({ viewer, onPress }: { viewer: ProfileViewer; onPress: () => void }) {
+function ViewerCard({ viewer, theme, onPress }: { viewer: ProfileViewer; theme: { background: string; card: string; text: string; textSecondary: string; border: string }; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.viewerCard, pressed && { opacity: 0.82 }]}
+      style={({ pressed }) => [styles.viewerCard, { backgroundColor: theme.card }, pressed && { opacity: 0.82 }]}
     >
       {/* Avatar */}
       <View style={styles.avatar}>
@@ -209,10 +212,10 @@ function ViewerCard({ viewer, onPress }: { viewer: ProfileViewer; onPress: () =>
 
       {/* Info */}
       <View style={styles.viewerInfo}>
-        <Text style={styles.viewerName} numberOfLines={1}>
+        <Text style={[styles.viewerName, { color: theme.text }]} numberOfLines={1}>
           {viewer.fullName}
         </Text>
-        <Text style={styles.viewerTime}>
+        <Text style={[styles.viewerTime, { color: theme.textSecondary }]}>
           Viewed {formatRelativeDate(viewer.lastViewedAt)}
         </Text>
       </View>
@@ -225,19 +228,19 @@ function ViewerCard({ viewer, onPress }: { viewer: ProfileViewer; onPress: () =>
       )}
 
       {/* Chevron */}
-      <Ionicons name="chevron-forward" size={16} color={C.textSecondary} />
+      <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
     </Pressable>
   );
 }
 
-function EmptyState() {
+function EmptyState({ theme }: { theme: { background: string; card: string; text: string; textSecondary: string } }) {
   return (
     <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconWrap}>
-        <Ionicons name="eye-off-outline" size={40} color={C.textSecondary} />
+      <View style={[styles.emptyIconWrap, { backgroundColor: theme.card }]}>
+        <Ionicons name="eye-off-outline" size={40} color={theme.textSecondary} />
       </View>
-      <Text style={styles.emptyTitle}>No profile views yet</Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>No profile views yet</Text>
+      <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
         Post in the community feed to get noticed by other lawyers in your area.
       </Text>
     </View>

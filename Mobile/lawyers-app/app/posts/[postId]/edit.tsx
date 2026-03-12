@@ -1,4 +1,5 @@
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import { fetchHelpPostById, updateHelpPost } from "@/lib/features/posts/api";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -26,6 +27,7 @@ export default function EditPostScreen() {
   const router = useRouter();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const { token } = useSession();
+  const { theme } = useTheme();
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -60,9 +62,9 @@ export default function EditPostScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={C.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading...</Text>
       </View>
     );
   }
@@ -71,18 +73,18 @@ export default function EditPostScreen() {
     <>
       <Stack.Screen options={{ title: "Edit Post" }} />
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme.background }]}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.card}>
-          <Text style={styles.label}>Description</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>Description</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
             multiline
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
             placeholder="What legal help do you need?"
-            placeholderTextColor={C.textSecondary}
+            placeholderTextColor={theme.textSecondary}
             editable={!isSaving}
           />
           {error ? <Text style={styles.errorText}>{error}</Text> : null}

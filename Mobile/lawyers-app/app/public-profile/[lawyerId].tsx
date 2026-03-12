@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useSession } from "@/lib/auth/session";
+import { useTheme } from "@/lib/ThemeContext";
 import { fetchPublicLawyerProfile } from "@/lib/features/lawyers/api";
 import type { PublicLawyerProfile } from "@/lib/features/lawyers/types";
 
@@ -41,6 +42,7 @@ function openWhatsApp(number: string) {
 export default function PublicProfileScreen() {
   const { lawyerId } = useLocalSearchParams<{ lawyerId: string }>();
   const { token } = useSession();
+  const { theme } = useTheme();
   const router = useRouter();
 
   const [profile, setProfile] = useState<PublicLawyerProfile | null>(null);
@@ -75,9 +77,9 @@ export default function PublicProfileScreen() {
     return (
       <>
         <Stack.Screen options={{ title: "Loading..." }} />
-        <View style={styles.centered}>
+        <View style={[styles.centered, { backgroundColor: theme.background }]}>
           <ActivityIndicator size="large" color={C.primary} />
-          <Text style={styles.loadingText}>Loading profile...</Text>
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading profile...</Text>
         </View>
       </>
     );
@@ -89,10 +91,10 @@ export default function PublicProfileScreen() {
     return (
       <>
         <Stack.Screen options={{ title: "Profile" }} />
-        <View style={styles.centered}>
-          <Ionicons name="person-remove-outline" size={48} color={C.textSecondary} />
-          <Text style={styles.errorTitle}>Profile not found</Text>
-          <Text style={styles.errorSubtitle}>{error ?? "This profile could not be loaded."}</Text>
+        <View style={[styles.centered, { backgroundColor: theme.background }]}>
+          <Ionicons name="person-remove-outline" size={48} color={theme.textSecondary} />
+          <Text style={[styles.errorTitle, { color: theme.text }]}>Profile not found</Text>
+          <Text style={[styles.errorSubtitle, { color: theme.textSecondary }]}>{error ?? "This profile could not be loaded."}</Text>
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </Pressable>
@@ -106,7 +108,7 @@ export default function PublicProfileScreen() {
   return (
     <>
       <Stack.Screen options={{ title: headerTitle }} />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
 
         {/* ── Avatar hero ── */}
         <View style={styles.heroCard}>
@@ -129,14 +131,16 @@ export default function PublicProfileScreen() {
         </View>
 
         {/* ── Details card ── */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
           <InfoRow
+            theme={theme}
             icon="card-outline"
             label="Syndicate Number"
             value={profile.syndicateCardNumber}
           />
-          <Separator />
+          <Separator theme={theme} />
           <InfoRow
+            theme={theme}
             icon="calendar-outline"
             label="Member since"
             value={new Date(profile.createdAt).getFullYear().toString()}
@@ -145,15 +149,15 @@ export default function PublicProfileScreen() {
 
         {/* ── Active cities ── */}
         {profile.activeCities.length > 0 && (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: theme.card }]}>
             <View style={styles.sectionHeader}>
               <Ionicons name="location-outline" size={16} color={C.primary} />
-              <Text style={styles.sectionTitle}>Active in</Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Active in</Text>
             </View>
             <View style={styles.citiesWrap}>
               {profile.activeCities.map((city) => (
-                <View key={city.id} style={styles.cityChip}>
-                  <Text style={styles.cityChipText}>{city.name}</Text>
+                <View key={city.id} style={[styles.cityChip, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                  <Text style={[styles.cityChipText, { color: theme.text }]}>{city.name}</Text>
                 </View>
               ))}
             </View>
@@ -177,10 +181,12 @@ export default function PublicProfileScreen() {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function InfoRow({
+  theme,
   icon,
   label,
   value,
 }: {
+  theme: { text: string; textSecondary: string };
   icon: React.ComponentProps<typeof Ionicons>["name"];
   label: string;
   value: string;
@@ -191,15 +197,15 @@ function InfoRow({
         <Ionicons name={icon} size={18} color={C.primary} />
       </View>
       <View style={styles.infoTextWrap}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
+        <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>{label}</Text>
+        <Text style={[styles.infoValue, { color: theme.text }]}>{value}</Text>
       </View>
     </View>
   );
 }
 
-function Separator() {
-  return <View style={styles.separator} />;
+function Separator({ theme }: { theme: { border: string } }) {
+  return <View style={[styles.separator, { backgroundColor: theme.border }]} />;
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
