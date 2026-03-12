@@ -1,42 +1,72 @@
 "use client";
+import Image from "next/image";
+import Link from "next/link";
+
+const navLinks = [
+  { label: "About", href: "#about" },
+  { label: "Models", href: "#models" },
+  { label: "Services", href: "#services" },
+  { label: "Industries", href: "#industries" },
+  { label: "Projects", href: "#projects" },
+  { label: "Testimonials", href: "#testimonials" },
+  { label: "Clients", href: "#clients" },
+  { label: "Contact", href: "#contact" },
+];
+
+import { ThemeToggle } from "../components/ThemeToggle";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function Header() {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <a href="#home" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 text-sm font-bold text-slate-950">
-            I
-          </div>
-          <div>
-            <div className="font-bold text-white">IKEN</div>
-            <div className="text-xs text-slate-400">Technology</div>
-          </div>
+    <header className="sticky top-0 z-50 border-b border-[var(--color-border-light)] bg-[var(--color-bg-glass)] backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+
+        {/* Logo */}
+        <a href="#home" className="group flex items-center">
+          <Image
+            src="/iken-logo-new.png"
+            alt="IKEN Technology"
+            width={120}
+            height={40}
+            className={`h-10 w-auto object-contain transition-all group-hover:opacity-80 ${
+              mounted && theme === "dark" ? "brightness-0 invert" : ""
+            }`}
+          />
         </a>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          <a href="#services" className="text-slate-400 transition-colors hover:text-white">
-            Services
-          </a>
-          <a href="#projects" className="text-slate-400 transition-colors hover:text-white">
-            Projects
-          </a>
-          <a href="#clients" className="text-slate-400 transition-colors hover:text-white">
-            Clients
-          </a>
-          <a href="#contact" className="text-slate-400 transition-colors hover:text-white">
-            Contact
-          </a>
+        {/* Nav */}
+        <nav className="hidden items-center gap-7 md:flex">
+          {navLinks.map(({ label, href }) => (
+            <a
+              key={label}
+              href={href}
+              className="relative text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-0 after:bg-[var(--color-brand-blue)] after:transition-all after:duration-300 hover:after:w-full"
+            >
+              {label}
+            </a>
+          ))}
         </nav>
 
-        <a
-          href="#contact"
-          className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-2 text-sm font-bold uppercase tracking-[0.08em] text-white transition-all hover:from-cyan-600 hover:to-blue-600"
-        >
-          Start a Project
-        </a>
+        {/* CTA & Toggle */}
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <Link
+            href="/contact"
+            className="rounded-full bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] px-6 py-2 text-sm font-semibold tracking-wide text-white shadow-[0_0_14px_rgba(59,130,246,0.3)] transition-all hover:-translate-y-px hover:shadow-[0_0_22px_rgba(59,130,246,0.5)]"
+          >
+            Start a Project
+          </Link>
+        </div>
+
       </div>
     </header>
   );
 }
-

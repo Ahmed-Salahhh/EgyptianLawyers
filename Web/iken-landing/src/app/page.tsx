@@ -1,32 +1,37 @@
 "use client";
 
+import { AboutSection } from "./sections/AboutSection";
 import { ContactSection } from "./sections/ContactSection";
 import { ClientsSection } from "./sections/ClientsSection";
 import { Header } from "./sections/Header";
 import { HeroSection } from "./sections/HeroSection";
+import { IndustriesSection } from "./sections/IndustriesSection";
+import { ModelsSection } from "./sections/ModelsSection";
 import { ProjectsSection } from "./sections/ProjectsSection";
 import { ServicesSection } from "./sections/ServicesSection";
 import { TestimonialsSection } from "./sections/TestimonialsSection";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#020818] text-[#15233b]">
+    <div className="min-h-screen bg-[var(--color-bg-main)] text-[var(--color-text-primary)]">
       <Header />
 
-      <main id="home" className="bg-[#f5f8ff]">
+      <main id="home" className="bg-[var(--color-bg-main)]">
         <HeroSection />
 
+        <AboutSection />
+
         <ServicesSection />
-        
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <ProjectsSection />
-        </div>
+
+        <ModelsSection />
+
+        <IndustriesSection />
+
+        <ProjectsSection />
 
         <TestimonialsSection />
-        
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <ClientsSection />
-        </div>
+
+        <ClientsSection />
 
         <ContactSection />
       </main>

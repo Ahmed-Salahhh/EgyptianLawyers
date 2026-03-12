@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import type { CSSProperties, MouseEventHandler } from "react";
 import Slider, { type Settings } from "react-slick";
 
@@ -11,6 +12,12 @@ const fade = {
 };
 
 const products = [
+  {
+    title: "ELAbd Patisserie",
+    image: "/products/p-homecare.jpg",
+    logo: "/clients/br-elabd.png",
+    href: "/projects/elabd",
+  },
   {
     title: "Contact Cars",
     image: "/products/p-contactcars.jpg",
@@ -64,6 +71,8 @@ export function ProjectsSection() {
     cssEase: "cubic-bezier(0.22, 1, 0.36, 1)",
     arrows: true,
     dots: true,
+    autoplay: true,
+    autoplaySpeed: 3000,
     centerMode: true,
     centerPadding: "0px",
     variableWidth: true,
@@ -106,34 +115,61 @@ export function ProjectsSection() {
       viewport={{ once: true, amount: 0.15 }}
       variants={fade}
       transition={{ duration: 0.45 }}
-      className="pb-24 pt-14 sm:pt-16"
+      className="relative overflow-hidden bg-[var(--color-bg-main)] pb-24 pt-14 sm:pt-16"
     >
-      <div className="mb-12 space-y-3 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#2f5fae]">Some Top Projects</p>
-        <h2 className="text-4xl font-semibold tracking-tight text-[#112d5c] sm:text-5xl">Our Recent Projects</h2>
+      {/* Background glow */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[var(--color-brand-blue)] opacity-[0.1] rounded-full blur-[100px]" />
       </div>
 
-      <div className="projects-carousel mx-auto max-w-7xl px-0 sm:px-2">
-        <Slider {...settings}>
-          {products.map((project, idx) => (
-            <div key={project.title} className="px-3 py-2" style={{ width: 420 }}>
-              <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[#d4e5ff] bg-white shadow-[0_24px_52px_rgba(21,62,128,0.25)]">
-                <div className="relative h-64">
-                  <Image src={project.image} alt={project.title} fill className="object-cover" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(12,20,54,0.03)_0%,rgba(12,20,54,0.26)_100%)]" />
-                </div>
-                <div className="space-y-2 p-5">
-                  <h3 className="text-3xl font-semibold tracking-tight text-[#122f5b]">{project.title}</h3>
-                </div>
-              </article>
-            </div>
-          ))}
-        </Slider>
-      </div>
+      <div className="relative z-10">
+        <div className="mb-12 space-y-3 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-text-brand)]">Some Top Projects</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
+            Our Recent <span className="bg-gradient-to-r from-[var(--color-brand-blue)] to-[var(--color-brand-cyan)] bg-clip-text text-transparent">Projects</span>
+          </h2>
+        </div>
 
-      <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-medium leading-relaxed text-[#1b3358]">
-        We Have Done More Than 20 Projects in Last 4 Years, With 100% Satisfaction.
-      </p>
+        <div className="projects-carousel mx-auto max-w-7xl px-0 sm:px-2">
+          <Slider {...settings}>
+            {products.map((project, idx) => (
+              <div key={project.title} className="px-3 py-2" style={{ width: 420 }}>
+                <article className="project-card relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[var(--color-border-light)] bg-[var(--color-bg-card)] shadow-[0_24px_52px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+                  <div className="relative h-64">
+                    {project.logo ? (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--color-brand-deep)] to-[var(--color-bg-main)]">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,var(--color-brand-blue-glow),transparent)]" />
+                        <div className="relative flex h-36 w-36 items-center justify-center rounded-2xl bg-white p-4 shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:shadow-[0_0_40px_var(--color-brand-blue-glow)]">
+                          <Image src={project.logo} alt={project.title} width={120} height={120} className="h-28 w-28 object-contain" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Image src={project.image} alt={project.title} fill className="object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                      </>
+                    )}
+
+                  </div>
+                  <div className="flex items-center justify-between p-5">
+                    <h3 className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)]">{project.title}</h3>
+                    {project.href && (
+                      <Link href={project.href}
+                        className="rounded-full border border-[var(--color-border-brand)] bg-[var(--color-brand-blue-glow)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-text-brand)] transition-all hover:bg-[var(--color-brand-blue-glow)]/20">
+                        Case Study →
+                      </Link>
+                    )}
+                  </div>
+                </article>
+              </div>
+            ))}
+          </Slider>
+        </div>
+
+        <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-medium leading-relaxed text-[var(--color-text-secondary)]">
+          We Have Done More Than 20 Projects in Last 4 Years, With 100% Satisfaction.
+        </p>
+      </div>
     </motion.section>
   );
 }
