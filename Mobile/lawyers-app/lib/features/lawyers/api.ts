@@ -109,3 +109,28 @@ export async function updateMyLawyerProfile(
     throw new Error("FAILED_TO_UPDATE_ME");
   }
 }
+
+export async function uploadAvatar(
+  token: string,
+  file: { uri: string; name: string; type: string },
+): Promise<{ avatarUrl: string }> {
+  const formData = new FormData();
+  // React Native FormData accepts { uri, name, type } for file uploads
+  formData.append("file", { uri: file.uri, name: file.name, type: file.type } as never);
+
+  const response = await fetch(`${API_BASE_URL}/api/lawyers/me/avatar`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to upload avatar (HTTP ${response.status}): ${body}`);
+  }
+
+  return (await response.json()) as { avatarUrl: string };
+}

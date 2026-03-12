@@ -38,6 +38,7 @@ public sealed class GetMyProfileHandler : IRequestHandler<GetMyProfileQuery, Law
             lawyer.Id,
             lawyer.FullName,
             lawyer.Title,
+            lawyer.AvatarUrl,
             lawyer.SyndicateCardNumber,
             lawyer.WhatsAppNumber,
             lawyer.IsVerified,

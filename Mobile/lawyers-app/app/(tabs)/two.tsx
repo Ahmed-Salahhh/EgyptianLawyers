@@ -1,14 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -16,7 +19,7 @@ import { useSession } from "@/lib/auth/session";
 import { useTheme } from "@/lib/ThemeContext";
 import { fetchCourtsAndCities } from "@/lib/features/lookups/api";
 import type { LookupCity } from "@/lib/features/lookups/types";
-import { fetchMyLawyerProfile, updateMyLawyerProfile } from "@/lib/features/lawyers/api";
+import { fetchMyLawyerProfile, updateMyLawyerProfile, uploadAvatar } from "@/lib/features/lawyers/api";
 import type { MyLawyerProfile } from "@/lib/features/lawyers/types";
 
 // ── Design tokens (LinkedIn-style) ───────────────────────────────────────────
@@ -87,6 +90,8 @@ export default function ProfileTab() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ text: string; success: boolean } | null>(null);
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const cityOptions = useMemo<CityOption[]>(
     () => cities.map((c) => ({ id: c.id, name: c.name })),
@@ -182,6 +187,50 @@ export default function ProfileTab() {
     router.replace("/login");
   };
 
+  const handlePickAvatar = useCallback(async () => {
+    if (!token) return;
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      setSaveMessage({ text: "Permission to access photos is required.", success: false });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const ext = asset.uri.split(".").pop() ?? "jpg";
+      const fileName = asset.fileName ?? `avatar.${ext}`;
+      const mimeType = asset.mimeType ?? `image/${ext}`;
+
+      setLocalAvatarUri(asset.uri);
+      setIsUploadingAvatar(true);
+      setSaveMessage(null);
+
+      try {
+        const { avatarUrl: newUrl } = await uploadAvatar(token, {
+          uri: asset.uri,
+          name: fileName,
+          type: mimeType,
+        });
+        setProfile((prev) => (prev ? { ...prev, avatarUrl: newUrl } : null));
+        setLocalAvatarUri(null);
+        setSaveMessage({ text: "Profile picture updated.", success: true });
+      } catch {
+        setLocalAvatarUri(null);
+        setSaveMessage({ text: "Failed to upload profile picture.", success: false });
+      } finally {
+        setIsUploadingAvatar(false);
+      }
+    }
+  }, [token]);
+
   const themedStyles = useMemo(() => createThemedStyles(theme), [theme]);
 
   if (isLoading) {
@@ -249,11 +298,32 @@ export default function ProfileTab() {
 
       {/* ── Profile picture (overlaps cover, white border) ───────────────────── */}
       <View style={styles.avatarWrap}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarInitial}>
-            {profile.fullName.trim().charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        <TouchableOpacity
+          onPress={handlePickAvatar}
+          disabled={isUploadingAvatar}
+          activeOpacity={0.8}
+        >
+          <View style={styles.avatar}>
+            {(localAvatarUri ?? profile.avatarUrl) ? (
+              <>
+                <Image
+                  source={{ uri: localAvatarUri ?? profile.avatarUrl! }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                />
+                {isUploadingAvatar && (
+                  <View style={styles.avatarOverlay}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  </View>
+                )}
+              </>
+            ) : (
+              <Text style={styles.avatarInitial}>
+                {profile.fullName.trim().charAt(0).toUpperCase()}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* ── Intro card ──────────────────────────────────────────────────────── */}
@@ -521,7 +591,15 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
     ...C.shadow,
+  },
+  avatarImage: { width: "100%", height: "100%" },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarInitial: { color: "#FFFFFF", fontSize: 40, fontWeight: "700" },
 

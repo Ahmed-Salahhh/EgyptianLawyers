@@ -23,6 +23,7 @@ export type MyLawyerProfile = {
   title: string;
   syndicateCardNumber: string;
   whatsAppNumber: string;
+  avatarUrl: string | null;
   isVerified: boolean;
   isSuspended: boolean;
   createdAt: string;

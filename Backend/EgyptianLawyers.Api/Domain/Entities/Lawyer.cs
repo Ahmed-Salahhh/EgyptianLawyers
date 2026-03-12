@@ -13,6 +13,7 @@ public class Lawyer
     public DateTime CreatedAt { get; set; }
     public required string IdentityUserId { get; set; }
     public string? FcmToken { get; set; }
+    public string? AvatarUrl { get; set; }
 
     public List<City> ActiveCities { get; set; } = [];
     public List<HelpPost> HelpPosts { get; set; } = [];
